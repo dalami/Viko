@@ -8,12 +8,12 @@
   background: rgba(250,250,247,0.92); backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
-.navLogo { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--black); text-decoration: none; letter-spacing: -0.5px; }
+.navLogo { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--black); text-decoration: none; letter-spacing: -0.5px; flex-shrink: 0; }
 .navDot { color: var(--olive); }
-.navLinks { display: flex; align-items: center; gap: 28px; }
-.navLink { font-size: 14px; color: var(--muted); text-decoration: none; font-weight: 500; transition: color 0.2s; }
+.navLinks { display: flex; align-items: center; gap: 20px; overflow: hidden; }
+.navLink { font-size: 14px; color: var(--muted); text-decoration: none; font-weight: 500; transition: color 0.2s; white-space: nowrap; }
 .navLink:hover { color: var(--black); }
-.navCta { background: var(--black); color: var(--white); padding: 8px 20px; border-radius: var(--radius-full); font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.2s; }
+.navCta { background: var(--black); color: var(--white); padding: 8px 20px; border-radius: var(--radius-full); font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.2s; white-space: nowrap; flex-shrink: 0; }
 .navCta:hover { background: var(--charcoal); }
 
 /* HERO */
@@ -51,7 +51,7 @@
   border-radius: var(--radius-full); padding: 10px 10px 10px 24px;
   box-shadow: var(--shadow-lg);
 }
-.searchInput { flex: 1; border: none; outline: none; font-family: 'Syne', sans-serif; font-size: 15px; color: var(--black); background: transparent; }
+.searchInput { flex: 1; border: none; outline: none; font-family: 'Syne', sans-serif; font-size: 15px; color: var(--black); background: transparent; min-width: 0; }
 .searchInput::placeholder { color: var(--muted); }
 
 /* CATEGORÍAS */
@@ -124,8 +124,25 @@
 .footerLogo { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--black); text-decoration: none; }
 .footerCopy { font-size: 13px; color: var(--muted); }
 
+/* ── RESPONSIVE ── */
 @media (max-width: 700px) {
   .grid { grid-template-columns: 1fr; }
   .heroTitle { font-size: 38px; letter-spacing: -1px; }
-  .navLinks { gap: 12px; }
+  .heroSub { font-size: 15px; }
+  .heroStats { gap: 24px; }
+
+  /* Nav móvil — ocultar links secundarios */
+  .navLinks { gap: 10px; }
+  .navLink { display: none; }
+  .navCta { padding: 7px 14px; font-size: 13px; }
+
+  /* Mostrar solo Comunidad como link visible en móvil */
+  .navLinks a:last-child { display: flex; font-size: 13px; }
+
+  .catsWrap { padding: 40px 4vw 20px; }
+  .gridWrap { padding: 8px 4vw 60px; }
+  .planes { padding: 60px 5vw; }
+  .planCard { padding: 32px 20px; }
+  .searchWrap { padding: 0 4vw; }
+  .footer { flex-direction: column; align-items: flex-start; gap: 10px; }
 }
