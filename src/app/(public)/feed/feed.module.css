@@ -1,0 +1,524 @@
+.page {
+    min-height: 100vh;
+    background: var(--cream);
+}
+
+/* NAV */
+.nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 5vw;
+    height: 60px;
+    background: color-mix(in srgb, var(--white) 92%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+}
+
+.navLogo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--black);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+}
+
+.navDot {
+    color: var(--olive);
+}
+
+.navLinks {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.navLink {
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.navLink:hover {
+    color: var(--black);
+}
+
+.navBtn {
+    background: var(--black);
+    color: var(--white);
+    padding: 8px 18px;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.navBtn:hover {
+    background: var(--charcoal);
+}
+
+.navAdmin {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    background: var(--terracota);
+    color: #fff;
+    text-decoration: none;
+}
+
+/* INNER */
+.inner {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 40px 5vw;
+}
+
+/* HEADER */
+.headerLabel {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--olive);
+    margin-bottom: 8px;
+}
+
+.headerTitle {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px;
+    color: var(--black);
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+}
+
+.headerSub {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+/* FORMULARIO */
+.formulario {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    margin-bottom: 28px;
+    box-shadow: var(--shadow);
+}
+
+.formularioLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 14px;
+}
+
+.formularioNombre {
+    color: var(--olive);
+}
+
+.tipoRow {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.tipoBtn {
+    padding: 7px 14px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Syne', sans-serif;
+}
+
+.textarea {
+    width: 100%;
+    min-height: 90px;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    color: var(--black);
+    background: var(--white);
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.textarea:focus {
+    border-color: var(--olive);
+}
+
+.formularioFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.charCount {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.charCountWarn {
+    font-size: 11px;
+    color: var(--terracota);
+}
+
+.errorMsg {
+    font-size: 12px;
+    color: var(--terracota);
+}
+
+.publishBtn {
+    border: none;
+    border-radius: var(--radius-full);
+    padding: 9px 22px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.publishBtnActive {
+    background: var(--black);
+    color: var(--white);
+}
+
+.publishBtnDisabled {
+    background: var(--beige);
+    color: var(--muted);
+    cursor: default;
+}
+
+/* REGISTRO CTA */
+.registerCta {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+    text-align: center;
+}
+
+.registerCtaText {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 14px;
+}
+
+.registerCtaBtn {
+    background: var(--olive);
+    color: var(--white);
+    padding: 10px 24px;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+/* FILTROS */
+.filtros {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.filtroBtn {
+    padding: 7px 16px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.15s;
+}
+
+.filtroBtnActive {
+    background: var(--black);
+    color: var(--white);
+    border: 1.5px solid var(--black);
+}
+
+.filtroBtnInactive {
+    background: transparent;
+    color: var(--muted);
+    border: 1.5px solid var(--border);
+}
+
+/* EMPTY */
+.empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+}
+
+.emptyIcon {
+    font-size: 32px;
+    margin-bottom: 12px;
+}
+
+.emptyTitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 6px;
+}
+
+.emptySub {
+    font-size: 13px;
+}
+
+/* POSTS */
+.postsList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.postCard {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 20px 24px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.postCardAdmin {
+    border-color: rgba(196, 102, 74, 0.25);
+}
+
+.postHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+
+.postAuthor {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.postAuthorName {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--black);
+    text-decoration: none;
+}
+
+.postAuthorMeta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+}
+
+.tipoBadge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+}
+
+.postContenido {
+    font-size: 15px;
+    color: var(--charcoal);
+    line-height: 1.7;
+    margin-bottom: 16px;
+}
+
+/* RESPUESTAS */
+.respuestasToggle {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    color: var(--olive);
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0;
+    margin-bottom: 12px;
+}
+
+.respuestaItem {
+    display: flex;
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.respuestaContenido {
+    font-size: 13px;
+    color: var(--charcoal);
+    line-height: 1.6;
+}
+
+.respuestaAutor {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--black);
+    text-decoration: none;
+}
+
+.respuestaTiempo {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* FORMULARIO RESPUESTA */
+.respuestaForm {
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    background: var(--cream);
+    border-radius: 12px;
+}
+
+.respuestaTextarea {
+    width: 100%;
+    min-height: 70px;
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    color: var(--black);
+    background: var(--white);
+    resize: none;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.respuestaFormFooter {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+}
+
+.cancelBtn {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.responderBtn {
+    border: none;
+    border-radius: var(--radius-full);
+    padding: 6px 16px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.responderBtnActive {
+    background: var(--olive);
+    color: var(--white);
+}
+
+.responderBtnDisabled {
+    background: var(--beige);
+    color: var(--muted);
+    cursor: default;
+}
+
+/* POST FOOTER */
+.postFooter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.likeBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: var(--radius-full);
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.likeBtnActive {
+    background: var(--olive-light);
+    border: 1px solid var(--olive);
+    color: var(--olive);
+}
+
+.likeBtnInactive {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+}
+
+.responderToggleBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.reportarBtn {
+    background: transparent;
+    border: none;
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.eliminarBtn {
+    background: var(--terracota);
+    border: none;
+    border-radius: var(--radius-full);
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+}
+
+.postFooterRight {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+
+/* AVATAR */
+.avatar {
+    border-radius: 30%;
+    overflow: hidden;
+    background: var(--beige);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--olive);
+    position: relative;
+}

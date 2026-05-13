@@ -22,23 +22,6 @@
   --radius-full: 100px;
 }
 
-html.dark {
-  --cream: #1A1814;
-  --beige: #2D2B26;
-  --white: #242220;
-  --black: #F5F0E8;
-  --charcoal: #EDE8DC;
-  --muted: #9A958A;
-  --border: rgba(245, 240, 232, 0.10);
-  --border-strong: rgba(245, 240, 232, 0.22);
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.4);
-}
-
-html.dark body {
-  background: #242220;
-  color: #F5F0E8;
-}
 
 * {
   margin: 0;

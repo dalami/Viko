@@ -64,8 +64,9 @@
   font-size: 11px;
   color: #7A756A;
   transition: all 0.15s;
-  background: #F5F0E8;
+  background: var(--cream);
   overflow: hidden;
+   position: relative;
 }
 
 .imgSlot:hover {
