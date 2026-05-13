@@ -12,6 +12,13 @@ interface Emprendimiento {
   images?: string[]
 }
 
+interface Respuesta {
+  id: number
+  contenido: string
+  created_at: string
+  emprendimientos: Emprendimiento | Emprendimiento[] | null
+}
+
 interface Post {
   id: number
   tipo: 'win' | 'pregunta' | 'tip'
@@ -19,6 +26,7 @@ interface Post {
   likes: number
   created_at: string
   emprendimientos: Emprendimiento | Emprendimiento[] | null
+  respuestas?: Respuesta[]
 }
 
 interface MiEmp {
@@ -58,6 +66,239 @@ function validarPost(contenido: string): string | null {
   return null
 }
 
+function getEmp(raw: Emprendimiento | Emprendimiento[] | null): Emprendimiento | null {
+  if (!raw) return null
+  return Array.isArray(raw) ? raw[0] : raw
+}
+
+function Avatar({ emp, size = 40 }: { emp: Emprendimiento; size?: number }) {
+  const avatar = emp.images?.[0]
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: size * 0.3,
+      overflow: 'hidden', background: '#EDE8DC', flexShrink: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size * 0.4, fontWeight: 700, color: '#6B7A5A',
+    }}>
+      {avatar
+        ? <img src={avatar} alt={emp.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : emp.nombre.slice(0, 2).toUpperCase()
+      }
+    </div>
+  )
+}
+
+function RespuestaItem({ respuesta, isAdmin, onEliminar }: {
+  respuesta: Respuesta
+  isAdmin: boolean
+  onEliminar: (id: number) => void
+}) {
+  const emp = getEmp(respuesta.emprendimientos)
+  if (!emp) return null
+  return (
+    <div style={{
+      display: 'flex', gap: 10, paddingTop: 12,
+      borderTop: '1px solid rgba(26,24,20,0.06)',
+    }}>
+      <Avatar emp={emp} size={30} />
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <Link href={`/emprendimiento/${emp.slug}`} style={{ fontSize: 12, fontWeight: 700, color: '#1A1814', textDecoration: 'none' }}>
+            {emp.nombre}
+          </Link>
+          <span style={{ fontSize: 11, color: '#9A958A' }}>{timeAgo(respuesta.created_at)}</span>
+          {isAdmin && (
+            <button onClick={() => onEliminar(respuesta.id)} style={{
+              marginLeft: 'auto', background: 'transparent', border: 'none',
+              fontSize: 10, color: '#C4664A', cursor: 'pointer',
+            }}>🗑️</button>
+          )}
+        </div>
+        <p style={{ fontSize: 13, color: '#2D2B26', lineHeight: 1.6 }}>{respuesta.contenido}</p>
+      </div>
+    </div>
+  )
+}
+
+function PostCard({ post, miEmprendimiento, userId, isAdmin, onLike, onReportar, onEliminarPost, likedPosts }: {
+  post: Post
+  miEmprendimiento: MiEmp | null
+  userId: string | null
+  isAdmin: boolean
+  onLike: (id: number) => void
+  onReportar: (id: number) => void
+  onEliminarPost: (id: number) => void
+  likedPosts: Set<number>
+}) {
+  const [showRespuestas, setShowRespuestas] = useState(false)
+  const [respuestas, setRespuestas] = useState<Respuesta[]>(post.respuestas ?? [])
+  const [respondiendo, setRespondiendo] = useState(false)
+  const [textoRespuesta, setTextoRespuesta] = useState('')
+  const [savingResp, setSavingResp] = useState(false)
+  const supabase = createClient()
+
+  const cfg = TIPO_CONFIG[post.tipo]
+  const emp = getEmp(post.emprendimientos)
+  const liked = likedPosts.has(post.id)
+  if (!emp) return null
+
+  async function handleResponder() {
+    if (!miEmprendimiento || !textoRespuesta.trim()) return
+    setSavingResp(true)
+    const { data, error } = await supabase
+      .from('respuestas')
+      .insert({
+        post_id: post.id,
+        emprendimiento_id: miEmprendimiento.id,
+        contenido: textoRespuesta.trim(),
+      })
+      .select(`id, contenido, created_at, emprendimientos (id, nombre, slug, images)`)
+      .single()
+
+    if (!error && data) {
+      setRespuestas(prev => [...prev, data as unknown as Respuesta])
+      setTextoRespuesta('')
+      setRespondiendo(false)
+      setShowRespuestas(true)
+    }
+    setSavingResp(false)
+  }
+
+  async function handleEliminarRespuesta(id: number) {
+    if (!isAdmin) return
+    await supabase.from('respuestas').delete().eq('id', id)
+    setRespuestas(prev => prev.filter(r => r.id !== id))
+  }
+
+  return (
+    <div style={{
+      background: '#FAFAF7', borderRadius: 20, padding: '20px 24px',
+      border: `1px solid ${isAdmin ? 'rgba(196,102,74,0.15)' : 'rgba(26,24,20,0.08)'}`,
+      boxShadow: '0 2px 8px rgba(26,24,20,0.04)',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <Avatar emp={emp} />
+          <div>
+            <Link href={`/emprendimiento/${emp.slug}`} style={{ fontSize: 14, fontWeight: 700, color: '#1A1814', textDecoration: 'none' }}>
+              {emp.nombre}
+            </Link>
+            <p style={{ fontSize: 11, color: '#9A958A', marginTop: 1 }}>
+              {emp.rubro} · {timeAgo(post.created_at)}
+            </p>
+          </div>
+        </div>
+        <span style={{
+          fontSize: 10, fontWeight: 700, padding: '4px 10px',
+          borderRadius: 100, background: cfg.bg, color: cfg.color,
+          border: `1px solid ${cfg.color}30`,
+        }}>{cfg.label}</span>
+      </div>
+
+      {/* Contenido */}
+      <p style={{ fontSize: 15, color: '#2D2B26', lineHeight: 1.7, marginBottom: 16 }}>
+        {post.contenido}
+      </p>
+
+      {/* Respuestas */}
+      {respuestas.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          <button onClick={() => setShowRespuestas(!showRespuestas)} style={{
+            background: 'transparent', border: 'none',
+            fontSize: 12, color: '#6B7A5A', cursor: 'pointer', fontWeight: 600,
+            padding: 0, marginBottom: showRespuestas ? 12 : 0,
+          }}>
+            {showRespuestas ? '▲ Ocultar' : `▼ Ver ${respuestas.length} respuesta${respuestas.length > 1 ? 's' : ''}`}
+          </button>
+          {showRespuestas && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {respuestas.map(r => (
+                <RespuestaItem key={r.id} respuesta={r} isAdmin={isAdmin} onEliminar={handleEliminarRespuesta} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Formulario respuesta */}
+      {respondiendo && miEmprendimiento && (
+        <div style={{ marginBottom: 12, padding: '12px 16px', background: '#F5F0E8', borderRadius: 12 }}>
+          <textarea
+            value={textoRespuesta}
+            onChange={e => setTextoRespuesta(e.target.value)}
+            placeholder="Escribí tu respuesta..."
+            maxLength={200}
+            style={{
+              width: '100%', minHeight: 70, padding: '8px 12px',
+              border: '1.5px solid rgba(26,24,20,0.12)', borderRadius: 10,
+              fontFamily: "'Syne', sans-serif", fontSize: 13, color: '#1A1814',
+              background: '#FAFAF7', resize: 'none', outline: 'none',
+              boxSizing: 'border-box',
+            }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+            <button onClick={() => setRespondiendo(false)} style={{
+              background: 'transparent', border: 'none', fontSize: 12,
+              color: '#9A958A', cursor: 'pointer',
+            }}>Cancelar</button>
+            <button onClick={handleResponder} disabled={savingResp || !textoRespuesta.trim()} style={{
+              background: savingResp || !textoRespuesta.trim() ? '#EDE8DC' : '#6B7A5A',
+              color: savingResp || !textoRespuesta.trim() ? '#9A958A' : '#FAFAF7',
+              border: 'none', borderRadius: 100, padding: '6px 16px',
+              fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 12, cursor: 'pointer',
+            }}>{savingResp ? 'Enviando...' : 'Responder'}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 12, borderTop: '1px solid rgba(26,24,20,0.06)' }}>
+        <button onClick={() => onLike(post.id)} style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: liked ? '#EFF2EB' : 'transparent',
+          border: `1px solid ${liked ? '#6B7A5A' : 'rgba(26,24,20,0.12)'}`,
+          borderRadius: 100, padding: '5px 12px',
+          fontSize: 12, fontWeight: 600,
+          color: liked ? '#6B7A5A' : '#7A756A',
+          cursor: 'pointer', transition: 'all 0.15s',
+        }}>
+          {liked ? '✅' : '👍'} {post.likes}
+        </button>
+
+        {miEmprendimiento && (
+          <button onClick={() => setRespondiendo(!respondiendo)} style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'transparent',
+            border: '1px solid rgba(26,24,20,0.12)',
+            borderRadius: 100, padding: '5px 12px',
+            fontSize: 12, fontWeight: 600, color: '#7A756A',
+            cursor: 'pointer', transition: 'all 0.15s',
+          }}>
+            💬 Responder
+          </button>
+        )}
+
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          {userId && miEmprendimiento && emp.id !== miEmprendimiento.id && (
+            <button onClick={() => onReportar(post.id)} style={{
+              background: 'transparent', border: 'none',
+              fontSize: 11, color: '#9A958A', cursor: 'pointer',
+            }}>Reportar</button>
+          )}
+          {isAdmin && (
+            <button onClick={() => onEliminarPost(post.id)} style={{
+              background: '#C4664A', border: 'none', borderRadius: 100,
+              padding: '4px 12px', fontSize: 11, fontWeight: 700,
+              color: '#FAFAF7', cursor: 'pointer',
+            }}>🗑️ Eliminar</button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function FeedClient({ posts: initialPosts, miEmprendimiento, userId, isAdmin }: {
   posts: Post[]
   miEmprendimiento: MiEmp | null
@@ -89,12 +330,12 @@ export default function FeedClient({ posts: initialPosts, miEmprendimiento, user
       .single()
 
     if (dbError) { setError('Error al publicar. Intentá de nuevo.') }
-    else if (data) { setPosts(prev => [data as unknown as Post, ...prev]); setContenido('') }
+    else if (data) { setPosts(prev => [{ ...(data as unknown as Post), respuestas: [] }, ...prev]); setContenido('') }
     setSaving(false)
   }
 
   async function handleLike(postId: number) {
-    if (!userId || likedPosts.has(postId)) return
+    if (likedPosts.has(postId)) return
     setLikedPosts(prev => new Set([...prev, postId]))
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p))
     await supabase.rpc('increment_post_likes', { post_id: postId })
@@ -106,11 +347,11 @@ export default function FeedClient({ posts: initialPosts, miEmprendimiento, user
     alert('Post reportado. Lo revisaremos pronto.')
   }
 
-  async function handleEliminar(postId: number) {
+  async function handleEliminarPost(postId: number) {
     if (!isAdmin) return
     if (!confirm('¿Eliminás este post?')) return
-    const { error } = await supabase.from('posts').delete().eq('id', postId)
-    if (!error) setPosts(prev => prev.filter(p => p.id !== postId))
+    await supabase.from('posts').delete().eq('id', postId)
+    setPosts(prev => prev.filter(p => p.id !== postId))
   }
 
   return (
@@ -130,12 +371,12 @@ export default function FeedClient({ posts: initialPosts, miEmprendimiento, user
         }}>
           Viko<span style={{ color: '#6B7A5A' }}>.</span>
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <Link href="/directorio" style={{ fontSize: 13, color: '#7A756A', textDecoration: 'none' }}>Directorio</Link>
           {isAdmin && (
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: '#C4664A', color: '#fff' }}>
+            <Link href="/admin" style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: '#C4664A', color: '#fff', textDecoration: 'none' }}>
               Admin
-            </span>
+            </Link>
           )}
           {userId ? (
             <Link href="/dashboard" style={{
@@ -248,87 +489,19 @@ export default function FeedClient({ posts: initialPosts, miEmprendimiento, user
               <p style={{ fontSize: 13 }}>Sé el primero en compartir algo con la comunidad.</p>
             </div>
           ) : (
-            filtered.map(post => {
-              const cfg = TIPO_CONFIG[post.tipo]
-              const emp = Array.isArray(post.emprendimientos) ? post.emprendimientos[0] : post.emprendimientos
-              if (!emp) return null
-              const avatar = emp.images?.[0]
-              const liked = likedPosts.has(post.id)
-
-              return (
-                <div key={post.id} style={{
-                  background: '#FAFAF7', borderRadius: 20, padding: '20px 24px',
-                  border: `1px solid ${isAdmin ? 'rgba(196,102,74,0.15)' : 'rgba(26,24,20,0.08)'}`,
-                  boxShadow: '0 2px 8px rgba(26,24,20,0.04)',
-                }}>
-                  {/* Header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                      <div style={{
-                        width: 40, height: 40, borderRadius: 12, overflow: 'hidden',
-                        background: '#EDE8DC', flexShrink: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 16, fontWeight: 700, color: '#6B7A5A',
-                      }}>
-                        {avatar
-                          ? <img src={avatar} alt={emp.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : emp.nombre.slice(0, 2).toUpperCase()
-                        }
-                      </div>
-                      <div>
-                        <Link href={`/emprendimiento/${emp.slug}`} style={{ fontSize: 14, fontWeight: 700, color: '#1A1814', textDecoration: 'none' }}>
-                          {emp.nombre}
-                        </Link>
-                        <p style={{ fontSize: 11, color: '#9A958A', marginTop: 1 }}>
-                          {emp.rubro} · {timeAgo(post.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '4px 10px',
-                      borderRadius: 100, background: cfg.bg, color: cfg.color,
-                      border: `1px solid ${cfg.color}30`,
-                    }}>{cfg.label}</span>
-                  </div>
-
-                  {/* Contenido */}
-                  <p style={{ fontSize: 15, color: '#2D2B26', lineHeight: 1.7, marginBottom: 16 }}>
-                    {post.contenido}
-                  </p>
-
-                  {/* Footer */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 12, borderTop: '1px solid rgba(26,24,20,0.06)' }}>
-                    <button onClick={() => handleLike(post.id)} disabled={!userId || liked} style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      background: liked ? '#EFF2EB' : 'transparent',
-                      border: `1px solid ${liked ? '#6B7A5A' : 'rgba(26,24,20,0.12)'}`,
-                      borderRadius: 100, padding: '5px 12px',
-                      fontSize: 12, fontWeight: 600,
-                      color: liked ? '#6B7A5A' : '#7A756A',
-                      cursor: userId && !liked ? 'pointer' : 'default', transition: 'all 0.15s',
-                    }}>
-                      {liked ? '✅' : '👍'} {post.likes}
-                    </button>
-
-                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                      {userId && miEmprendimiento && emp.id !== miEmprendimiento.id && (
-                        <button onClick={() => handleReportar(post.id)} style={{
-                          background: 'transparent', border: 'none',
-                          fontSize: 11, color: '#9A958A', cursor: 'pointer',
-                        }}>Reportar</button>
-                      )}
-                      {isAdmin && (
-                        <button onClick={() => handleEliminar(post.id)} style={{
-                          background: '#C4664A', border: 'none', borderRadius: 100,
-                          padding: '4px 12px', fontSize: 11, fontWeight: 700,
-                          color: '#FAFAF7', cursor: 'pointer',
-                        }}>🗑️ Eliminar</button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            })
+            filtered.map(post => (
+              <PostCard
+                key={post.id}
+                post={post}
+                miEmprendimiento={miEmprendimiento}
+                userId={userId}
+                isAdmin={isAdmin}
+                onLike={handleLike}
+                onReportar={handleReportar}
+                onEliminarPost={handleEliminarPost}
+                likedPosts={likedPosts}
+              />
+            ))
           )}
         </div>
       </div>

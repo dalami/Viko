@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from "../../../lib/server";
 import FeedClient from "./FeedClient";
 
@@ -11,17 +12,23 @@ export default async function FeedPage() {
 
   const { data: posts } = await supabase
     .from("posts")
-    .select(`
-      id, tipo, contenido, likes, created_at,
-      emprendimientos (
-        id, nombre, rubro, slug, images
-      )
-    `)
+    .select(
+      `
+    id, tipo, contenido, likes, created_at,
+    emprendimientos (id, nombre, rubro, slug, images),
+    respuestas (
+      id, contenido, created_at,
+      emprendimientos (id, nombre, slug, images)
+    )
+  `,
+    )
     .eq("visible", true)
     .order("created_at", { ascending: false })
     .limit(50);
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   let miEmprendimiento = null;
   let isAdmin = false;
@@ -42,12 +49,14 @@ export default async function FeedPage() {
     isAdmin = !!adminData;
   }
 
-  return (
-    <FeedClient
-      posts={posts ?? []}
-      miEmprendimiento={miEmprendimiento}
-      userId={user?.id ?? null}
-      isAdmin={isAdmin}
-    />
-  );
+ const safePosts = (posts ?? []) as any[]
+
+return (
+  <FeedClient
+    posts={safePosts}
+    miEmprendimiento={miEmprendimiento}
+    userId={user?.id ?? null}
+    isAdmin={isAdmin}
+  />
+)
 }

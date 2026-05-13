@@ -8,7 +8,7 @@ import ViewPerfil from "../../../components/dashboard/ViewPerfil";
 import ViewProductos from "../../../components/dashboard/ViewProductos";
 import ViewMetricas from "../../../components/dashboard/Viewmetricas";
 import { ViewLanding } from "../../../components/dashboard/Viewmetricaslanding";
-import Link from 'next/link'
+import Link from "next/link";
 
 export interface Emprendimiento {
   id: number;
@@ -130,6 +130,24 @@ export default function DashboardClient({
           </div>
           <p className={styles.logoSub}>Panel de emprendedor</p>
         </div>
+        <Link
+          href="/feed"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "10px 16px",
+            borderRadius: 12,
+            fontSize: 14,
+            fontWeight: 500,
+            color: "#7A756A",
+            textDecoration: "none",
+            transition: "all 0.15s",
+          }}
+        >
+          <span>💬</span>
+          Comunidad
+        </Link>
 
         <nav className={styles.nav}>
           <p className={styles.navSection}>Principal</p>
