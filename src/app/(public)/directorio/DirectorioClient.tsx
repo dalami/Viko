@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import styles from "../directorio/directorio.module.css";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface Emp {
   id: number;
@@ -100,24 +101,25 @@ export default function DirectorioClient({
         <Link href="/" className={styles.navLogo}>
           Viko<span className={styles.navDot}>.</span>
         </Link>
-        <div className={styles.navLinks}>
-          <Link href="/directorio" className={styles.navLink}>
+
+        <div className={styles.navCenter}>
+          <a href="#grid" className={styles.navLink}>
             Emprendimientos
-          </Link>
-          <Link
-            href="/login"
-            className={styles.navLink}
-            style={{ fontSize: "0.8rem", opacity: 0.6 }}
-          >
+          </a>
+          <Link href="/login" className={styles.navLink}>
             Acceso emprendedores
           </Link>
-          <Link href="/register" className={styles.navCta}>
-            Publicar
-          </Link>
-          <Link href="/feed" className={styles.navLinkComunidad}>
+          <Link href="/feed" className={styles.navLink}>
             Comunidad
           </Link>
+          <Link href="/register" className={styles.navLinkPublicar}>
+            Publicar
+          </Link>
         </div>
+
+        <Link href="/login" className={styles.navAcceder}>
+          Acceder
+        </Link>
       </nav>
 
       {/* HERO */}
@@ -183,7 +185,7 @@ export default function DirectorioClient({
       </div>
 
       {/* GRID */}
-      <div className={styles.gridWrap}>
+      <div className={styles.gridWrap} id="grid">
         <div className={styles.gridHeader}>
           <span className={styles.gridCount}>
             {filtered.length} emprendimiento{filtered.length !== 1 ? "s" : ""}
@@ -209,7 +211,13 @@ export default function DirectorioClient({
                 >
                   <div className={styles.cardImg}>
                     {img ? (
-                      <img src={img} alt={e.nombre} />
+                      <Image
+                        src={img}
+                        alt={e.nombre}
+                        fill
+                        style={{ objectFit: "cover" }}
+                        sizes="(max-width: 700px) 100vw, 33vw"
+                      />
                     ) : (
                       <div className={styles.cardImgEmpty}>📷</div>
                     )}

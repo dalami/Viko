@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import styles from "./public.module.css";
 import { createClient } from "../../../../lib/supabase";
+import Image from "next/image";
 
 interface Producto {
   id: string;
@@ -53,15 +54,18 @@ export default function PublicProfile({ emp, productos }: Props) {
       .then(({ error }) => console.log("insert result:", error));
   }, [emp.id]);
 
-  async function trackClick(type: 'whatsapp' | 'instagram' | 'web', url: string) {
-  const supabase = createClient()
-  await supabase.from('visitas').insert({
-    emprendimiento_id: Number(emp.id),
-    source: type,
-    type: 'click',
-  })
-  window.open(url, '_blank')
-}
+  async function trackClick(
+    type: "whatsapp" | "instagram" | "web",
+    url: string,
+  ) {
+    const supabase = createClient();
+    await supabase.from("visitas").insert({
+      emprendimiento_id: Number(emp.id),
+      source: type,
+      type: "click",
+    });
+    window.open(url, "_blank");
+  }
 
   return (
     <div className={styles.profilePage}>
@@ -84,7 +88,14 @@ export default function PublicProfile({ emp, productos }: Props) {
           {images.length > 0 ? (
             <>
               <div className={styles.mainImage}>
-                <img src={images[activeImg]} alt={emp.nombre} />
+                <Image
+                  src={images[activeImg]}
+                  alt={emp.nombre}
+                  fill
+                  style={{ objectFit: "cover" }}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
+                />
                 {emp.plan === "premium" && (
                   <span className={styles.planBadge}>Premium</span>
                 )}
@@ -104,7 +115,13 @@ export default function PublicProfile({ emp, productos }: Props) {
                       className={`${styles.thumb} ${i === activeImg ? styles.thumbActive : ""}`}
                       onClick={() => setActiveImg(i)}
                     >
-                      <img src={src} alt="" />
+                      <Image
+                        src={src}
+                        alt=""
+                        fill
+                        style={{ objectFit: "cover" }}
+                        sizes="64px"
+                      />
                     </button>
                   ))}
                 </div>
@@ -133,39 +150,45 @@ export default function PublicProfile({ emp, productos }: Props) {
 
           {emp.descripcion && <p className={styles.desc}>{emp.descripcion}</p>}
 
-    {emp.plan === 'premium' && (
-  <div className={styles.contactBtns}>
-    <button
-      className={`${styles.contactBtn} ${styles.btnWa}`}
-      onClick={() =>
-        trackClick(
-          "whatsapp",
-          buildWA(emp.whatsapp, `Hola ${emp.nombre}! Vi tu perfil en Viko.`),
-        )
-      }
-    >
-      💬 Contactar por WhatsApp
-    </button>
-    {emp.instagram && (
-      <button
-        className={`${styles.contactBtn} ${styles.btnIg}`}
-        onClick={() =>
-          trackClick("instagram", `https://instagram.com/${emp.instagram}`)
-        }
-      >
-        📷 Ver en Instagram
-      </button>
-    )}
-    {emp.web && (
-      <button
-        className={`${styles.contactBtn} ${styles.btnWeb}`}
-        onClick={() => trackClick("web", emp.web!)}
-      >
-        🌐 Sitio web
-      </button>
-    )}
-  </div>
-)}
+          {emp.plan === "premium" && (
+            <div className={styles.contactBtns}>
+              <button
+                className={`${styles.contactBtn} ${styles.btnWa}`}
+                onClick={() =>
+                  trackClick(
+                    "whatsapp",
+                    buildWA(
+                      emp.whatsapp,
+                      `Hola ${emp.nombre}! Vi tu perfil en Viko.`,
+                    ),
+                  )
+                }
+              >
+                💬 Contactar por WhatsApp
+              </button>
+              {emp.instagram && (
+                <button
+                  className={`${styles.contactBtn} ${styles.btnIg}`}
+                  onClick={() =>
+                    trackClick(
+                      "instagram",
+                      `https://instagram.com/${emp.instagram}`,
+                    )
+                  }
+                >
+                  📷 Ver en Instagram
+                </button>
+              )}
+              {emp.web && (
+                <button
+                  className={`${styles.contactBtn} ${styles.btnWeb}`}
+                  onClick={() => trackClick("web", emp.web!)}
+                >
+                  🌐 Sitio web
+                </button>
+              )}
+            </div>
+          )}
 
           {productos.length > 0 && (
             <div className={styles.productos}>

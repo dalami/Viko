@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '../../../lib/supabase'
+import Image from 'next/image'
 
 interface Emprendimiento {
   id: number
@@ -81,7 +82,7 @@ function Avatar({ emp, size = 40 }: { emp: Emprendimiento; size?: number }) {
       fontSize: size * 0.4, fontWeight: 700, color: '#6B7A5A',
     }}>
       {avatar
-        ? <img src={avatar} alt={emp.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ? <Image src={avatar} alt={emp.nombre} fill style={{ objectFit: 'cover' }} sizes="40px" />
         : emp.nombre.slice(0, 2).toUpperCase()
       }
     </div>
