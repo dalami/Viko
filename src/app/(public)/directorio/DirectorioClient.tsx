@@ -5,6 +5,7 @@ import Link from "next/link";
 import styles from "../directorio/directorio.module.css";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import ThemeToggle from "../../../components/ThemeToggle";
 
 interface Emp {
   id: number;
@@ -116,10 +117,12 @@ export default function DirectorioClient({
             Publicar
           </Link>
         </div>
-
-        <Link href="/login" className={styles.navAcceder}>
-          Acceder
-        </Link>
+        <div className={styles.navRight}>
+          <ThemeToggle />
+          <Link href="/login" className={styles.navAcceder}>
+            Acceder
+          </Link>
+        </div>
       </nav>
 
       {/* HERO */}
