@@ -1,0 +1,402 @@
+/* ── NAV ── */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5vw;
+  height: 60px;
+  background: rgba(250,250,247,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.navLogo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--black);
+  text-decoration: none;
+  letter-spacing: -0.5px;
+}
+
+.navDot { color: var(--olive); }
+
+.navRight { display: flex; align-items: center; gap: 20px; }
+
+.navLink {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.navLink:hover { color: var(--black); }
+
+.navCta {
+  background: var(--black);
+  color: var(--white);
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.navCta:hover { background: var(--charcoal); }
+
+/* ── PROFILE PAGE ── */
+.profilePage { background: var(--white); min-height: 100vh; }
+
+.profileWrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 5vw;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: start;
+}
+
+/* GALERÍA */
+.gallery { position: sticky; top: 80px; }
+
+.mainImage {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 10px;
+  background: var(--cream);
+}
+
+.mainImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.noImage {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: var(--radius-lg);
+  background: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  border: 1px solid var(--border);
+}
+
+.planBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--black);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.planFeatured { background: var(--gold); }
+
+.thumbs { display: flex; gap: 8px; }
+
+.thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  background: var(--cream);
+  transition: border-color 0.15s;
+}
+
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.thumbActive { border-color: var(--olive); }
+
+/* INFO */
+.rubro {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--olive);
+  margin-bottom: 8px;
+}
+
+.nombre {
+  font-family: 'DM Serif Display', serif;
+  font-size: 40px;
+  color: var(--black);
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+
+.tagline {
+  font-size: 16px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.desc {
+  font-size: 15px;
+  color: var(--charcoal);
+  line-height: 1.75;
+  margin-bottom: 28px;
+}
+
+/* CONTACTO */
+.contactBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.contactBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btnWa { background: #25D366; color: #fff; }
+.btnWa:hover { background: #20b858; transform: translateY(-1px); }
+
+.btnIg { background: linear-gradient(135deg, #E1306C, #F77737); color: #fff; }
+.btnIg:hover { opacity: 0.92; transform: translateY(-1px); }
+
+.btnWeb { background: var(--black); color: var(--white); }
+.btnWeb:hover { background: var(--charcoal); transform: translateY(-1px); }
+
+/* PRODUCTOS */
+.productos { margin-bottom: 28px; }
+
+.productosTitle {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--black);
+  margin-bottom: 16px;
+  letter-spacing: -0.3px;
+}
+
+.productosGrid { display: flex; flex-direction: column; gap: 10px; }
+
+.productoCard {
+  background: var(--cream);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+}
+
+.productoInfo { margin-bottom: 10px; }
+.productoNombre { font-size: 14px; font-weight: 600; color: var(--black); display: block; }
+.productoDesc { font-size: 12px; color: var(--muted); display: block; margin-top: 2px; }
+
+.productoBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.productoPrecio { font-size: 16px; font-weight: 700; color: var(--olive-dark); }
+
+.productoWa {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--olive);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--olive);
+  transition: all 0.15s;
+}
+.productoWa:hover { background: var(--olive); color: var(--white); }
+
+/* VIKO BADGE */
+.vikoBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  background: var(--cream);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.vikoBadgeText { font-size: 12px; color: var(--muted); }
+.vikoBadgeLogo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 16px;
+  color: var(--olive);
+  text-decoration: none;
+}
+
+/* ── DIRECTORIO EMBEBIDO ── */
+.directorioSection {
+  background: var(--cream);
+  padding: 72px 5vw;
+  border-top: 1px solid var(--border);
+}
+
+.directorioInner { max-width: 1100px; margin: 0 auto; }
+
+.directorioLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.directorioTitle {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px;
+  color: var(--black);
+  letter-spacing: -0.5px;
+  margin-bottom: 32px;
+}
+
+.directorioGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.dirCard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.dirCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.dirCardImg {
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+  background: var(--cream);
+}
+
+.dirCardImg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.dirCard:hover .dirCardImg img { transform: scale(1.04); }
+
+.dirCardImgPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+}
+
+.dirCardBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(250,250,247,0.92);
+  backdrop-filter: blur(6px);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  color: var(--charcoal);
+}
+
+.dirCardPremium {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--black);
+  color: var(--white);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+}
+
+.dirCardBody { padding: 16px; }
+.dirCardName { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--black); margin-bottom: 4px; }
+.dirCardTag { font-size: 12px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+.dirCardMeta { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+
+.dirCardLinks {
+  display: flex;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.dirCardBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.dirCardBtn:hover { background: var(--cream); }
+
+.directorioFooter { text-align: center; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .profileWrap {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 24px 16px;
+  }
+  .gallery { position: static; }
+  .nombre { font-size: 30px; }
+  .navCta { display: none; }
+}
+
+
