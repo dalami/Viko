@@ -6,7 +6,6 @@ import styles from "../directorio/directorio.module.css";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-
 interface Emp {
   id: number;
   nombre: string;
@@ -118,7 +117,6 @@ export default function DirectorioClient({
           </Link>
         </div>
         <div className={styles.navRight}>
-         
           <Link href="/login" className={styles.navAcceder}>
             Acceder
           </Link>
@@ -127,17 +125,41 @@ export default function DirectorioClient({
 
       {/* HERO */}
       <section className={styles.hero}>
-        <div className={styles.heroBadge}>Guía seleccionada</div>
+        <div className={styles.heroBadge}>Directorio de emprendimientos</div>
         <h1 className={styles.heroTitle}>
-          Descubrí marcas
+          Publicá tu emprendimiento
           <br />
-          <em>independientes</em>
-          <br />
-          con identidad propia.
+          <em>gratis</em> y llegá a más clientes
         </h1>
         <p className={styles.heroSub}>
-          Productos, servicios y emprendimientos seleccionados.
+          Sin comisiones. Sin tarjeta de crédito. Tu ficha lista en minutos.
         </p>
+
+        <div className={styles.heroCtaRow}>
+          <input
+            className={styles.heroInput}
+            type="email"
+            placeholder="tu@email.com"
+          />
+          <Link
+            href="/register"
+            className={styles.heroBtn}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              textDecoration: "none",
+            }}
+          >
+            Empezar gratis →
+          </Link>
+        </div>
+
+        <div className={styles.heroTrust}>
+          <span>Gratis para siempre</span>
+          <span>Sin comisiones por venta</span>
+          <span>Configuración en 5 minutos</span>
+        </div>
+
         <div className={styles.heroStats}>
           <div className={styles.stat}>
             <span className={styles.statNum}>{emprendimientos.length}</span>
