@@ -114,7 +114,7 @@ export default function DirectorioClient({
           <Link href="/register" className={styles.navCta}>
             Publicar
           </Link>
-          <Link href="/feed" className={styles.navLink}>
+          <Link href="/feed" className={styles.navLinkComunidad}>
             Comunidad
           </Link>
         </div>
@@ -343,7 +343,17 @@ export default function DirectorioClient({
         <Link href="/" className={styles.footerLogo}>
           Viko.
         </Link>
-       <Link href="/admin" style={{ fontSize: 10, color: 'rgba(26,24,20,0.2)', textDecoration: 'none' }}> Admin</Link>
+        <Link
+          href="/admin"
+          style={{
+            fontSize: 10,
+            color: "rgba(26,24,20,0.2)",
+            textDecoration: "none",
+          }}
+        >
+          {" "}
+          Admin
+        </Link>
         <span className={styles.footerCopy}>
           © 2026 Viko — Directorio de emprendimientos seleccionados.
         </span>
