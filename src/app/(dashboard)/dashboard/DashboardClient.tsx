@@ -29,6 +29,8 @@ export interface Emprendimiento {
   historia_diferencia?: string;
   historia_cliente?: string;
   highlights?: { icono: string; texto: string }[] | null;
+  mp_connected?: boolean;
+  mp_access_token?: string;
 }
 
 export interface Producto {
@@ -37,6 +39,9 @@ export interface Producto {
   precio: number;
   descripcion?: string;
   categoria?: string;
+  imagen?: string;
+  variantes?: { tipo: string; opciones: string[] }[];
+  activo?: boolean;
   emprendimiento_id?: number;
 }
 
@@ -241,7 +246,10 @@ export default function DashboardClient({
           {view === "productos" && (
             <ViewProductos
               empId={emp.id}
+              userId={user.id}
               isPro={isPro}
+              mpConnected={emp.mp_connected ?? false}
+              empNombre={emp.nombre}
               productos={prods}
               setProductos={setProds}
             />
