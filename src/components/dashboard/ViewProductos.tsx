@@ -33,30 +33,7 @@ interface ViewProductosProps {
   setProductos: React.Dispatch<React.SetStateAction<Producto[]>>;
 }
 
-function ProLock({ onUpgrade }: { onUpgrade: () => void }) {
-  return (
-    <div style={{
-      background: "linear-gradient(135deg, #1A1814, #2D2B26)",
-      borderRadius: 16, padding: "32px 24px", textAlign: "center",
-      border: "1px solid rgba(201,168,76,0.3)",
-    }}>
-      <div style={{ fontSize: 32, marginBottom: 10 }}>🛍️</div>
-      <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
-        Productos — Viko Pro
-      </p>
-      <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
-        Mostrá tu catálogo con fotos, precios, variantes y carrito de compras integrado.
-      </p>
-      <button onClick={onUpgrade} style={{
-        background: "#C9A84C", border: "none", borderRadius: 100,
-        padding: "11px 28px", fontFamily: "Syne, sans-serif",
-        fontWeight: 700, fontSize: 13, color: "#1A1814", cursor: "pointer",
-      }}>
-        Activar Viko Pro — $9.900/mes
-      </button>
-    </div>
-  );
-}
+const LIMITE_FREE = 3;
 
 export default function ViewProductos({
   empId, userId, isPro, mpConnected, empNombre, productos, setProductos,
@@ -76,8 +53,15 @@ export default function ViewProductos({
 
   const supabase = createClient();
 
+  // Límite: free = 3, pro = ilimitado
+  const limiteAlcanzado = !isPro && productos.length >= LIMITE_FREE;
+
   async function handleUpgrade() {
-    const res = await fetch("/api/checkout", { method: "POST" });
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ periodo: "mensual" }),
+    });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
   }
@@ -119,6 +103,7 @@ export default function ViewProductos({
 
   async function handleAddProduct(e: React.FormEvent) {
     e.preventDefault();
+    if (limiteAlcanzado) return;
     setSaving(true);
     const { data, error } = await supabase
       .from("productos")
@@ -153,35 +138,65 @@ export default function ViewProductos({
     setProductos(prev => prev.map(p => p.id === id ? { ...p, activo: !activo } : p));
   }
 
-  if (!isPro) {
-    return (
-      <div className={styles.view}>
-        <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Catálogo de productos</h3>
-          <ProLock onUpgrade={handleUpgrade} />
-        </section>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.view}>
       <section className={styles.section}>
 
-        {/* Banner MP */}
-        <MpBanner mpConnected={mpConnected} empNombre={empNombre} />
+        {/* Banner MP — solo Pro */}
+        {isPro && <MpBanner mpConnected={mpConnected} empNombre={empNombre} />}
 
         <div className={styles.sectionHeader}>
-          <h3 className={styles.sectionTitle}>Catálogo de productos</h3>
-          <button type="button" className="btn btn-primary"
-            style={{ padding: "8px 18px", fontSize: "13px" }}
-            onClick={() => setAdding(!adding)}>
+          <div>
+            <h3 className={styles.sectionTitle}>Catálogo de productos</h3>
+            {!isPro && (
+              <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+                Plan Free: {productos.length}/{LIMITE_FREE} productos
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ padding: "8px 18px", fontSize: "13px", opacity: limiteAlcanzado ? 0.4 : 1 }}
+            onClick={() => !limiteAlcanzado && setAdding(!adding)}
+            disabled={limiteAlcanzado}
+            title={limiteAlcanzado ? "Límite del plan Free alcanzado" : ""}
+          >
             {adding ? "Cancelar" : "+ Agregar producto"}
           </button>
         </div>
 
+        {/* Banner upgrade cuando llega al límite */}
+        {limiteAlcanzado && (
+          <div style={{
+            background: "linear-gradient(135deg, #1A1814, #2D2B26)",
+            borderRadius: 14, padding: "18px 20px",
+            border: "1px solid rgba(201,168,76,0.3)",
+            display: "flex", alignItems: "center",
+            justifyContent: "space-between", gap: 16,
+            flexWrap: "wrap",
+          }}>
+            <div>
+              <p style={{ color: "#C9A84C", fontWeight: 700, fontSize: 13, marginBottom: 2 }}>
+                Límite del plan Free alcanzado
+              </p>
+              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, lineHeight: 1.5 }}>
+                Activá Pro para cargar productos ilimitados, carrito y MercadoPago.
+              </p>
+            </div>
+            <button onClick={handleUpgrade} style={{
+              background: "#C9A84C", border: "none", borderRadius: 100,
+              padding: "10px 22px", fontFamily: "Syne, sans-serif",
+              fontWeight: 700, fontSize: 12, color: "#1A1814",
+              cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
+            }}>
+              ⚡ Activar Pro — $9.900/mes
+            </button>
+          </div>
+        )}
+
         {/* FORMULARIO */}
-        {adding && (
+        {adding && !limiteAlcanzado && (
           <form onSubmit={handleAddProduct} className={styles.addForm}>
 
             {/* Imagen */}

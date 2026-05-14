@@ -8,12 +8,23 @@ export const metadata = {
 
 export default async function DirectorioPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: emprendimientos } = await supabase
+  const { data: raw } = await supabase
     .from('emprendimientos')
-    .select('id, nombre, rubro, tagline, ubicacion, envios, whatsapp, instagram, web, images, plan, destacadoSemana, descripcion, slug')
+    .select('id, nombre, rubro, tagline, ubicacion, envios, whatsapp, instagram, web, images, plan, destacadoSemana, descripcion, slug, productos(nombre)')
     .eq('visible', true)
     .order('plan', { ascending: true })
 
-  return <DirectorioClient emprendimientos={emprendimientos ?? []} />
+  const emprendimientos = raw?.map((e) => ({
+    ...e,
+    productos_nombres: e.productos?.map((p: { nombre: string }) => p.nombre) ?? [],
+  })) ?? [];
+
+  return (
+    <DirectorioClient
+      emprendimientos={emprendimientos}
+      isLoggedIn={!!user}
+    />
+  );
 }

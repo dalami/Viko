@@ -2,6 +2,9 @@ import { createClient } from "../../../../lib/server";
 import { notFound } from "next/navigation";
 import PublicProfile from "./Publicprofile";
 import PublicDirectorio from "./Publicdirectorio";
+import { CartProvider } from "../../../../context/CartContext";
+import { CartDrawer } from "../../../../components/cart/CartDrawer";
+import { CartButton } from "../../../../components/cart/CartButton";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -20,12 +23,10 @@ export async function generateMetadata({ params }: PageProps) {
 
   if (!emp) return { title: "Viko" };
 
-  // Descripción SEO: tagline + descripcion truncada
   const descSeo = emp.descripcion
     ? `${emp.tagline} — ${emp.descripcion.slice(0, 120)}...`
     : emp.tagline;
 
-  // Keywords naturales
   const keywords = [
     emp.nombre,
     emp.rubro,
@@ -34,7 +35,9 @@ export async function generateMetadata({ params }: PageProps) {
     `${emp.nombre} ${emp.ubicacion}`,
     "emprendimiento",
     "Viko",
-  ].filter(Boolean).join(", ");
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return {
     title: `${emp.nombre} — ${emp.rubro} en ${emp.ubicacion || "Argentina"} | Viko`,
@@ -43,7 +46,9 @@ export async function generateMetadata({ params }: PageProps) {
     openGraph: {
       title: `${emp.nombre} — ${emp.rubro}`,
       description: descSeo,
-      images: emp.images?.[0] ? [{ url: emp.images[0], width: 1200, height: 630, alt: emp.nombre }] : [],
+      images: emp.images?.[0]
+        ? [{ url: emp.images[0], width: 1200, height: 630, alt: emp.nombre }]
+        : [],
       type: "website",
       locale: "es_AR",
       siteName: "Viko — Directorio de emprendimientos",
@@ -75,21 +80,39 @@ export default async function EmprendimientoPage({ params }: PageProps) {
 
   const { data: relacionados } = await supabase
     .from("emprendimientos")
-    .select("id, nombre, rubro, tagline, ubicacion, envios, whatsapp, instagram, images, plan, slug")
+    .select(
+      "id, nombre, rubro, tagline, ubicacion, envios, whatsapp, instagram, images, plan, slug",
+    )
     .eq("rubro", emp.rubro)
     .eq("visible", true)
     .neq("id", emp.id)
     .limit(6);
 
+  const cartEmp = {
+    id: emp.id,
+    nombre: emp.nombre,
+    whatsapp: emp.whatsapp ?? "",
+    isPro: emp.plan === "premium",
+    mpConnected: emp.mp_connected ?? false,
+    envios: emp.envios ?? false,
+    transferenciaActiva: emp.transferencia_activa ?? false,
+    transferenciaCbu: emp.transferencia_cbu ?? "",
+    efectivoActivo: emp.efectivo_activo ?? false,
+  };
+
   return (
-    <main>
-      <PublicProfile emp={emp} productos={emp.productos ?? []} />
-      {(relacionados?.length ?? 0) > 0 && (
-        <PublicDirectorio
-          emprendimientos={relacionados!}
-          titulo={`Más emprendimientos de ${emp.rubro}`}
-        />
-      )}
-    </main>
+    <CartProvider>
+      <main>
+        <PublicProfile emp={emp} productos={emp.productos ?? []} />
+        {(relacionados?.length ?? 0) > 0 && (
+          <PublicDirectorio
+            emprendimientos={relacionados!}
+            titulo={`Más emprendimientos de ${emp.rubro}`}
+          />
+        )}
+      </main>
+      <CartButton />
+      <CartDrawer emp={cartEmp} />
+    </CartProvider>
   );
 }

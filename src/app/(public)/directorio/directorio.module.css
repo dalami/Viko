@@ -591,22 +591,29 @@
 
 .planCta {
   display: block;
+  width: 100%;
   text-align: center;
-  padding: 14px;
-  border-radius: var(--radius-full);
-  font-family: 'Syne', sans-serif;
-  font-size: 15px;
+  cursor: pointer;
+  font-family: "Syne", sans-serif;
   font-weight: 700;
-  text-decoration: none;
-  background: var(--gold);
+  font-size: 14px;
+  padding: 13px;
+  border-radius: 12px;
   border: none;
-  color: var(--black);
-  transition: all 0.2s;
+  background: var(--gold, #C9A84C);
+  color: #1A1814;
+  text-decoration: none;
+  transition: opacity 0.15s;
+  box-sizing: border-box;
+  pointer-events: all;   /* ← clave */
+  position: relative;    /* ← clave */
+  z-index: 1;            /* ← clave */
 }
 
 .planCta:hover {
   background: #d4b052;
   transform: translateY(-2px);
+  opacity: 0.85;
 }
 
 /* FOOTER */
@@ -807,3 +814,95 @@
   color: var(--olive);
   font-weight: 700;
 }
+
+.planesGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .planesGrid { grid-template-columns: 1fr; }
+}
+
+.planCardLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.planCardPrice {
+  font-family: "Syne", sans-serif;
+  font-size: 34px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.planCardPrice span {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.planCardAnual {
+  font-size: 11px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.planCardFeatures {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.featureOff {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.planCardReco {
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--gold);
+  color: #1A1814;
+  padding: 3px 12px;
+  border-radius: 100px;
+  width: fit-content;
+  margin: 0 auto 12px;
+}
+
+.planCardPro {
+  background: #1A1814;
+  color: #fff;
+  border-color: var(--gold);
+}
+
+.planCtaSecondary {
+  display: block;
+  text-align: center;
+  padding: 13px;
+  border-radius: 12px;
+  border: 1.5px solid currentColor;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.15s;
+  width: 100%;
+  cursor: pointer;
+   box-sizing: border-box;
+}
+
+.planCtaSecondary:hover { opacity: 0.7; }

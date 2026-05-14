@@ -21,6 +21,7 @@ interface Emp {
   destacadoSemana?: boolean;
   descripcion?: string;
   slug?: string;
+  productos_nombres?: string[];
 }
 
 const CATEGORIAS = [
@@ -58,23 +59,46 @@ function buildWA(whatsapp: string, nombre: string) {
 
 export default function DirectorioClient({
   emprendimientos,
+  isLoggedIn,
 }: {
   emprendimientos: Emp[];
+  isLoggedIn: boolean;
 }) {
   const [cat, setCat] = useState("all");
   const [search, setSearch] = useState("");
+  const [zona, setZona] = useState("all");
   const router = useRouter();
+
+  const zonas = [
+    "all",
+    ...Array.from(
+      new Set(emprendimientos.map((e) => e.ubicacion).filter(Boolean)),
+    ),
+  ] as string[];
+
   const filtered = emprendimientos.filter((e) => {
     const matchCat = cat === "all" || e.rubro === cat;
+    const matchZona = zona === "all" || e.ubicacion === zona;
     const q = search.toLowerCase();
     const matchSearch =
       !q ||
       e.nombre.toLowerCase().includes(q) ||
       e.rubro.toLowerCase().includes(q) ||
       (e.ubicacion?.toLowerCase().includes(q) ?? false) ||
-      e.tagline.toLowerCase().includes(q);
-    return matchCat && matchSearch;
+      e.tagline.toLowerCase().includes(q) ||
+      (e.productos_nombres?.some((p) => p.toLowerCase().includes(q)) ?? false);
+    return matchCat && matchZona && matchSearch;
   });
+
+  async function handleUpgrade(periodo: "mensual" | "anual" = "mensual") {
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ periodo }),
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  }
 
   function getBadges(e: Emp) {
     const badges = [];
@@ -93,7 +117,6 @@ export default function DirectorioClient({
       badges.push({ label: "🏪 Activo", color: "#7A756A" });
     return badges;
   }
-
   return (
     <div className={styles.page}>
       {/* NAV */}
@@ -184,13 +207,27 @@ export default function DirectorioClient({
           <span>🔍</span>
           <input
             className={styles.searchInput}
-            placeholder="Buscá por nombre, rubro o ciudad..."
+            placeholder="Buscá por nombre, rubro, ciudad o producto..."
             value={search}
+            autoComplete="off"
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && setSearch(e.currentTarget.value)
-            }
           />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 16,
+                color: "var(--muted)",
+                padding: "0 4px",
+                lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
 
@@ -204,6 +241,21 @@ export default function DirectorioClient({
               onClick={() => setCat(c.value)}
             >
               {c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ZONAS */}
+      <div className={styles.catsWrap}>
+        <div className={styles.cats}>
+          {zonas.map((z) => (
+            <button
+              key={z}
+              className={`${styles.pill} ${zona === z ? styles.pillActive : ""}`}
+              onClick={() => setZona(z)}
+            >
+              {z === "all" ? "📍 Todas las zonas" : `📍 ${z}`}
             </button>
           ))}
         </div>
@@ -346,27 +398,76 @@ export default function DirectorioClient({
             <br />
             <em>más visibilidad</em>
           </h2>
-          <div className={styles.planCard}>
-            <div className={styles.planBadgeTop}>PLAN ÚNICO</div>
-            <div className={styles.planName}>VIKO PRO</div>
-            <div className={styles.planPrice}>
-              $9900<span>/mes</span>
+
+          <div className={styles.planesGrid}>
+            {/* FREE */}
+            <div className={styles.planCard}>
+              <div className={styles.planCardLabel}>FREE</div>
+              <div className={styles.planCardPrice}>
+                $0<span>/mes</span>
+              </div>
+              <ul className={styles.planCardFeatures}>
+                <li>✓ 3 fotos</li>
+                <li>✓ WhatsApp, Instagram y redes</li>
+                <li>✓ Perfil público en el directorio</li>
+                <li>✓ Hasta 3 productos</li>
+                <li className={styles.featureOff}>✕ Carrito + MercadoPago</li>
+                <li className={styles.featureOff}>✕ Métricas completas</li>
+                <li className={styles.featureOff}>✕ Landing page + QR</li>
+              </ul>
+              <Link
+                href={isLoggedIn ? "/dashboard?view=planes" : "/register"}
+                className={styles.planCtaSecondary}
+              >
+                {isLoggedIn ? "Ver mi plan →" : "Empezar gratis →"}
+              </Link>
             </div>
-            <ul className={styles.planFeatures}>
-              {[
-                "Landing page incluida",
-                "Perfil premium en Viko",
-                "Galería de fotos",
-                "Categoría y ubicación",
-                "Links directos a WhatsApp e Instagram",
-                "Presencia online profesional",
-              ].map((f) => (
-                <li key={f}>{f}</li>
-              ))}
-            </ul>
-            <Link href="/register" className={styles.planCta}>
-              Quiero formar parte →
-            </Link>
+
+            {/* PRO */}
+            <div className={`${styles.planCard} ${styles.planCardPro}`}>
+              <div className={styles.planCardReco}>⭐ Recomendado</div>
+              <div className={styles.planCardLabel}>VIKO PRO</div>
+              <div className={styles.planCardPrice}>
+                $9.900<span>/mes</span>
+              </div>
+              <p className={styles.planCardAnual}>
+                o $5.940/mes abonando anual — 40% off
+              </p>
+              <ul className={styles.planCardFeatures}>
+                <li>✓ Todo lo del plan Free</li>
+                <li>✓ 5 fotos</li>
+                <li>✓ Productos ilimitados</li>
+                <li>✓ Carrito + pago con MercadoPago</li>
+                <li>✓ Métricas completas</li>
+                <li>✓ Landing page + QR propio</li>
+              </ul>
+
+              {isLoggedIn ? (
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleUpgrade("mensual")}
+                    className={styles.planCta}
+                  >
+                    ⚡ Activar mensual — $9.900/mes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUpgrade("anual")}
+                    className={styles.planCtaSecondary}
+                    style={{ color: "#C9A84C", borderColor: "#C9A84C" }}
+                  >
+                    🌟 Activar anual — $5.940/mes
+                  </button>
+                </div>
+              ) : (
+                <Link href="/register" className={styles.planCta}>
+                  Quiero formar parte →
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </section>

@@ -4,13 +4,22 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import styles from "./public.module.css";
 import { createClient } from "../../../../lib/supabase";
+import { useCart } from "../../../../context/CartContext";
 import Image from "next/image";
+
+interface Variante {
+  tipo: string;
+  opciones: string[];
+}
 
 interface Producto {
   id: string;
   nombre: string;
   descripcion?: string;
   precio: number;
+  imagen?: string;
+  variantes?: Variante[];
+  activo?: boolean;
 }
 
 interface Emp {
@@ -27,6 +36,7 @@ interface Emp {
   web?: string;
   images?: string[];
   plan?: string;
+  mp_connected?: boolean;
 }
 
 interface Props {
@@ -38,9 +48,149 @@ function buildWA(whatsapp: string, texto: string) {
   return `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(texto)}`;
 }
 
+// Selector de variantes inline
+function VarianteSelector({
+  producto,
+  onAgregar,
+  onConsultar,
+  isPro,
+}: {
+  producto: Producto;
+  onAgregar: (variante?: { tipo: string; opcion: string }) => void;
+  onConsultar: () => void;
+  isPro: boolean;
+}) {
+  const variantes = producto.variantes ?? [];
+  const [selecciones, setSelecciones] = useState<Record<string, string>>({});
+  const [open, setOpen] = useState(false);
+
+  const todasSeleccionadas = variantes.every((v) => selecciones[v.tipo]);
+
+  function handleAgregar() {
+    if (!isPro) {
+      onConsultar();
+      return;
+    }
+    if (variantes.length === 0) {
+      onAgregar();
+      return;
+    }
+    if (!open) {
+      setOpen(true);
+      return;
+    }
+    if (!todasSeleccionadas) return;
+    const [primera] = variantes;
+    onAgregar({ tipo: primera.tipo, opcion: selecciones[primera.tipo] });
+    setOpen(false);
+    setSelecciones({});
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {open &&
+        variantes.map((v) => (
+          <div key={v.tipo}>
+            <p
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "#8A8680",
+                marginBottom: 4,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              {v.tipo}
+            </p>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {v.opciones.map((op) => (
+                <button
+                  key={op}
+                  onClick={() =>
+                    setSelecciones((prev) => ({ ...prev, [v.tipo]: op }))
+                  }
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: 100,
+                    border: `1.5px solid ${selecciones[v.tipo] === op ? "#1A1814" : "#E8E4DC"}`,
+                    background:
+                      selecciones[v.tipo] === op ? "#1A1814" : "transparent",
+                    color: selecciones[v.tipo] === op ? "#FAFAF7" : "#1A1814",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {op}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+
+      <div style={{ display: "flex", gap: 8 }}>
+        {isPro ? (
+          <button
+            className={styles.productoWa}
+            onClick={handleAgregar}
+            disabled={open && variantes.length > 0 && !todasSeleccionadas}
+            style={{
+              flex: 1,
+              opacity:
+                open && variantes.length > 0 && !todasSeleccionadas ? 0.5 : 1,
+            }}
+          >
+            {open && variantes.length > 0
+              ? todasSeleccionadas
+                ? "✓ Agregar al carrito"
+                : "Elegí una opción"
+              : variantes.length > 0
+                ? "Elegir opciones"
+                : "🛍️ Agregar"}
+          </button>
+        ) : (
+          <button
+            className={styles.productoWa}
+            onClick={onConsultar}
+            style={{ flex: 1 }}
+          >
+            Consultar →
+          </button>
+        )}
+        {open && (
+          <button
+            onClick={() => {
+              setOpen(false);
+              setSelecciones({});
+            }}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 10,
+              border: "1.5px solid #E8E4DC",
+              background: "transparent",
+              cursor: "pointer",
+              fontSize: 12,
+              color: "#8A8680",
+            }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function PublicProfile({ emp, productos }: Props) {
   const [activeImg, setActiveImg] = useState(0);
   const images = emp.images?.filter(Boolean) ?? [];
+  console.log("images:", images, typeof emp.images);
+  const { addItem } = useCart();
+
+  const isPro = emp.plan === "premium";
+  const productosActivos = productos.filter((p) => p.activo !== false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -59,12 +209,37 @@ export default function PublicProfile({ emp, productos }: Props) {
     url: string,
   ) {
     const supabase = createClient();
-    await supabase.from("visitas").insert({
-      emprendimiento_id: Number(emp.id),
-      source: type,
-      type: "click",
-    });
+    await supabase
+      .from("visitas")
+      .insert({
+        emprendimiento_id: Number(emp.id),
+        source: type,
+        type: "click",
+      });
     window.open(url, "_blank");
+  }
+
+  function handleAgregar(
+    producto: Producto,
+    variante?: { tipo: string; opcion: string },
+  ) {
+    addItem({
+      productoId: producto.id,
+      nombre: producto.nombre,
+      precio: producto.precio,
+      imagen: producto.imagen,
+      variante,
+    });
+  }
+
+  function handleConsultar(producto: Producto) {
+    trackClick(
+      "whatsapp",
+      buildWA(
+        emp.whatsapp,
+        `Hola! Me interesa "${producto.nombre}" que vi en Viko.`,
+      ),
+    );
   }
 
   return (
@@ -84,17 +259,21 @@ export default function PublicProfile({ emp, productos }: Props) {
       </nav>
 
       <div className={styles.profileWrap}>
+        {/* Galería */}
         <div className={styles.gallery}>
           {images.length > 0 ? (
             <>
               <div className={styles.mainImage}>
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={images[activeImg]}
                   alt={emp.nombre}
-                  fill
-                  style={{ objectFit: "cover" }}
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  priority
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
                 />
                 {emp.plan === "premium" && (
                   <span className={styles.planBadge}>Premium</span>
@@ -115,12 +294,16 @@ export default function PublicProfile({ emp, productos }: Props) {
                       className={`${styles.thumb} ${i === activeImg ? styles.thumbActive : ""}`}
                       onClick={() => setActiveImg(i)}
                     >
-                      <Image
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={src}
                         alt=""
-                        fill
-                        style={{ objectFit: "cover" }}
-                        sizes="64px"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          display: "block",
+                        }}
                       />
                     </button>
                   ))}
@@ -134,6 +317,7 @@ export default function PublicProfile({ emp, productos }: Props) {
           )}
         </div>
 
+        {/* Info */}
         <div className={styles.info}>
           <div className={styles.rubro}>{emp.rubro}</div>
           <h1 className={styles.nombre}>{emp.nombre}</h1>
@@ -150,8 +334,9 @@ export default function PublicProfile({ emp, productos }: Props) {
 
           {emp.descripcion && <p className={styles.desc}>{emp.descripcion}</p>}
 
-          {emp.plan === "premium" && (
-            <div className={styles.contactBtns}>
+          {/* Contacto — todos los planes */}
+          <div className={styles.contactBtns}>
+            {emp.whatsapp && (
               <button
                 className={`${styles.contactBtn} ${styles.btnWa}`}
                 onClick={() =>
@@ -166,36 +351,82 @@ export default function PublicProfile({ emp, productos }: Props) {
               >
                 💬 Contactar por WhatsApp
               </button>
-              {emp.instagram && (
-                <button
-                  className={`${styles.contactBtn} ${styles.btnIg}`}
-                  onClick={() =>
-                    trackClick(
-                      "instagram",
-                      `https://instagram.com/${emp.instagram}`,
-                    )
-                  }
-                >
-                  📷 Ver en Instagram
-                </button>
-              )}
-              {emp.web && (
-                <button
-                  className={`${styles.contactBtn} ${styles.btnWeb}`}
-                  onClick={() => trackClick("web", emp.web!)}
-                >
-                  🌐 Sitio web
-                </button>
-              )}
-            </div>
-          )}
+            )}
+            {emp.instagram && (
+              <button
+                className={`${styles.contactBtn} ${styles.btnIg}`}
+                onClick={() =>
+                  trackClick(
+                    "instagram",
+                    `https://instagram.com/${emp.instagram}`,
+                  )
+                }
+              >
+                📷 Ver en Instagram
+              </button>
+            )}
+            {emp.web && (
+              <button
+                className={`${styles.contactBtn} ${styles.btnWeb}`}
+                onClick={() => trackClick("web", emp.web!)}
+              >
+                🌐 Sitio web
+              </button>
+            )}
+          </div>
 
-          {productos.length > 0 && (
+          {/* Productos */}
+          {productosActivos.length > 0 && (
             <div className={styles.productos}>
-              <h3 className={styles.productosTitle}>Productos y servicios</h3>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 16,
+                }}
+              >
+                <h3 className={styles.productosTitle}>
+                  {isPro ? "🛍️ Tienda" : "Productos y servicios"}
+                </h3>
+                {isPro && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: "#8A8680",
+                      background: "#F5F2EC",
+                      padding: "3px 10px",
+                      borderRadius: 100,
+                    }}
+                  >
+                    Pago online disponible
+                  </span>
+                )}
+              </div>
               <div className={styles.productosGrid}>
-                {productos.map((p) => (
+                {productosActivos.map((p) => (
                   <div key={p.id} className={styles.productoCard}>
+                    {/* Imagen del producto */}
+                    {p.imagen && (
+                      <div
+                        style={{
+                          position: "relative",
+                          width: "100%",
+                          aspectRatio: "1",
+                          borderRadius: 10,
+                          overflow: "hidden",
+                          marginBottom: 10,
+                        }}
+                      >
+                        <Image
+                          src={p.imagen}
+                          alt={p.nombre}
+                          fill
+                          style={{ objectFit: "cover" }}
+                          sizes="200px"
+                        />
+                      </div>
+                    )}
                     <div className={styles.productoInfo}>
                       <span className={styles.productoNombre}>{p.nombre}</span>
                       {p.descripcion && (
@@ -208,21 +439,13 @@ export default function PublicProfile({ emp, productos }: Props) {
                       <span className={styles.productoPrecio}>
                         ${Number(p.precio).toLocaleString("es-AR")}
                       </span>
-                      <button
-                        className={styles.productoWa}
-                        onClick={() =>
-                          trackClick(
-                            "whatsapp",
-                            buildWA(
-                              emp.whatsapp,
-                              `Hola! Me interesa "${p.nombre}" que vi en Viko.`,
-                            ),
-                          )
-                        }
-                      >
-                        Consultar →
-                      </button>
                     </div>
+                    <VarianteSelector
+                      producto={p}
+                      isPro={isPro}
+                      onAgregar={(variante) => handleAgregar(p, variante)}
+                      onConsultar={() => handleConsultar(p)}
+                    />
                   </div>
                 ))}
               </div>

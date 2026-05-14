@@ -8,6 +8,8 @@ import ViewPerfil from "../../../components/dashboard/ViewPerfil";
 import ViewProductos from "../../../components/dashboard/ViewProductos";
 import ViewMetricas from "../../../components/dashboard/Viewmetricas";
 import { ViewLanding } from "../../../components/dashboard/Viewmetricaslanding";
+import ViewPlanes from "../../../components/dashboard/Viewplanes";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export interface Emprendimiento {
@@ -31,6 +33,9 @@ export interface Emprendimiento {
   highlights?: { icono: string; texto: string }[] | null;
   mp_connected?: boolean;
   mp_access_token?: string;
+  transferencia_activa?: boolean;
+  transferencia_cbu?: string;
+  efectivo_activo?: boolean;
 }
 
 export interface Producto {
@@ -55,6 +60,7 @@ const NAV = [
   { id: "productos", label: "Productos", icon: "🛍️" },
   { id: "metricas", label: "Métricas", icon: "📊" },
   { id: "landing", label: "Mi landing", icon: "🌐" },
+  { id: "planes", label: "Planes", icon: "⚡" },
 ] as const;
 
 type ViewId = (typeof NAV)[number]["id"];
@@ -68,7 +74,9 @@ export default function DashboardClient({
   emprendimiento: Emprendimiento;
   productos: Producto[];
 }) {
-  const [view, setView] = useState<ViewId>("perfil");
+  const searchParams = useSearchParams();
+  const initialView = (searchParams.get("view") as ViewId) ?? "perfil";
+  const [view, setView] = useState<ViewId>(initialView);
   const [emp, setEmp] = useState<Emprendimiento>(emprendimiento);
   const [prods, setProds] = useState<Producto[]>(productos);
   const [saving, setSaving] = useState(false);
@@ -97,6 +105,9 @@ export default function DashboardClient({
         historia_diferencia: emp.historia_diferencia,
         historia_cliente: emp.historia_cliente,
         highlights: emp.highlights,
+        transferencia_activa: emp.transferencia_activa,
+        transferencia_cbu: emp.transferencia_cbu,
+        efectivo_activo: emp.efectivo_activo,
       })
       .eq("user_id", user.id);
 
@@ -111,8 +122,12 @@ export default function DashboardClient({
     router.refresh();
   }
 
-  async function handleUpgrade() {
-    const res = await fetch("/api/checkout", { method: "POST" });
+  async function handleUpgrade(periodo: "mensual" | "anual" = "mensual") {
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ periodo }),
+    });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
   }
@@ -135,21 +150,8 @@ export default function DashboardClient({
           </div>
           <p className={styles.logoSub}>Panel de emprendedor</p>
         </div>
-        <Link
-          href="/feed"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "10px 16px",
-            borderRadius: 12,
-            fontSize: 14,
-            fontWeight: 500,
-            color: "#7A756A",
-            textDecoration: "none",
-            transition: "all 0.15s",
-          }}
-        >
+
+        <Link href="/feed" className={styles.sidebarLink}>
           <span>💬</span>
           Comunidad
         </Link>
@@ -164,20 +166,9 @@ export default function DashboardClient({
             >
               <span className={styles.navIcon}>{n.icon}</span>
               {n.label}
-              {!isPro &&
-                (n.id === "productos" ||
-                  n.id === "metricas" ||
-                  n.id === "landing") && (
-                  <span
-                    style={{
-                      marginLeft: "auto",
-                      fontSize: 10,
-                      color: "#C9A84C",
-                    }}
-                  >
-                    Pro
-                  </span>
-                )}
+              {!isPro && (n.id === "metricas" || n.id === "landing") && (
+                <span className={styles.navItemPro}>Pro</span>
+              )}
             </button>
           ))}
         </nav>
@@ -190,13 +181,16 @@ export default function DashboardClient({
                 ? "Viko Pro"
                 : emp.plan === "featured"
                   ? "Destacado"
-                  : "Básico"}
+                  : "Free"}
             </span>
           </div>
 
           {!isPro && (
-            <button className={styles.upgradeBtn} onClick={handleUpgrade}>
-              ⚡ Activar Viko Pro
+            <button
+              className={styles.upgradeBtn}
+              onClick={() => setView("planes")}
+            >
+              ⚡ Ver planes
             </button>
           )}
 
@@ -212,17 +206,7 @@ export default function DashboardClient({
             {NAV.find((n) => n.id === view)?.label || "Panel"}
           </span>
           <div className={styles.topbarRight}>
-            <Link
-              href="/directorio"
-              style={{
-                fontSize: 12,
-                color: "#7A756A",
-                textDecoration: "none",
-                padding: "6px 14px",
-                borderRadius: 100,
-                border: "1px solid rgba(26,24,20,0.12)",
-              }}
-            >
+            <Link href="/directorio" className={styles.topbarBackLink}>
               ← Directorio
             </Link>
             {saveMsg && <span className={styles.saveMsg}>{saveMsg}</span>}
@@ -259,6 +243,9 @@ export default function DashboardClient({
           )}
           {view === "landing" && (
             <ViewLanding emp={emp} slug={slug} isPro={isPro} />
+          )}
+          {view === "planes" && (
+            <ViewPlanes currentPlan={emp.plan} onUpgrade={handleUpgrade} />
           )}
         </div>
       </div>

@@ -26,58 +26,6 @@ const RUBROS = [
 
 const SLOT_LABELS = ["Producto", "Lifestyle", "Branding", "Packaging", "Promo"];
 
-function ProLock({ onUpgrade }: { onUpgrade: () => void }) {
-  return (
-    <div
-      style={{
-        background: "linear-gradient(135deg, #1A1814, #2D2B26)",
-        borderRadius: 16,
-        padding: "24px",
-        textAlign: "center",
-        border: "1px solid rgba(201,168,76,0.3)",
-      }}
-    >
-      <div style={{ fontSize: 28, marginBottom: 8 }}>⚡</div>
-      <p
-        style={{
-          color: "#C9A84C",
-          fontWeight: 700,
-          fontSize: 14,
-          marginBottom: 4,
-        }}
-      >
-        Función exclusiva Viko Pro
-      </p>
-      <p
-        style={{
-          color: "rgba(255,255,255,0.5)",
-          fontSize: 12,
-          marginBottom: 16,
-          lineHeight: 1.5,
-        }}
-      >
-        Activá tu plan para acceder a WhatsApp, Instagram y más.
-      </p>
-      <button
-        onClick={onUpgrade}
-        style={{
-          background: "#C9A84C",
-          border: "none",
-          borderRadius: 100,
-          padding: "10px 24px",
-          fontFamily: "Syne, sans-serif",
-          fontWeight: 700,
-          fontSize: 13,
-          color: "#1A1814",
-          cursor: "pointer",
-        }}
-      >
-        Activar Viko Pro — $9.900/mes
-      </button>
-    </div>
-  );
-}
-
 function ImageSlot({
   index,
   label,
@@ -96,6 +44,7 @@ function ImageSlot({
   const inputRef = useRef<HTMLInputElement>(null);
   const imgUrl = images?.[index];
   const isUploading = uploading === index;
+
   return (
     <div style={{ position: "relative" }}>
       <input
@@ -116,15 +65,13 @@ function ImageSlot({
         {isUploading ? (
           <span style={{ fontSize: 11, color: "#6B7A5A" }}>Subiendo...</span>
         ) : imgUrl ? (
-         
-            <Image
-              src={imgUrl}
-              alt={label}
-              fill
-              style={{ objectFit: "cover" }}
-              sizes="150px"
-            />
-          
+          <Image
+            src={imgUrl}
+            alt={label}
+            fill
+            style={{ objectFit: "cover" }}
+            sizes="150px"
+          />
         ) : (
           <>
             <span className={styles.imgPlus}>+</span>
@@ -177,8 +124,27 @@ export default function ViewPerfil({
 
   const isPro = emp.plan === "premium";
 
-  function update(field: keyof Emprendimiento, value: string | boolean) {
+function update(field: keyof Emprendimiento, value: string | boolean) {
+  setEmp((prev) => ({ ...prev, [field]: value }));
+}
+
+  async function updateMedioPago(
+    field: keyof Emprendimiento,
+    value: string | boolean,
+  ) {
+    // Primero actualiza el estado local
     setEmp((prev) => ({ ...prev, [field]: value }));
+
+    // Luego guarda inmediatamente en Supabase
+    const update: Record<string, string | boolean> = { [field]: value };
+
+    // Si se desactiva transferencia, limpia el CBU también
+    if (field === "transferencia_activa" && value === false) {
+      update.transferencia_cbu = "";
+      setEmp((prev) => ({ ...prev, transferencia_cbu: "" }));
+    }
+
+    await supabase.from("emprendimientos").update(update).eq("id", emp.id);
   }
 
   async function handleUpgrade() {
@@ -361,52 +327,157 @@ export default function ViewPerfil({
         )}
       </section>
 
-      {/* ── CONTACTO Y REDES (solo Pro) ── */}
+      {/* ── CONTACTO Y REDES ── */}
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>Contacto y redes</h3>
-        {isPro ? (
-          <div className={styles.formGrid}>
-            <div className={styles.field}>
-              <label className="field-label">WhatsApp</label>
-              <input
-                className="input-field"
-                value={emp.whatsapp || ""}
-                onChange={(e) => update("whatsapp", e.target.value)}
-                placeholder="5491100000000"
-              />
-            </div>
-            <div className={styles.field}>
-              <label className="field-label">Instagram (sin @)</label>
-              <input
-                className="input-field"
-                value={emp.instagram || ""}
-                onChange={(e) => update("instagram", e.target.value)}
-                placeholder="tuemprendimiento"
-              />
-            </div>
-            <div className={styles.field}>
-              <label className="field-label">Email</label>
-              <input
-                className="input-field"
-                type="email"
-                value={emp.email || ""}
-                onChange={(e) => update("email", e.target.value)}
-                placeholder="hola@tuemprendimiento.com"
-              />
-            </div>
-            <div className={styles.field}>
-              <label className="field-label">Sitio web</label>
-              <input
-                className="input-field"
-                value={emp.web || ""}
-                onChange={(e) => update("web", e.target.value)}
-                placeholder="https://tuemprendimiento.com"
-              />
+        <div className={styles.formGrid}>
+          <div className={styles.field}>
+            <label className="field-label">WhatsApp</label>
+            <input
+              className="input-field"
+              value={emp.whatsapp || ""}
+              onChange={(e) => update("whatsapp", e.target.value)}
+              placeholder="5491100000000"
+            />
+          </div>
+          <div className={styles.field}>
+            <label className="field-label">Instagram (sin @)</label>
+            <input
+              className="input-field"
+              value={emp.instagram || ""}
+              onChange={(e) => update("instagram", e.target.value)}
+              placeholder="tuemprendimiento"
+            />
+          </div>
+          <div className={styles.field}>
+            <label className="field-label">Email</label>
+            <input
+              className="input-field"
+              type="email"
+              value={emp.email || ""}
+              onChange={(e) => update("email", e.target.value)}
+              placeholder="hola@tuemprendimiento.com"
+            />
+          </div>
+          <div className={styles.field}>
+            <label className="field-label">Sitio web</label>
+            <input
+              className="input-field"
+              value={emp.web || ""}
+              onChange={(e) => update("web", e.target.value)}
+              placeholder="https://tuemprendimiento.com"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── MEDIOS DE PAGO ── */}
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>Medios de pago</h3>
+        <p className={styles.sectionSub}>
+          Elegí qué métodos de pago ofrecés a tus clientes.
+        </p>
+
+        {/* MercadoPago */}
+        <div className={styles.toggleRow}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 20 }}>💳</span>
+            <div>
+              <span className={styles.toggleLabel}>MercadoPago</span>
+              <p className={styles.toggleSub}>
+                {emp.mp_connected
+                  ? "✅ Cuenta conectada"
+                  : "Conectá tu cuenta para recibir pagos online"}
+              </p>
             </div>
           </div>
-        ) : (
-          <ProLock onUpgrade={handleUpgrade} />
-        )}
+          {!emp.mp_connected ? (
+            <a
+              href={`https://auth.mercadopago.com.ar/authorization?client_id=${process.env.NEXT_PUBLIC_MP_CLIENT_ID}&response_type=code&platform_id=mp&redirect_uri=${process.env.NEXT_PUBLIC_BASE_URL}/api/mp/callback`}
+              style={{
+                background: "#009EE3",
+                color: "#fff",
+                borderRadius: 100,
+                padding: "8px 18px",
+                fontSize: 12,
+                fontWeight: 700,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Conectar
+            </a>
+          ) : (
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#6B7A5A",
+                background: "rgba(107,122,90,0.1)",
+                padding: "6px 14px",
+                borderRadius: 100,
+              }}
+            >
+              Activo ✓
+            </span>
+          )}
+        </div>
+
+        {/* Transferencia */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          <div className={styles.toggleRow}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 20 }}>🏦</span>
+              <div>
+                <span className={styles.toggleLabel}>
+                  Transferencia bancaria
+                </span>
+                <p className={styles.toggleSub}>
+                  CBU o Alias para transferencias
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className={`${styles.toggle} ${emp.transferencia_activa ? styles.toggleOn : ""}`}
+              onClick={() => updateMedioPago("transferencia_activa", !emp.transferencia_activa)}
+            />
+          </div>
+          {emp.transferencia_activa && (
+            <div
+              className={styles.field}
+              style={{ marginTop: 8, marginLeft: 30 }}
+            >
+              <label className="field-label">CBU o Alias</label>
+              <input
+                className="input-field"
+                value={emp.transferencia_cbu || ""}
+                onChange={(e) => update("transferencia_cbu", e.target.value)}
+                placeholder="Ej: mi.alias o 0000003100012345678901"
+                maxLength={22}
+                onBlur={e => updateMedioPago("transferencia_cbu", e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Efectivo */}
+        <div className={styles.toggleRow}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 20 }}>💵</span>
+            <div>
+              <span className={styles.toggleLabel}>Efectivo</span>
+              <p className={styles.toggleSub}>
+                El cliente paga al recibir o retirar
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className={`${styles.toggle} ${emp.efectivo_activo ? styles.toggleOn : ""}`}
+            onClick={() => update("efectivo_activo", !emp.efectivo_activo)}
+          />
+        </div>
       </section>
 
       {/* ── OPCIONES ── */}

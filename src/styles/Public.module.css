@@ -83,11 +83,13 @@
 .mainImage {
   width: 100%;
   aspect-ratio: 4/3;
-  border-radius: var(--radius-lg);
+  border-radius: 20px;
   overflow: hidden;
   position: relative;
-  margin-bottom: 10px;
-  background: var(--cream);
+  background: #F0EDE8;
+  box-shadow: 0 2px 24px rgba(26,24,20,0.08);
+  min-height: 260px;
+  display: block;
 }
 
 .mainImage img {
@@ -127,19 +129,25 @@
 .thumbs {
   display: flex;
   gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
 }
 
 .thumb {
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
+  width: 68px;
+  height: 68px;
+  border-radius: 10px;
   overflow: hidden;
   border: 2px solid transparent;
   cursor: pointer;
   padding: 0;
-  background: var(--cream);
-  transition: border-color 0.15s;
+  background: #F0EDE8;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color 0.15s, transform 0.15s;
 }
+.thumb:hover { transform: scale(1.04); }
+.thumbActive { border-color: #6B7A5A; }
 
 .thumb img {
   width: 100%;
