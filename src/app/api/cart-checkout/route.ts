@@ -19,11 +19,19 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (!emp) {
-      return NextResponse.json({ error: "Emprendimiento no encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Emprendimiento no encontrado" },
+        { status: 404 },
+      );
     }
 
-    if (emp.plan !== "premium" || !emp.mp_access_token) {
-      return NextResponse.json({ error: "El emprendimiento no tiene MercadoPago activo" }, { status: 403 });
+    const accessToken = emp.mp_access_token ?? process.env.MP_ACCESS_TOKEN;
+
+    if (emp.plan !== "premium" || !accessToken) {
+      return NextResponse.json(
+        { error: "El emprendimiento no tiene MercadoPago activo" },
+        { status: 403 },
+      );
     }
 
     const baseUrl =
@@ -33,58 +41,75 @@ export async function POST(req: NextRequest) {
         : "https://viko-ryk4.vercel.app";
 
     // Crear preferencia con el token del emprendedor
-    const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${emp.mp_access_token}`,
-      },
-      body: JSON.stringify({
-        items: items.map((i: {
-          id: string;
-          title: string;
-          quantity: number;
-          unit_price: number;
-          picture_url?: string;
-        }) => ({
-          id:          i.id,
-          title:       i.title,
-          quantity:    i.quantity,
-          unit_price:  i.unit_price,
-          currency_id: "ARS",
-          picture_url: i.picture_url,
-        })),
-        payer: {
-          name:  payer.name,
-          phone: { number: payer.phone },
+    const response = await fetch(
+      "https://api.mercadopago.com/checkout/preferences",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
-        back_urls: {
-          success: `${baseUrl}/emprendimiento/pedido-exitoso?emp=${emprendimientoId}`,
-          failure: `${baseUrl}/emprendimiento/pedido-error`,
-          pending: `${baseUrl}/emprendimiento/pedido-pendiente`,
-        },
-        auto_return: "approved",
-        external_reference: JSON.stringify({
-          emprendimientoId,
-          payer,
-          direccion,
-          notas,
+        body: JSON.stringify({
+          items: items.map(
+            (i: {
+              id: string;
+              title: string;
+              quantity: number;
+              unit_price: number;
+              picture_url?: string;
+            }) => ({
+              id: i.id,
+              title: i.title,
+              quantity: i.quantity,
+              unit_price: i.unit_price,
+              currency_id: "ARS",
+              picture_url: i.picture_url,
+            }),
+          ),
+          payer: {
+            name: payer.name,
+            phone: { number: payer.phone },
+          },
+          back_urls: {
+            success: `${baseUrl}/emprendimiento/pedido-exitoso?emp=${emprendimientoId}`,
+            failure: `${baseUrl}/emprendimiento/pedido-error`,
+            pending: `${baseUrl}/emprendimiento/pedido-pendiente`,
+          },
+          auto_return: "approved",
+          external_reference: JSON.stringify({
+            emprendimientoId,
+            payer,
+            direccion,
+            notas,
+          }),
+          statement_descriptor: emp.nombre,
         }),
-        statement_descriptor: emp.nombre,
-      }),
-    });
+      },
+    );
 
     const data = await response.json();
 
     console.log("MP Preferences status:", response.status);
     console.log("MP Preferences response:", JSON.stringify(data, null, 2));
 
+    console.log("emp.plan:", emp.plan);
+    console.log(
+      "emp.mp_access_token:",
+      emp.mp_access_token ? "existe" : "null",
+    );
+    console.log(
+      "MP_ACCESS_TOKEN env:",
+      process.env.MP_ACCESS_TOKEN ? "existe" : "null",
+    );
+
     if (!response.ok) {
-      return NextResponse.json({ error: "Error al crear preferencia", detail: data }, { status: 500 });
+      return NextResponse.json(
+        { error: "Error al crear preferencia", detail: data },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({ url: data.init_point });
-
   } catch (err) {
     console.error("Cart checkout error:", err);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });

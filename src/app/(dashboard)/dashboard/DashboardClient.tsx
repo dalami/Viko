@@ -75,6 +75,7 @@ export default function DashboardClient({
   productos: Producto[];
 }) {
   const searchParams = useSearchParams();
+  const mpStatus = searchParams.get("mp");
   const initialView = (searchParams.get("view") as ViewId) ?? "perfil";
   const [view, setView] = useState<ViewId>(initialView);
   const [emp, setEmp] = useState<Emprendimiento>(emprendimiento);
@@ -209,6 +210,11 @@ export default function DashboardClient({
             <Link href="/directorio" className={styles.topbarBackLink}>
               ← Directorio
             </Link>
+            {mpStatus === "conectado" && (
+              <span style={{ fontSize: 13, color: "#6B7A5A", fontWeight: 600 }}>
+                ✅ MercadoPago conectado
+              </span>
+            )}
             {saveMsg && <span className={styles.saveMsg}>{saveMsg}</span>}
             {view === "perfil" && (
               <button
