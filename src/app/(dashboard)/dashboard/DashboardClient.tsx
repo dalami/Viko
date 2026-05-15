@@ -36,6 +36,7 @@ export interface Emprendimiento {
   transferencia_activa?: boolean;
   transferencia_cbu?: string;
   efectivo_activo?: boolean;
+  plantilla?: { layout: string; color: string } | string;
 }
 
 export interface Producto {
@@ -109,6 +110,7 @@ export default function DashboardClient({
         transferencia_activa: emp.transferencia_activa,
         transferencia_cbu: emp.transferencia_cbu,
         efectivo_activo: emp.efectivo_activo,
+        plantilla: emp.plantilla,
       })
       .eq("user_id", user.id);
 
@@ -242,6 +244,10 @@ export default function DashboardClient({
               empNombre={emp.nombre}
               productos={prods}
               setProductos={setProds}
+              plantilla={emp.plantilla}
+              onPlantillaChange={(p) =>
+                setEmp((prev) => ({ ...prev, plantilla: p }))
+              }
             />
           )}
           {view === "metricas" && (

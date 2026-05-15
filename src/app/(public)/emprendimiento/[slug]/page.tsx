@@ -103,7 +103,11 @@ export default async function EmprendimientoPage({ params }: PageProps) {
   return (
     <CartProvider>
       <main>
-        <PublicProfile emp={emp} productos={emp.productos ?? []} />
+        <PublicProfile
+          emp={emp}
+          productos={emp.productos ?? []}
+          plantilla={emp.plantilla} // ← sacá el ?? "minimalista", pasá directo
+        />
         {(relacionados?.length ?? 0) > 0 && (
           <PublicDirectorio
             emprendimientos={relacionados!}
