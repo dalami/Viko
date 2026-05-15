@@ -68,13 +68,33 @@ export function CartDrawer({ emp }: { emp: Emp }) {
     );
   }
 
-  function handleEfectivo() {
-    if (!emp.whatsapp) return;
-    const msg = buildWAMessage() + `\n\n💵 *Pago en efectivo al recibir*`;
-    window.open(
-      `https://api.whatsapp.com/send?phone=${emp.whatsapp}&text=${encodeURIComponent(msg)}`,
-      "_blank",
-    );
+  async function handleEfectivo() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/cart-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          emprendimientoId: emp.id,
+          items: items.map((i) => ({
+            id: i.productoId,
+            title: i.nombre,
+            quantity: i.cantidad,
+            unit_price: i.precio,
+          })),
+          payer: { name: nombre, phone: telefono },
+          direccion,
+          notas,
+          metodo: "efectivo",
+        }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleMercadoPago() {
@@ -607,13 +627,17 @@ export function CartDrawer({ emp }: { emp: Emp }) {
               {emp.efectivoActivo && (
                 <button
                   onClick={handleEfectivo}
-                  disabled={!canProceed}
-                  style={{ ...btnSecondary, opacity: !canProceed ? 0.5 : 1 }}
+                  disabled={!canProceed || loading}
+                  style={{
+                    ...btnSecondary,
+                    opacity: !canProceed || loading ? 0.5 : 1,
+                  }}
                 >
-                  💵 Pagar en efectivo
+                  {loading
+                    ? "Procesando..."
+                    : "💵 Pagar en efectivo (Pago Fácil / Rapipago)"}
                 </button>
               )}
-
               {emp.whatsapp && (
                 <button
                   onClick={handleWhatsApp}

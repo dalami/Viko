@@ -394,35 +394,25 @@ export default function ViewPerfil({
             </div>
           </div>
           {!emp.mp_connected ? (
-            <a
-             href={`https://auth.mercadopago.com.ar/authorization?client_id=${process.env.NEXT_PUBLIC_MP_CLIENT_ID}&response_type=code&state=${emp.id}&redirect_uri=${process.env.NEXT_PUBLIC_BASE_URL}/api/mp/callback`}
-              style={{
-                background: "#009EE3",
-                color: "#fff",
-                borderRadius: 100,
-                padding: "8px 18px",
-                fontSize: 12,
-                fontWeight: 700,
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Conectar
-            </a>
-          ) : (
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: "#6B7A5A",
-                background: "rgba(107,122,90,0.1)",
-                padding: "6px 14px",
-                borderRadius: 100,
-              }}
-            >
-              Activo ✓
-            </span>
-          )}
+  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <input
+      className="input-field"
+      placeholder="Pegá tu Access Token de MercadoPago"
+      onBlur={async (e) => {
+        if (!e.target.value) return;
+        await updateMedioPago("mp_access_token", e.target.value);
+        await updateMedioPago("mp_connected", true);
+      }}
+    />
+    <p style={{ fontSize: 11, color: "#8A8680" }}>
+      Encontralo en mercadopago.com/developers → Tu app → Credenciales de producción
+    </p>
+  </div>
+) : (
+  <span style={{ fontSize: 12, fontWeight: 700, color: "#6B7A5A", background: "rgba(107,122,90,0.1)", padding: "6px 14px", borderRadius: 100 }}>
+    Activo ✓
+  </span>
+)}
         </div>
 
         {/* Transferencia */}
