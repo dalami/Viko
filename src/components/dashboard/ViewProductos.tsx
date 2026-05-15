@@ -62,7 +62,17 @@ export default function ViewProductos({
   const [uploadingImg, setUploadingImg] = useState(false);
   const [vistaGrid, setVistaGrid] = useState(true);
   const [tab, setTab] = useState<"productos" | "plantilla">("productos");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editProd, setEditProd] = useState({
+    nombre: "",
+    precio: "",
+    descripcion: "",
+    imagen: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+
   const fileRef = useRef<HTMLInputElement>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
 
   const [newProd, setNewProd] = useState({
     nombre: "",
@@ -77,6 +87,14 @@ export default function ViewProductos({
 
   const supabase = createClient();
   const limiteAlcanzado = !isPro && productos.length >= LIMITE_FREE;
+
+  const slugify = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
 
   async function handleUpgrade() {
     const res = await fetch("/api/checkout", {
@@ -116,6 +134,18 @@ export default function ViewProductos({
     }
   }
 
+  async function handleEditImageUpload(file: File) {
+    const ext = file.name.split(".").pop();
+    const ts = new Date().getTime();
+    const path = `${userId}/${empId}/${ts}.${ext}`;
+    const { error } = await supabase.storage
+      .from("productos")
+      .upload(path, file, { upsert: true });
+    if (error) return;
+    const { data } = supabase.storage.from("productos").getPublicUrl(path);
+    setEditProd((prev) => ({ ...prev, imagen: data.publicUrl }));
+  }
+
   function agregarVariante() {
     if (!nuevaVarianteTipo.trim() || !nuevaVarianteOpciones.trim()) return;
     const opciones = nuevaVarianteOpciones
@@ -138,6 +168,16 @@ export default function ViewProductos({
       ...prev,
       variantes: prev.variantes.filter((_, i) => i !== index),
     }));
+  }
+
+  function startEdit(p: Producto) {
+    setEditingId(p.id);
+    setEditProd({
+      nombre: p.nombre,
+      precio: String(p.precio),
+      descripcion: p.descripcion ?? "",
+      imagen: p.imagen ?? "",
+    });
   }
 
   async function handleAddProduct(e: React.FormEvent) {
@@ -173,6 +213,28 @@ export default function ViewProductos({
     setSaving(false);
   }
 
+  async function handleSaveEdit(id: string) {
+    setSavingEdit(true);
+    const { data, error } = await supabase
+      .from("productos")
+      .update({
+        nombre: editProd.nombre,
+        precio: parseFloat(editProd.precio),
+        descripcion: editProd.descripcion,
+        imagen: editProd.imagen,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+    if (!error && data) {
+      setProductos((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...data } : p)),
+      );
+      setEditingId(null);
+    }
+    setSavingEdit(false);
+  }
+
   async function handleDelete(id: string) {
     await supabase.from("productos").delete().eq("id", id);
     setProductos((prev) => prev.filter((p) => p.id !== id));
@@ -184,14 +246,6 @@ export default function ViewProductos({
       prev.map((p) => (p.id === id ? { ...p, activo: !activo } : p)),
     );
   }
-
-  const slugify = (s: string) =>
-    s
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
 
   return (
     <div className={styles.view}>
@@ -241,7 +295,6 @@ export default function ViewProductos({
         {/* ── TAB DISEÑO ── */}
         {tab === "plantilla" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-            {/* Layout picker */}
             <div>
               <h4
                 style={{
@@ -343,7 +396,6 @@ export default function ViewProductos({
               </div>
             </div>
 
-            {/* Color picker */}
             <div>
               <h4
                 style={{
@@ -431,7 +483,6 @@ export default function ViewProductos({
               </div>
             </div>
 
-            {/* Status bar */}
             <div
               style={{
                 background: "var(--cream)",
@@ -878,6 +929,7 @@ export default function ViewProductos({
                 </p>
               </div>
             ) : vistaGrid ? (
+              /* ── GRID ── */
               <div
                 style={{
                   display: "grid",
@@ -885,6 +937,16 @@ export default function ViewProductos({
                   gap: 12,
                 }}
               >
+                <input
+                  ref={editFileRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleEditImageUpload(f);
+                  }}
+                />
                 {productos.map((p) => (
                   <div
                     key={p.id}
@@ -906,7 +968,15 @@ export default function ViewProductos({
                         background: "var(--white)",
                       }}
                     >
-                      {p.imagen ? (
+                      {editingId === p.id && editProd.imagen ? (
+                        <Image
+                          src={editProd.imagen}
+                          alt={p.nombre}
+                          fill
+                          style={{ objectFit: "cover" }}
+                          sizes="160px"
+                        />
+                      ) : p.imagen ? (
                         <Image
                           src={p.imagen}
                           alt={p.nombre}
@@ -929,167 +999,155 @@ export default function ViewProductos({
                         </div>
                       )}
                     </div>
-                    <div style={{ padding: "10px 12px", flex: 1 }}>
-                      <p
+
+                    {editingId === p.id ? (
+                      <div
                         style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "var(--black)",
-                          marginBottom: 2,
+                          padding: "10px 12px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6,
                         }}
                       >
-                        {p.nombre}
-                      </p>
-                      <p
-                        style={{
-                          fontSize: 14,
-                          fontWeight: 700,
-                          color: "var(--olive-dark)",
-                        }}
-                      >
-                        ${Number(p.precio).toLocaleString("es-AR")}
-                      </p>
-                    </div>
-                    <div
-                      style={{
-                        padding: "8px 12px",
-                        display: "flex",
-                        gap: 6,
-                        borderTop: "1px solid var(--border)",
-                      }}
-                    >
-                      <button
-                        onClick={() => toggleActivo(p.id, p.activo ?? true)}
-                        style={{
-                          flex: 1,
-                          padding: "4px 0",
-                          borderRadius: 100,
-                          fontSize: 10,
-                          fontWeight: 600,
-                          border: "1px solid var(--border)",
-                          background: "transparent",
-                          color: "var(--muted)",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {p.activo === false ? "Activar" : "Pausar"}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p.id)}
-                        style={{
-                          padding: "4px 8px",
-                          borderRadius: 100,
-                          fontSize: 12,
-                          border: "1px solid var(--border)",
-                          background: "transparent",
-                          cursor: "pointer",
-                        }}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: 12 }}
-              >
-                {productos.map((p) => (
-                  <div
-                    key={p.id}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "64px 1fr auto",
-                      gap: 14,
-                      alignItems: "center",
-                      padding: "14px 16px",
-                      background: "var(--cream)",
-                      borderRadius: 14,
-                      border: "1px solid var(--border)",
-                      opacity: p.activo === false ? 0.5 : 1,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: 10,
-                        overflow: "hidden",
-                        background: "var(--white)",
-                        border: "1px solid var(--border)",
-                        flexShrink: 0,
-                        position: "relative",
-                      }}
-                    >
-                      {p.imagen ? (
-                        <Image
-                          src={p.imagen}
-                          alt={p.nombre}
-                          fill
-                          style={{ objectFit: "cover" }}
-                          sizes="64px"
+                        <input
+                          className="input-field"
+                          value={editProd.nombre}
+                          onChange={(e) =>
+                            setEditProd((p) => ({
+                              ...p,
+                              nombre: e.target.value,
+                            }))
+                          }
+                          placeholder="Nombre"
+                          style={{ fontSize: 12, padding: "6px 10px" }}
                         />
-                      ) : (
-                        <div
+                        <input
+                          className="input-field"
+                          type="number"
+                          value={editProd.precio}
+                          onChange={(e) =>
+                            setEditProd((p) => ({
+                              ...p,
+                              precio: e.target.value,
+                            }))
+                          }
+                          placeholder="Precio"
+                          style={{ fontSize: 12, padding: "6px 10px" }}
+                        />
+                        <input
+                          className="input-field"
+                          value={editProd.descripcion}
+                          onChange={(e) =>
+                            setEditProd((p) => ({
+                              ...p,
+                              descripcion: e.target.value,
+                            }))
+                          }
+                          placeholder="Descripción"
+                          style={{ fontSize: 12, padding: "6px 10px" }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => editFileRef.current?.click()}
                           style={{
-                            width: "100%",
-                            height: "100%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 24,
+                            fontSize: 11,
+                            color: "var(--olive)",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            padding: 0,
                           }}
                         >
-                          🛍️
+                          📷 Cambiar foto
+                        </button>
+                        <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
+                          <button
+                            onClick={() => handleSaveEdit(p.id)}
+                            disabled={savingEdit}
+                            style={{
+                              flex: 1,
+                              padding: "6px",
+                              borderRadius: 8,
+                              border: "none",
+                              background: "var(--olive)",
+                              color: "#fff",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            {savingEdit ? "..." : "Guardar"}
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            style={{
+                              padding: "6px 10px",
+                              borderRadius: 8,
+                              border: "1px solid var(--border)",
+                              background: "transparent",
+                              fontSize: 11,
+                              cursor: "pointer",
+                            }}
+                          >
+                            ✕
+                          </button>
                         </div>
-                      )}
-                    </div>
-                    <div>
-                      <p
-                        style={{
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: "var(--black)",
-                          marginBottom: 2,
-                        }}
-                      >
-                        {p.nombre}
-                      </p>
-                      {p.descripcion && (
+                      </div>
+                    ) : (
+                      <div style={{ padding: "10px 12px", flex: 1 }}>
                         <p
                           style={{
-                            fontSize: 12,
-                            color: "var(--muted)",
-                            marginBottom: 4,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: "var(--black)",
+                            marginBottom: 2,
                           }}
                         >
-                          {p.descripcion}
+                          {p.nombre}
                         </p>
-                      )}
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-end",
-                        gap: 6,
-                      }}
-                    >
-                      <p
+                        <p
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: "var(--olive-dark)",
+                          }}
+                        >
+                          ${Number(p.precio).toLocaleString("es-AR")}
+                        </p>
+                      </div>
+                    )}
+
+                    {editingId !== p.id && (
+                      <div
                         style={{
-                          fontSize: 15,
-                          fontWeight: 700,
-                          color: "var(--olive-dark)",
+                          padding: "8px 12px",
+                          display: "flex",
+                          gap: 6,
+                          borderTop: "1px solid var(--border)",
                         }}
                       >
-                        ${Number(p.precio).toLocaleString("es-AR")}
-                      </p>
-                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={() => startEdit(p)}
+                          style={{
+                            flex: 1,
+                            padding: "4px 0",
+                            borderRadius: 100,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            border: "1px solid var(--border)",
+                            background: "transparent",
+                            color: "var(--muted)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          ✏️ Editar
+                        </button>
                         <button
                           onClick={() => toggleActivo(p.id, p.activo ?? true)}
                           style={{
-                            padding: "4px 10px",
+                            flex: 1,
+                            padding: "4px 0",
                             borderRadius: 100,
                             fontSize: 10,
                             fontWeight: 600,
@@ -1103,13 +1161,293 @@ export default function ViewProductos({
                         </button>
                         <button
                           onClick={() => handleDelete(p.id)}
-                          className={styles.iconBtn}
-                          title="Eliminar"
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: 100,
+                            fontSize: 12,
+                            border: "1px solid var(--border)",
+                            background: "transparent",
+                            cursor: "pointer",
+                          }}
                         >
                           🗑️
                         </button>
                       </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* ── LISTA ── */
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 12 }}
+              >
+                {productos.map((p) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      background: "var(--cream)",
+                      borderRadius: 14,
+                      border: "1px solid var(--border)",
+                      overflow: "hidden",
+                      opacity: p.activo === false ? 0.5 : 1,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "64px 1fr auto",
+                        gap: 14,
+                        alignItems: "center",
+                        padding: "14px 16px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 64,
+                          height: 64,
+                          borderRadius: 10,
+                          overflow: "hidden",
+                          background: "var(--white)",
+                          border: "1px solid var(--border)",
+                          flexShrink: 0,
+                          position: "relative",
+                        }}
+                      >
+                        {editingId === p.id && editProd.imagen ? (
+                          <Image
+                            src={editProd.imagen}
+                            alt={p.nombre}
+                            fill
+                            style={{ objectFit: "cover" }}
+                            sizes="64px"
+                          />
+                        ) : p.imagen ? (
+                          <Image
+                            src={p.imagen}
+                            alt={p.nombre}
+                            fill
+                            style={{ objectFit: "cover" }}
+                            sizes="64px"
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 24,
+                            }}
+                          >
+                            🛍️
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            color: "var(--black)",
+                            marginBottom: 2,
+                          }}
+                        >
+                          {p.nombre}
+                        </p>
+                        {p.descripcion && (
+                          <p
+                            style={{
+                              fontSize: 12,
+                              color: "var(--muted)",
+                              marginBottom: 4,
+                            }}
+                          >
+                            {p.descripcion}
+                          </p>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: 6,
+                        }}
+                      >
+                        <p
+                          style={{
+                            fontSize: 15,
+                            fontWeight: 700,
+                            color: "var(--olive-dark)",
+                          }}
+                        >
+                          ${Number(p.precio).toLocaleString("es-AR")}
+                        </p>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            onClick={() => startEdit(p)}
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: 100,
+                              fontSize: 10,
+                              fontWeight: 600,
+                              border: "1px solid var(--border)",
+                              background: "transparent",
+                              color: "var(--muted)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            ✏️ Editar
+                          </button>
+                          <button
+                            onClick={() => toggleActivo(p.id, p.activo ?? true)}
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: 100,
+                              fontSize: 10,
+                              fontWeight: 600,
+                              border: "1px solid var(--border)",
+                              background: "transparent",
+                              color: "var(--muted)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {p.activo === false ? "Activar" : "Pausar"}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(p.id)}
+                            className={styles.iconBtn}
+                            title="Eliminar"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
                     </div>
+
+                    {editingId === p.id && (
+                      <div
+                        style={{
+                          padding: "12px 16px",
+                          borderTop: "1px solid var(--border)",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
+                        <input
+                          ref={editFileRef}
+                          type="file"
+                          accept="image/*"
+                          style={{ display: "none" }}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleEditImageUpload(f);
+                          }}
+                        />
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            className="input-field"
+                            value={editProd.nombre}
+                            onChange={(e) =>
+                              setEditProd((p) => ({
+                                ...p,
+                                nombre: e.target.value,
+                              }))
+                            }
+                            placeholder="Nombre"
+                            style={{
+                              flex: 2,
+                              fontSize: 13,
+                              padding: "8px 12px",
+                            }}
+                          />
+                          <input
+                            className="input-field"
+                            type="number"
+                            value={editProd.precio}
+                            onChange={(e) =>
+                              setEditProd((p) => ({
+                                ...p,
+                                precio: e.target.value,
+                              }))
+                            }
+                            placeholder="Precio"
+                            style={{
+                              flex: 1,
+                              fontSize: 13,
+                              padding: "8px 12px",
+                            }}
+                          />
+                        </div>
+                        <input
+                          className="input-field"
+                          value={editProd.descripcion}
+                          onChange={(e) =>
+                            setEditProd((p) => ({
+                              ...p,
+                              descripcion: e.target.value,
+                            }))
+                          }
+                          placeholder="Descripción"
+                          style={{ fontSize: 13, padding: "8px 12px" }}
+                        />
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            alignItems: "center",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => editFileRef.current?.click()}
+                            style={{
+                              fontSize: 12,
+                              color: "var(--olive)",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: 0,
+                            }}
+                          >
+                            📷 Cambiar foto
+                          </button>
+                          <div style={{ flex: 1 }} />
+                          <button
+                            onClick={() => handleSaveEdit(p.id)}
+                            disabled={savingEdit}
+                            style={{
+                              padding: "7px 18px",
+                              borderRadius: 8,
+                              border: "none",
+                              background: "var(--olive)",
+                              color: "#fff",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            {savingEdit ? "..." : "Guardar"}
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            style={{
+                              padding: "7px 12px",
+                              borderRadius: 8,
+                              border: "1px solid var(--border)",
+                              background: "transparent",
+                              fontSize: 12,
+                              cursor: "pointer",
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
