@@ -124,9 +124,9 @@ export default function ViewPerfil({
 
   const isPro = emp.plan === "premium";
 
-function update(field: keyof Emprendimiento, value: string | boolean) {
-  setEmp((prev) => ({ ...prev, [field]: value }));
-}
+  function update(field: keyof Emprendimiento, value: string | boolean) {
+    setEmp((prev) => ({ ...prev, [field]: value }));
+  }
 
   async function updateMedioPago(
     field: keyof Emprendimiento,
@@ -393,7 +393,7 @@ function update(field: keyof Emprendimiento, value: string | boolean) {
           </div>
           {!emp.mp_connected ? (
             <a
-              href={`https://auth.mercadopago.com.ar/authorization?client_id=${process.env.NEXT_PUBLIC_MP_CLIENT_ID}&response_type=code&platform_id=mp&redirect_uri=${process.env.NEXT_PUBLIC_BASE_URL}/api/mp/callback`}
+              href={`https://auth.mercadopago.com.ar/authorization?client_id=${process.env.NEXT_PUBLIC_MP_CLIENT_ID}&response_type=code&platform_id=mp&state=${userId}&redirect_uri=${process.env.NEXT_PUBLIC_BASE_URL}/api/mp/callback`}
               style={{
                 background: "#009EE3",
                 color: "#fff",
@@ -440,7 +440,12 @@ function update(field: keyof Emprendimiento, value: string | boolean) {
             <button
               type="button"
               className={`${styles.toggle} ${emp.transferencia_activa ? styles.toggleOn : ""}`}
-              onClick={() => updateMedioPago("transferencia_activa", !emp.transferencia_activa)}
+              onClick={() =>
+                updateMedioPago(
+                  "transferencia_activa",
+                  !emp.transferencia_activa,
+                )
+              }
             />
           </div>
           {emp.transferencia_activa && (
@@ -455,7 +460,9 @@ function update(field: keyof Emprendimiento, value: string | boolean) {
                 onChange={(e) => update("transferencia_cbu", e.target.value)}
                 placeholder="Ej: mi.alias o 0000003100012345678901"
                 maxLength={22}
-                onBlur={e => updateMedioPago("transferencia_cbu", e.target.value)}
+                onBlur={(e) =>
+                  updateMedioPago("transferencia_cbu", e.target.value)
+                }
               />
             </div>
           )}
