@@ -393,7 +393,7 @@ export default function ViewPerfil({
           </div>
           {!emp.mp_connected ? (
             <a
-              href={`https://auth.mercadopago.com.ar/authorization?client_id=${process.env.NEXT_PUBLIC_MP_CLIENT_ID}&response_type=code&platform_id=mp&state=${userId}&redirect_uri=${process.env.NEXT_PUBLIC_BASE_URL}/api/mp/callback`}
+             href={`https://auth.mercadopago.com.ar/authorization?client_id=${process.env.NEXT_PUBLIC_MP_CLIENT_ID}&response_type=code&platform_id=mp&state=${userId}&redirect_uri=https://viko-ryk4.vercel.app/api/mp/callback`}
               style={{
                 background: "#009EE3",
                 color: "#fff",
