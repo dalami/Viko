@@ -43,6 +43,10 @@ export interface Producto {
   id: string;
   nombre: string;
   precio: number;
+  precio_descuento?: number;
+  stock?: number;
+  tags?: string[];
+  orden?: number;
   descripcion?: string;
   categoria?: string;
   imagen?: string;

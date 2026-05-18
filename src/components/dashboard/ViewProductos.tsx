@@ -21,6 +21,10 @@ interface Producto {
   id: string;
   nombre: string;
   precio: number;
+  precio_descuento?: number;
+  stock?: number;
+  tags?: string[];
+  orden?: number;
   descripcion?: string;
   categoria?: string;
   imagen?: string;
@@ -43,6 +47,589 @@ interface ViewProductosProps {
 
 const LIMITE_FREE = 3;
 
+const CATEGORIAS = [
+  "Indumentaria",
+  "Calzado",
+  "Accesorios",
+  "Belleza",
+  "Hogar y deco",
+  "Alimentos",
+  "Bebidas",
+  "Arte",
+  "Tecnología",
+  "Servicios",
+  "Digital",
+  "Otro",
+];
+
+function EditForm({
+  prod,
+  onSave,
+  onCancel,
+  saving,
+  userId,
+  empId,
+  supabase,
+}: {
+  prod: Producto;
+  onSave: (data: Partial<Producto>) => void;
+  onCancel: () => void;
+  saving: boolean;
+  userId: string;
+  empId: number;
+  supabase: ReturnType<typeof createClient>;
+}) {
+  const [form, setForm] = useState({
+    nombre: prod.nombre,
+    precio: String(prod.precio),
+    precio_descuento: prod.precio_descuento
+      ? String(prod.precio_descuento)
+      : "",
+    stock: prod.stock !== undefined ? String(prod.stock) : "",
+    descripcion: prod.descripcion ?? "",
+    categoria: prod.categoria ?? "",
+    imagen: prod.imagen ?? "",
+    activo: prod.activo !== false,
+    tags: (prod.tags ?? []).join(", "),
+    variantes: prod.variantes ?? ([] as Variante[]),
+  });
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [nuevoTipo, setNuevoTipo] = useState("");
+  const [nuevasOpc, setNuevasOpc] = useState("");
+  const editFileRef = useRef<HTMLInputElement>(null);
+
+  async function handleImgUpload(file: File) {
+    setUploadingImg(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${userId}/${empId}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("productos")
+        .upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from("productos").getPublicUrl(path);
+      setForm((f) => ({ ...f, imagen: data.publicUrl }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUploadingImg(false);
+    }
+  }
+
+  function agregarVariante() {
+    if (!nuevoTipo.trim() || !nuevasOpc.trim()) return;
+    const opciones = nuevasOpc
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
+    setForm((f) => ({
+      ...f,
+      variantes: [...f.variantes, { tipo: nuevoTipo.trim(), opciones }],
+    }));
+    setNuevoTipo("");
+    setNuevasOpc("");
+  }
+
+  function quitarVariante(i: number) {
+    setForm((f) => ({
+      ...f,
+      variantes: f.variantes.filter((_, idx) => idx !== i),
+    }));
+  }
+
+  function handleSubmit() {
+    onSave({
+      nombre: form.nombre,
+      precio: parseFloat(form.precio) || 0,
+      precio_descuento: form.precio_descuento
+        ? parseFloat(form.precio_descuento)
+        : undefined,
+      stock: form.stock !== "" ? parseInt(form.stock) : undefined,
+      descripcion: form.descripcion,
+      categoria: form.categoria,
+      imagen: form.imagen,
+      activo: form.activo,
+      tags: form.tags
+        ? form.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
+      variantes: form.variantes,
+    });
+  }
+
+  const f = form;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        padding: "16px",
+        background: "#fff",
+        borderRadius: 14,
+        border: "1px solid var(--border)",
+      }}
+    >
+      <input
+        ref={editFileRef}
+        type="file"
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleImgUpload(file);
+        }}
+      />
+
+      {/* Imagen */}
+      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        <div
+          style={{
+            position: "relative",
+            width: 80,
+            height: 80,
+            borderRadius: 10,
+            overflow: "hidden",
+            background: "var(--cream)",
+            flexShrink: 0,
+            cursor: "pointer",
+          }}
+          onClick={() => editFileRef.current?.click()}
+        >
+          {f.imagen ? (
+            <Image
+              src={f.imagen}
+              alt="preview"
+              fill
+              style={{ objectFit: "cover" }}
+              sizes="80px"
+            />
+          ) : (
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 28,
+              }}
+            >
+              📷
+            </div>
+          )}
+          {uploadingImg && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "rgba(255,255,255,0.7)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+              }}
+            >
+              ...
+            </div>
+          )}
+        </div>
+        <div>
+          <p
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "var(--black)",
+              marginBottom: 4,
+            }}
+          >
+            Foto del producto
+          </p>
+          <button
+            type="button"
+            onClick={() => editFileRef.current?.click()}
+            style={{
+              fontSize: 11,
+              color: "var(--olive)",
+              background: "none",
+              border: "1px solid var(--olive)",
+              borderRadius: 100,
+              padding: "4px 10px",
+              cursor: "pointer",
+            }}
+          >
+            📷 Cambiar foto
+          </button>
+        </div>
+      </div>
+
+      {/* Nombre y categoría */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div>
+          <label className="field-label" style={{ fontSize: 10 }}>
+            Nombre *
+          </label>
+          <input
+            className="input-field"
+            value={f.nombre}
+            onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))}
+            placeholder="Nombre del producto"
+            style={{ fontSize: 13, padding: "8px 12px" }}
+          />
+        </div>
+        <div>
+          <label className="field-label" style={{ fontSize: 10 }}>
+            Categoría
+          </label>
+          <select
+            className="input-field"
+            value={f.categoria}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, categoria: e.target.value }))
+            }
+            style={{ fontSize: 13, padding: "8px 12px" }}
+          >
+            <option value="">Sin categoría</option>
+            {CATEGORIAS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Precios y stock */}
+      <div
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}
+      >
+        <div>
+          <label className="field-label" style={{ fontSize: 10 }}>
+            Precio *
+          </label>
+          <input
+            className="input-field"
+            type="number"
+            value={f.precio}
+            onChange={(e) => setForm((p) => ({ ...p, precio: e.target.value }))}
+            placeholder="15000"
+            style={{ fontSize: 13, padding: "8px 12px" }}
+          />
+        </div>
+        <div>
+          <label className="field-label" style={{ fontSize: 10 }}>
+            Precio con descuento
+          </label>
+          <input
+            className="input-field"
+            type="number"
+            value={f.precio_descuento}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, precio_descuento: e.target.value }))
+            }
+            placeholder="12000"
+            style={{ fontSize: 13, padding: "8px 12px" }}
+          />
+        </div>
+        <div>
+          <label className="field-label" style={{ fontSize: 10 }}>
+            Stock disponible
+          </label>
+          <input
+            className="input-field"
+            type="number"
+            value={f.stock}
+            onChange={(e) => setForm((p) => ({ ...p, stock: e.target.value }))}
+            placeholder="∞"
+            style={{ fontSize: 13, padding: "8px 12px" }}
+          />
+        </div>
+      </div>
+
+      {/* Descuento badge preview */}
+      {f.precio_descuento &&
+        parseFloat(f.precio_descuento) < parseFloat(f.precio) && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "6px 12px",
+              background: "#FEF2EE",
+              borderRadius: 8,
+              border: "1px solid #FFDDD0",
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#C4664A" }}>
+              ${parseFloat(f.precio_descuento).toLocaleString("es-AR")}
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                color: "var(--muted)",
+                textDecoration: "line-through",
+              }}
+            >
+              ${parseFloat(f.precio).toLocaleString("es-AR")}
+            </span>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "#fff",
+                background: "#C4664A",
+                padding: "2px 8px",
+                borderRadius: 100,
+              }}
+            >
+              -
+              {Math.round(
+                (1 - parseFloat(f.precio_descuento) / parseFloat(f.precio)) *
+                  100,
+              )}
+              % OFF
+            </span>
+          </div>
+        )}
+
+      {/* Descripción */}
+      <div>
+        <label className="field-label" style={{ fontSize: 10 }}>
+          Descripción
+        </label>
+        <textarea
+          className="input-field"
+          value={f.descripcion}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, descripcion: e.target.value }))
+          }
+          placeholder="Descripción del producto..."
+          rows={2}
+          style={{ fontSize: 13, padding: "8px 12px", resize: "none" }}
+        />
+      </div>
+
+      {/* Tags */}
+      <div>
+        <label className="field-label" style={{ fontSize: 10 }}>
+          Tags / Etiquetas
+        </label>
+        <input
+          className="input-field"
+          value={f.tags}
+          onChange={(e) => setForm((p) => ({ ...p, tags: e.target.value }))}
+          placeholder="Ej: verano, oferta, nuevo"
+          style={{ fontSize: 13, padding: "8px 12px" }}
+        />
+        {f.tags && (
+          <div
+            style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}
+          >
+            {f.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+              .map((t) => (
+                <span
+                  key={t}
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    padding: "2px 8px",
+                    borderRadius: 100,
+                    background: "var(--olive-light)",
+                    color: "var(--olive-dark)",
+                  }}
+                >
+                  {t}
+                </span>
+              ))}
+          </div>
+        )}
+      </div>
+
+      {/* Variantes */}
+      <div>
+        <label className="field-label" style={{ fontSize: 10 }}>
+          Variantes
+        </label>
+        {f.variantes.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              marginBottom: 8,
+            }}
+          >
+            {f.variantes.map((v, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "6px 10px",
+                  background: "var(--cream)",
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "var(--black)",
+                  }}
+                >
+                  {v.tipo}:
+                </span>
+                <span style={{ fontSize: 12, color: "var(--muted)", flex: 1 }}>
+                  {v.opciones.join(", ")}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => quitarVariante(i)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "var(--terracota)",
+                    fontSize: 14,
+                    padding: 0,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 6 }}>
+          <input
+            className="input-field"
+            value={nuevoTipo}
+            onChange={(e) => setNuevoTipo(e.target.value)}
+            placeholder="Tipo (ej: Color)"
+            style={{ flex: 1, fontSize: 12, padding: "6px 10px" }}
+          />
+          <input
+            className="input-field"
+            value={nuevasOpc}
+            onChange={(e) => setNuevasOpc(e.target.value)}
+            placeholder="Opciones (ej: Rojo, Azul)"
+            style={{ flex: 2, fontSize: 12, padding: "6px 10px" }}
+          />
+          <button
+            type="button"
+            onClick={agregarVariante}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 8,
+              border: "none",
+              background: "var(--olive)",
+              color: "#fff",
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            + Agregar
+          </button>
+        </div>
+      </div>
+
+      {/* Estado activo */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 14px",
+          background: "var(--cream)",
+          borderRadius: 10,
+        }}
+      >
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--black)" }}>
+            Producto activo
+          </p>
+          <p style={{ fontSize: 11, color: "var(--muted)" }}>
+            Los clientes pueden verlo y comprarlo
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setForm((p) => ({ ...p, activo: !p.activo }))}
+          style={{
+            width: 44,
+            height: 24,
+            borderRadius: 12,
+            border: "none",
+            cursor: "pointer",
+            background: f.activo ? "var(--olive)" : "var(--border)",
+            position: "relative",
+            transition: "background 0.2s",
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              position: "absolute",
+              top: 3,
+              left: f.activo ? 22 : 3,
+              width: 18,
+              height: 18,
+              borderRadius: "50%",
+              background: "#fff",
+              transition: "left 0.2s",
+              display: "block",
+            }}
+          />
+        </button>
+      </div>
+
+      {/* Acciones */}
+      <div style={{ display: "flex", gap: 8, paddingTop: 4 }}>
+        <button
+          onClick={handleSubmit}
+          disabled={saving}
+          style={{
+            flex: 1,
+            padding: "10px",
+            borderRadius: 10,
+            border: "none",
+            background: "var(--olive)",
+            color: "#fff",
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          {saving ? "Guardando..." : "Guardar cambios"}
+        </button>
+        <button
+          onClick={onCancel}
+          style={{
+            padding: "10px 16px",
+            borderRadius: 10,
+            border: "1px solid var(--border)",
+            background: "transparent",
+            fontSize: 13,
+            cursor: "pointer",
+          }}
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ViewProductos({
   empId,
   userId,
@@ -63,23 +650,19 @@ export default function ViewProductos({
   const [vistaGrid, setVistaGrid] = useState(true);
   const [tab, setTab] = useState<"productos" | "plantilla">("productos");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editProd, setEditProd] = useState({
-    nombre: "",
-    precio: "",
-    descripcion: "",
-    imagen: "",
-  });
   const [savingEdit, setSavingEdit] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
-  const editFileRef = useRef<HTMLInputElement>(null);
 
   const [newProd, setNewProd] = useState({
     nombre: "",
     descripcion: "",
     precio: "",
+    precio_descuento: "",
+    stock: "",
     categoria: "",
     imagen: "",
+    tags: "",
     variantes: [] as Variante[],
   });
   const [nuevaVarianteTipo, setNuevaVarianteTipo] = useState("");
@@ -134,18 +717,6 @@ export default function ViewProductos({
     }
   }
 
-  async function handleEditImageUpload(file: File) {
-    const ext = file.name.split(".").pop();
-    const ts = new Date().getTime();
-    const path = `${userId}/${empId}/${ts}.${ext}`;
-    const { error } = await supabase.storage
-      .from("productos")
-      .upload(path, file, { upsert: true });
-    if (error) return;
-    const { data } = supabase.storage.from("productos").getPublicUrl(path);
-    setEditProd((prev) => ({ ...prev, imagen: data.publicUrl }));
-  }
-
   function agregarVariante() {
     if (!nuevaVarianteTipo.trim() || !nuevaVarianteOpciones.trim()) return;
     const opciones = nuevaVarianteOpciones
@@ -170,16 +741,6 @@ export default function ViewProductos({
     }));
   }
 
-  function startEdit(p: Producto) {
-    setEditingId(p.id);
-    setEditProd({
-      nombre: p.nombre,
-      precio: String(p.precio),
-      descripcion: p.descripcion ?? "",
-      imagen: p.imagen ?? "",
-    });
-  }
-
   async function handleAddProduct(e: React.FormEvent) {
     e.preventDefault();
     if (limiteAlcanzado) return;
@@ -190,11 +751,22 @@ export default function ViewProductos({
         nombre: newProd.nombre,
         descripcion: newProd.descripcion,
         precio: parseFloat(newProd.precio),
+        precio_descuento: newProd.precio_descuento
+          ? parseFloat(newProd.precio_descuento)
+          : null,
+        stock: newProd.stock ? parseInt(newProd.stock) : null,
         categoria: newProd.categoria,
         imagen: newProd.imagen,
         variantes: newProd.variantes,
+        tags: newProd.tags
+          ? newProd.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
         emprendimiento_id: empId,
         activo: true,
+        orden: productos.length,
       })
       .select()
       .single();
@@ -204,8 +776,11 @@ export default function ViewProductos({
         nombre: "",
         descripcion: "",
         precio: "",
+        precio_descuento: "",
+        stock: "",
         categoria: "",
         imagen: "",
+        tags: "",
         variantes: [],
       });
       setAdding(false);
@@ -213,16 +788,11 @@ export default function ViewProductos({
     setSaving(false);
   }
 
-  async function handleSaveEdit(id: string) {
+  async function handleSaveEdit(id: string, updates: Partial<Producto>) {
     setSavingEdit(true);
     const { data, error } = await supabase
       .from("productos")
-      .update({
-        nombre: editProd.nombre,
-        precio: parseFloat(editProd.precio),
-        descripcion: editProd.descripcion,
-        imagen: editProd.imagen,
-      })
+      .update(updates)
       .eq("id", id)
       .select()
       .single();
@@ -246,6 +816,34 @@ export default function ViewProductos({
       prev.map((p) => (p.id === id ? { ...p, activo: !activo } : p)),
     );
   }
+
+  async function moverOrden(id: string, direction: "up" | "down") {
+    const sorted = [...productos].sort(
+      (a, b) => (a.orden ?? 0) - (b.orden ?? 0),
+    );
+    const idx = sorted.findIndex((p) => p.id === id);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sorted.length) return;
+    const a = sorted[idx];
+    const b = sorted[swapIdx];
+    const ordenA = a.orden ?? idx;
+    const ordenB = b.orden ?? swapIdx;
+    await Promise.all([
+      supabase.from("productos").update({ orden: ordenB }).eq("id", a.id),
+      supabase.from("productos").update({ orden: ordenA }).eq("id", b.id),
+    ]);
+    setProductos((prev) =>
+      prev.map((p) => {
+        if (p.id === a.id) return { ...p, orden: ordenB };
+        if (p.id === b.id) return { ...p, orden: ordenA };
+        return p;
+      }),
+    );
+  }
+
+  const productosSorted = [...productos].sort(
+    (a, b) => (a.orden ?? 0) - (b.orden ?? 0),
+  );
 
   return (
     <div className={styles.view}>
@@ -395,7 +993,6 @@ export default function ViewProductos({
                 })}
               </div>
             </div>
-
             <div>
               <h4
                 style={{
@@ -482,7 +1079,6 @@ export default function ViewProductos({
                 })}
               </div>
             </div>
-
             <div
               style={{
                 background: "var(--cream)",
@@ -664,6 +1260,7 @@ export default function ViewProductos({
               </div>
             )}
 
+            {/* FORMULARIO AGREGAR */}
             {adding && !limiteAlcanzado && (
               <form onSubmit={handleAddProduct} className={styles.addForm}>
                 <div className={styles.field}>
@@ -767,7 +1364,7 @@ export default function ViewProductos({
                 </div>
                 <div className={styles.formGrid}>
                   <div className={styles.field}>
-                    <label className="field-label">Nombre del producto</label>
+                    <label className="field-label">Nombre *</label>
                     <input
                       className="input-field"
                       value={newProd.nombre}
@@ -779,7 +1376,24 @@ export default function ViewProductos({
                     />
                   </div>
                   <div className={styles.field}>
-                    <label className="field-label">Precio (ARS)</label>
+                    <label className="field-label">Categoría</label>
+                    <select
+                      className="input-field"
+                      value={newProd.categoria}
+                      onChange={(e) =>
+                        setNewProd((p) => ({ ...p, categoria: e.target.value }))
+                      }
+                    >
+                      <option value="">Sin categoría</option>
+                      {CATEGORIAS.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.field}>
+                    <label className="field-label">Precio *</label>
                     <input
                       className="input-field"
                       type="number"
@@ -791,37 +1405,67 @@ export default function ViewProductos({
                       required
                     />
                   </div>
+                  <div className={styles.field}>
+                    <label className="field-label">Precio con descuento</label>
+                    <input
+                      className="input-field"
+                      type="number"
+                      value={newProd.precio_descuento}
+                      onChange={(e) =>
+                        setNewProd((p) => ({
+                          ...p,
+                          precio_descuento: e.target.value,
+                        }))
+                      }
+                      placeholder="12000"
+                    />
+                  </div>
+                  <div className={styles.field}>
+                    <label className="field-label">Stock</label>
+                    <input
+                      className="input-field"
+                      type="number"
+                      value={newProd.stock}
+                      onChange={(e) =>
+                        setNewProd((p) => ({ ...p, stock: e.target.value }))
+                      }
+                      placeholder="Sin límite"
+                    />
+                  </div>
                 </div>
                 <div className={styles.field}>
-                  <label className="field-label">Descripción (opcional)</label>
+                  <label className="field-label">Descripción</label>
                   <input
                     className="input-field"
                     value={newProd.descripcion}
                     onChange={(e) =>
                       setNewProd((p) => ({ ...p, descripcion: e.target.value }))
                     }
-                    placeholder="Breve descripción del producto"
+                    placeholder="Breve descripción"
+                  />
+                </div>
+                <div className={styles.field}>
+                  <label className="field-label">
+                    Tags (separados por coma)
+                  </label>
+                  <input
+                    className="input-field"
+                    value={newProd.tags}
+                    onChange={(e) =>
+                      setNewProd((p) => ({ ...p, tags: e.target.value }))
+                    }
+                    placeholder="oferta, nuevo, verano"
                   />
                 </div>
                 <div className={styles.field}>
                   <label className="field-label">Variantes (opcional)</label>
-                  <p
-                    style={{
-                      fontSize: 12,
-                      color: "var(--muted)",
-                      marginBottom: 10,
-                    }}
-                  >
-                    Ej: tipo &quot;Color&quot;, opciones &quot;Rojo, Azul,
-                    Negro&quot;
-                  </p>
                   {newProd.variantes.length > 0 && (
                     <div
                       style={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: 8,
-                        marginBottom: 12,
+                        gap: 6,
+                        marginBottom: 8,
                       }}
                     >
                       {newProd.variantes.map((v, i) => (
@@ -830,10 +1474,10 @@ export default function ViewProductos({
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 10,
-                            padding: "8px 14px",
+                            gap: 8,
+                            padding: "6px 12px",
                             background: "var(--cream)",
-                            borderRadius: 10,
+                            borderRadius: 8,
                             border: "1px solid var(--border)",
                           }}
                         >
@@ -857,7 +1501,6 @@ export default function ViewProductos({
                               border: "none",
                               cursor: "pointer",
                               color: "var(--terracota)",
-                              fontSize: 14,
                             }}
                           >
                             ✕
@@ -866,44 +1509,32 @@ export default function ViewProductos({
                       ))}
                     </div>
                   )}
-                  <div
-                    style={{ display: "flex", gap: 8, alignItems: "flex-end" }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <label className="field-label" style={{ fontSize: 10 }}>
-                        Tipo
-                      </label>
-                      <input
-                        className="input-field"
-                        value={nuevaVarianteTipo}
-                        onChange={(e) => setNuevaVarianteTipo(e.target.value)}
-                        placeholder="Color / Talle..."
-                      />
-                    </div>
-                    <div style={{ flex: 2 }}>
-                      <label className="field-label" style={{ fontSize: 10 }}>
-                        Opciones (separadas por coma)
-                      </label>
-                      <input
-                        className="input-field"
-                        value={nuevaVarianteOpciones}
-                        onChange={(e) =>
-                          setNuevaVarianteOpciones(e.target.value)
-                        }
-                        placeholder="Rojo, Azul, Negro"
-                      />
-                    </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      className="input-field"
+                      value={nuevaVarianteTipo}
+                      onChange={(e) => setNuevaVarianteTipo(e.target.value)}
+                      placeholder="Tipo (Color)"
+                      style={{ flex: 1 }}
+                    />
+                    <input
+                      className="input-field"
+                      value={nuevaVarianteOpciones}
+                      onChange={(e) => setNuevaVarianteOpciones(e.target.value)}
+                      placeholder="Opciones (Rojo, Azul)"
+                      style={{ flex: 2 }}
+                    />
                     <button
                       type="button"
                       onClick={agregarVariante}
                       className="btn btn-olive"
                       style={{
-                        padding: "10px 16px",
+                        padding: "10px 14px",
                         fontSize: 12,
                         flexShrink: 0,
                       }}
                     >
-                      + Agregar
+                      + Add
                     </button>
                   </div>
                 </div>
@@ -918,6 +1549,7 @@ export default function ViewProductos({
               </form>
             )}
 
+            {/* LISTA / GRID */}
             {productos.length === 0 && !adding ? (
               <div className={styles.emptyState}>
                 <span className={styles.emptyIcon}>🛍️</span>
@@ -933,168 +1565,118 @@ export default function ViewProductos({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
                   gap: 12,
                 }}
               >
-                <input
-                  ref={editFileRef}
-                  type="file"
-                  accept="image/*"
-                  style={{ display: "none" }}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleEditImageUpload(f);
-                  }}
-                />
-                {productos.map((p) => (
+                {productosSorted.map((p, idx) => (
                   <div
                     key={p.id}
-                    style={{
-                      background: "var(--cream)",
-                      borderRadius: 14,
-                      border: "1px solid var(--border)",
-                      overflow: "hidden",
-                      opacity: p.activo === false ? 0.5 : 1,
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
+                    style={{ display: "flex", flexDirection: "column", gap: 8 }}
                   >
                     <div
                       style={{
-                        position: "relative",
-                        width: "100%",
-                        aspectRatio: "1",
-                        background: "var(--white)",
+                        background: "var(--cream)",
+                        borderRadius: 14,
+                        border: "1px solid var(--border)",
+                        overflow: "hidden",
+                        opacity: p.activo === false ? 0.55 : 1,
+                        display: "flex",
+                        flexDirection: "column",
                       }}
                     >
-                      {editingId === p.id && editProd.imagen ? (
-                        <Image
-                          src={editProd.imagen}
-                          alt={p.nombre}
-                          fill
-                          style={{ objectFit: "cover" }}
-                          sizes="160px"
-                        />
-                      ) : p.imagen ? (
-                        <Image
-                          src={p.imagen}
-                          alt={p.nombre}
-                          fill
-                          style={{ objectFit: "cover" }}
-                          sizes="160px"
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 32,
-                          }}
-                        >
-                          🛍️
-                        </div>
-                      )}
-                    </div>
-
-                    {editingId === p.id ? (
                       <div
                         style={{
-                          padding: "10px 12px",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 6,
+                          position: "relative",
+                          width: "100%",
+                          aspectRatio: "1",
+                          background: "var(--white)",
                         }}
                       >
-                        <input
-                          className="input-field"
-                          value={editProd.nombre}
-                          onChange={(e) =>
-                            setEditProd((p) => ({
-                              ...p,
-                              nombre: e.target.value,
-                            }))
-                          }
-                          placeholder="Nombre"
-                          style={{ fontSize: 12, padding: "6px 10px" }}
-                        />
-                        <input
-                          className="input-field"
-                          type="number"
-                          value={editProd.precio}
-                          onChange={(e) =>
-                            setEditProd((p) => ({
-                              ...p,
-                              precio: e.target.value,
-                            }))
-                          }
-                          placeholder="Precio"
-                          style={{ fontSize: 12, padding: "6px 10px" }}
-                        />
-                        <input
-                          className="input-field"
-                          value={editProd.descripcion}
-                          onChange={(e) =>
-                            setEditProd((p) => ({
-                              ...p,
-                              descripcion: e.target.value,
-                            }))
-                          }
-                          placeholder="Descripción"
-                          style={{ fontSize: 12, padding: "6px 10px" }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => editFileRef.current?.click()}
+                        {p.imagen ? (
+                          <Image
+                            src={p.imagen}
+                            alt={p.nombre}
+                            fill
+                            style={{ objectFit: "cover" }}
+                            sizes="180px"
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 32,
+                            }}
+                          >
+                            🛍️
+                          </div>
+                        )}
+                        {/* Badges */}
+                        <div
                           style={{
-                            fontSize: 11,
-                            color: "var(--olive)",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            textAlign: "left",
-                            padding: 0,
+                            position: "absolute",
+                            top: 6,
+                            left: 6,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 4,
                           }}
                         >
-                          📷 Cambiar foto
-                        </button>
-                        <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
-                          <button
-                            onClick={() => handleSaveEdit(p.id)}
-                            disabled={savingEdit}
-                            style={{
-                              flex: 1,
-                              padding: "6px",
-                              borderRadius: 8,
-                              border: "none",
-                              background: "var(--olive)",
-                              color: "#fff",
-                              fontSize: 11,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                            }}
-                          >
-                            {savingEdit ? "..." : "Guardar"}
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            style={{
-                              padding: "6px 10px",
-                              borderRadius: 8,
-                              border: "1px solid var(--border)",
-                              background: "transparent",
-                              fontSize: 11,
-                              cursor: "pointer",
-                            }}
-                          >
-                            ✕
-                          </button>
+                          {p.activo === false && (
+                            <span
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                background: "rgba(26,24,20,0.7)",
+                                color: "#fff",
+                                padding: "2px 6px",
+                                borderRadius: 100,
+                              }}
+                            >
+                              Pausado
+                            </span>
+                          )}
+                          {p.precio_descuento &&
+                            p.precio_descuento < p.precio && (
+                              <span
+                                style={{
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  background: "#C4664A",
+                                  color: "#fff",
+                                  padding: "2px 6px",
+                                  borderRadius: 100,
+                                }}
+                              >
+                                -
+                                {Math.round(
+                                  (1 - p.precio_descuento / p.precio) * 100,
+                                )}
+                                % OFF
+                              </span>
+                            )}
+                          {p.stock !== undefined &&
+                            p.stock !== null &&
+                            p.stock <= 5 && (
+                              <span
+                                style={{
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  background: "#C9A84C",
+                                  color: "#1A1814",
+                                  padding: "2px 6px",
+                                  borderRadius: 100,
+                                }}
+                              >
+                                Stock: {p.stock}
+                              </span>
+                            )}
                         </div>
                       </div>
-                    ) : (
                       <div style={{ padding: "10px 12px", flex: 1 }}>
                         <p
                           style={{
@@ -1106,347 +1688,439 @@ export default function ViewProductos({
                         >
                           {p.nombre}
                         </p>
-                        <p
+                        {p.categoria && (
+                          <p
+                            style={{
+                              fontSize: 10,
+                              color: "var(--muted)",
+                              marginBottom: 4,
+                            }}
+                          >
+                            {p.categoria}
+                          </p>
+                        )}
+                        <div
                           style={{
-                            fontSize: 14,
-                            fontWeight: 700,
-                            color: "var(--olive-dark)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
                           }}
                         >
-                          ${Number(p.precio).toLocaleString("es-AR")}
-                        </p>
+                          {p.precio_descuento &&
+                          p.precio_descuento < p.precio ? (
+                            <>
+                              <span
+                                style={{
+                                  fontSize: 14,
+                                  fontWeight: 700,
+                                  color: "#C4664A",
+                                }}
+                              >
+                                $
+                                {Number(p.precio_descuento).toLocaleString(
+                                  "es-AR",
+                                )}
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  color: "var(--muted)",
+                                  textDecoration: "line-through",
+                                }}
+                              >
+                                ${Number(p.precio).toLocaleString("es-AR")}
+                              </span>
+                            </>
+                          ) : (
+                            <span
+                              style={{
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: "var(--olive-dark)",
+                              }}
+                            >
+                              ${Number(p.precio).toLocaleString("es-AR")}
+                            </span>
+                          )}
+                        </div>
+                        {p.tags && p.tags.length > 0 && (
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 3,
+                              flexWrap: "wrap",
+                              marginTop: 4,
+                            }}
+                          >
+                            {p.tags.slice(0, 2).map((t) => (
+                              <span
+                                key={t}
+                                style={{
+                                  fontSize: 9,
+                                  padding: "1px 5px",
+                                  borderRadius: 100,
+                                  background: "var(--olive-light)",
+                                  color: "var(--olive-dark)",
+                                }}
+                              >
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-
-                    {editingId !== p.id && (
                       <div
                         style={{
-                          padding: "8px 12px",
+                          padding: "6px 10px",
                           display: "flex",
-                          gap: 6,
+                          gap: 4,
                           borderTop: "1px solid var(--border)",
+                          alignItems: "center",
                         }}
                       >
                         <button
-                          onClick={() => startEdit(p)}
+                          onClick={() =>
+                            setEditingId(editingId === p.id ? null : p.id)
+                          }
                           style={{
                             flex: 1,
                             padding: "4px 0",
                             borderRadius: 100,
                             fontSize: 10,
                             fontWeight: 600,
-                            border: "1px solid var(--border)",
-                            background: "transparent",
-                            color: "var(--muted)",
+                            border: `1px solid ${editingId === p.id ? "var(--olive)" : "var(--border)"}`,
+                            background:
+                              editingId === p.id
+                                ? "var(--olive)"
+                                : "transparent",
+                            color: editingId === p.id ? "#fff" : "var(--muted)",
                             cursor: "pointer",
                           }}
                         >
-                          ✏️ Editar
+                          {editingId === p.id ? "✕ Cerrar" : "✏️ Editar"}
                         </button>
                         <button
-                          onClick={() => toggleActivo(p.id, p.activo ?? true)}
+                          onClick={() => moverOrden(p.id, "up")}
+                          disabled={idx === 0}
                           style={{
-                            flex: 1,
-                            padding: "4px 0",
-                            borderRadius: 100,
-                            fontSize: 10,
-                            fontWeight: 600,
+                            padding: "4px 6px",
+                            borderRadius: 8,
                             border: "1px solid var(--border)",
                             background: "transparent",
-                            color: "var(--muted)",
                             cursor: "pointer",
+                            fontSize: 10,
+                            opacity: idx === 0 ? 0.3 : 1,
                           }}
                         >
-                          {p.activo === false ? "Activar" : "Pausar"}
+                          ↑
+                        </button>
+                        <button
+                          onClick={() => moverOrden(p.id, "down")}
+                          disabled={idx === productosSorted.length - 1}
+                          style={{
+                            padding: "4px 6px",
+                            borderRadius: 8,
+                            border: "1px solid var(--border)",
+                            background: "transparent",
+                            cursor: "pointer",
+                            fontSize: 10,
+                            opacity:
+                              idx === productosSorted.length - 1 ? 0.3 : 1,
+                          }}
+                        >
+                          ↓
                         </button>
                         <button
                           onClick={() => handleDelete(p.id)}
                           style={{
-                            padding: "4px 8px",
-                            borderRadius: 100,
-                            fontSize: 12,
+                            padding: "4px 6px",
+                            borderRadius: 8,
                             border: "1px solid var(--border)",
                             background: "transparent",
                             cursor: "pointer",
+                            fontSize: 12,
                           }}
                         >
                           🗑️
                         </button>
                       </div>
+                    </div>
+                    {editingId === p.id && (
+                      <EditForm
+                        prod={p}
+                        onSave={(u) => handleSaveEdit(p.id, u)}
+                        onCancel={() => setEditingId(null)}
+                        saving={savingEdit}
+                        userId={userId}
+                        empId={empId}
+                        supabase={supabase}
+                      />
                     )}
                   </div>
                 ))}
               </div>
             ) : (
               /* ── LISTA ── */
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: 12 }}
-              >
-                {productos.map((p) => (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {productosSorted.map((p, idx) => (
                   <div
                     key={p.id}
-                    style={{
-                      background: "var(--cream)",
-                      borderRadius: 14,
-                      border: "1px solid var(--border)",
-                      overflow: "hidden",
-                      opacity: p.activo === false ? 0.5 : 1,
-                    }}
+                    style={{ display: "flex", flexDirection: "column", gap: 8 }}
                   >
                     <div
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "64px 1fr auto",
-                        gap: 14,
-                        alignItems: "center",
-                        padding: "14px 16px",
+                        background: "var(--cream)",
+                        borderRadius: 14,
+                        border: "1px solid var(--border)",
+                        overflow: "hidden",
+                        opacity: p.activo === false ? 0.55 : 1,
                       }}
                     >
                       <div
                         style={{
-                          width: 64,
-                          height: 64,
-                          borderRadius: 10,
-                          overflow: "hidden",
-                          background: "var(--white)",
-                          border: "1px solid var(--border)",
-                          flexShrink: 0,
-                          position: "relative",
+                          display: "grid",
+                          gridTemplateColumns: "64px 1fr auto",
+                          gap: 12,
+                          alignItems: "center",
+                          padding: "12px 14px",
                         }}
                       >
-                        {editingId === p.id && editProd.imagen ? (
-                          <Image
-                            src={editProd.imagen}
-                            alt={p.nombre}
-                            fill
-                            style={{ objectFit: "cover" }}
-                            sizes="64px"
-                          />
-                        ) : p.imagen ? (
-                          <Image
-                            src={p.imagen}
-                            alt={p.nombre}
-                            fill
-                            style={{ objectFit: "cover" }}
-                            sizes="64px"
-                          />
-                        ) : (
+                        <div
+                          style={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: 10,
+                            overflow: "hidden",
+                            background: "var(--white)",
+                            border: "1px solid var(--border)",
+                            flexShrink: 0,
+                            position: "relative",
+                          }}
+                        >
+                          {p.imagen ? (
+                            <Image
+                              src={p.imagen}
+                              alt={p.nombre}
+                              fill
+                              style={{ objectFit: "cover" }}
+                              sizes="64px"
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 24,
+                              }}
+                            >
+                              🛍️
+                            </div>
+                          )}
+                        </div>
+                        <div>
                           <div
                             style={{
-                              width: "100%",
-                              height: "100%",
                               display: "flex",
                               alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 24,
+                              gap: 6,
+                              marginBottom: 2,
                             }}
                           >
-                            🛍️
+                            <p
+                              style={{
+                                fontSize: 14,
+                                fontWeight: 600,
+                                color: "var(--black)",
+                              }}
+                            >
+                              {p.nombre}
+                            </p>
+                            {p.activo === false && (
+                              <span
+                                style={{
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  background: "var(--cream)",
+                                  color: "var(--muted)",
+                                  padding: "1px 6px",
+                                  borderRadius: 100,
+                                  border: "1px solid var(--border)",
+                                }}
+                              >
+                                Pausado
+                              </span>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div>
-                        <p
-                          style={{
-                            fontSize: 14,
-                            fontWeight: 600,
-                            color: "var(--black)",
-                            marginBottom: 2,
-                          }}
-                        >
-                          {p.nombre}
-                        </p>
-                        {p.descripcion && (
-                          <p
+                          {p.categoria && (
+                            <p
+                              style={{
+                                fontSize: 11,
+                                color: "var(--muted)",
+                                marginBottom: 2,
+                              }}
+                            >
+                              {p.categoria}
+                            </p>
+                          )}
+                          <div
                             style={{
-                              fontSize: 12,
-                              color: "var(--muted)",
-                              marginBottom: 4,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
                             }}
                           >
-                            {p.descripcion}
-                          </p>
-                        )}
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-end",
-                          gap: 6,
-                        }}
-                      >
-                        <p
-                          style={{
-                            fontSize: 15,
-                            fontWeight: 700,
-                            color: "var(--olive-dark)",
-                          }}
-                        >
-                          ${Number(p.precio).toLocaleString("es-AR")}
-                        </p>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button
-                            onClick={() => startEdit(p)}
-                            style={{
-                              padding: "4px 10px",
-                              borderRadius: 100,
-                              fontSize: 10,
-                              fontWeight: 600,
-                              border: "1px solid var(--border)",
-                              background: "transparent",
-                              color: "var(--muted)",
-                              cursor: "pointer",
-                            }}
-                          >
-                            ✏️ Editar
-                          </button>
-                          <button
-                            onClick={() => toggleActivo(p.id, p.activo ?? true)}
-                            style={{
-                              padding: "4px 10px",
-                              borderRadius: 100,
-                              fontSize: 10,
-                              fontWeight: 600,
-                              border: "1px solid var(--border)",
-                              background: "transparent",
-                              color: "var(--muted)",
-                              cursor: "pointer",
-                            }}
-                          >
-                            {p.activo === false ? "Activar" : "Pausar"}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(p.id)}
-                            className={styles.iconBtn}
-                            title="Eliminar"
-                          >
-                            🗑️
-                          </button>
+                            {p.precio_descuento &&
+                            p.precio_descuento < p.precio ? (
+                              <>
+                                <span
+                                  style={{
+                                    fontSize: 14,
+                                    fontWeight: 700,
+                                    color: "#C4664A",
+                                  }}
+                                >
+                                  $
+                                  {Number(p.precio_descuento).toLocaleString(
+                                    "es-AR",
+                                  )}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    color: "var(--muted)",
+                                    textDecoration: "line-through",
+                                  }}
+                                >
+                                  ${Number(p.precio).toLocaleString("es-AR")}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    background: "#C4664A",
+                                    color: "#fff",
+                                    padding: "1px 5px",
+                                    borderRadius: 100,
+                                  }}
+                                >
+                                  -
+                                  {Math.round(
+                                    (1 - p.precio_descuento / p.precio) * 100,
+                                  )}
+                                  %
+                                </span>
+                              </>
+                            ) : (
+                              <span
+                                style={{
+                                  fontSize: 14,
+                                  fontWeight: 700,
+                                  color: "var(--olive-dark)",
+                                }}
+                              >
+                                ${Number(p.precio).toLocaleString("es-AR")}
+                              </span>
+                            )}
+                            {p.stock !== undefined && p.stock !== null && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  color:
+                                    p.stock <= 5 ? "#C9A84C" : "var(--muted)",
+                                }}
+                              >
+                                Stock: {p.stock}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </div>
-
-                    {editingId === p.id && (
-                      <div
-                        style={{
-                          padding: "12px 16px",
-                          borderTop: "1px solid var(--border)",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 8,
-                        }}
-                      >
-                        <input
-                          ref={editFileRef}
-                          type="file"
-                          accept="image/*"
-                          style={{ display: "none" }}
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) handleEditImageUpload(f);
-                          }}
-                        />
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <input
-                            className="input-field"
-                            value={editProd.nombre}
-                            onChange={(e) =>
-                              setEditProd((p) => ({
-                                ...p,
-                                nombre: e.target.value,
-                              }))
-                            }
-                            placeholder="Nombre"
-                            style={{
-                              flex: 2,
-                              fontSize: 13,
-                              padding: "8px 12px",
-                            }}
-                          />
-                          <input
-                            className="input-field"
-                            type="number"
-                            value={editProd.precio}
-                            onChange={(e) =>
-                              setEditProd((p) => ({
-                                ...p,
-                                precio: e.target.value,
-                              }))
-                            }
-                            placeholder="Precio"
-                            style={{
-                              flex: 1,
-                              fontSize: 13,
-                              padding: "8px 12px",
-                            }}
-                          />
-                        </div>
-                        <input
-                          className="input-field"
-                          value={editProd.descripcion}
-                          onChange={(e) =>
-                            setEditProd((p) => ({
-                              ...p,
-                              descripcion: e.target.value,
-                            }))
-                          }
-                          placeholder="Descripción"
-                          style={{ fontSize: 13, padding: "8px 12px" }}
-                        />
                         <div
                           style={{
                             display: "flex",
-                            gap: 8,
-                            alignItems: "center",
+                            flexDirection: "column",
+                            gap: 4,
+                            alignItems: "flex-end",
                           }}
                         >
-                          <button
-                            type="button"
-                            onClick={() => editFileRef.current?.click()}
-                            style={{
-                              fontSize: 12,
-                              color: "var(--olive)",
-                              background: "none",
-                              border: "none",
-                              cursor: "pointer",
-                              padding: 0,
-                            }}
-                          >
-                            📷 Cambiar foto
-                          </button>
-                          <div style={{ flex: 1 }} />
-                          <button
-                            onClick={() => handleSaveEdit(p.id)}
-                            disabled={savingEdit}
-                            style={{
-                              padding: "7px 18px",
-                              borderRadius: 8,
-                              border: "none",
-                              background: "var(--olive)",
-                              color: "#fff",
-                              fontSize: 12,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                            }}
-                          >
-                            {savingEdit ? "..." : "Guardar"}
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            style={{
-                              padding: "7px 12px",
-                              borderRadius: 8,
-                              border: "1px solid var(--border)",
-                              background: "transparent",
-                              fontSize: 12,
-                              cursor: "pointer",
-                            }}
-                          >
-                            ✕
-                          </button>
+                          <div style={{ display: "flex", gap: 4 }}>
+                            <button
+                              onClick={() => moverOrden(p.id, "up")}
+                              disabled={idx === 0}
+                              style={{
+                                padding: "3px 6px",
+                                borderRadius: 6,
+                                border: "1px solid var(--border)",
+                                background: "transparent",
+                                cursor: "pointer",
+                                fontSize: 10,
+                                opacity: idx === 0 ? 0.3 : 1,
+                              }}
+                            >
+                              ↑
+                            </button>
+                            <button
+                              onClick={() => moverOrden(p.id, "down")}
+                              disabled={idx === productosSorted.length - 1}
+                              style={{
+                                padding: "3px 6px",
+                                borderRadius: 6,
+                                border: "1px solid var(--border)",
+                                background: "transparent",
+                                cursor: "pointer",
+                                fontSize: 10,
+                                opacity:
+                                  idx === productosSorted.length - 1 ? 0.3 : 1,
+                              }}
+                            >
+                              ↓
+                            </button>
+                          </div>
+                          <div style={{ display: "flex", gap: 4 }}>
+                            <button
+                              onClick={() =>
+                                setEditingId(editingId === p.id ? null : p.id)
+                              }
+                              style={{
+                                padding: "4px 8px",
+                                borderRadius: 8,
+                                fontSize: 10,
+                                fontWeight: 600,
+                                border: `1px solid ${editingId === p.id ? "var(--olive)" : "var(--border)"}`,
+                                background:
+                                  editingId === p.id
+                                    ? "var(--olive)"
+                                    : "transparent",
+                                color:
+                                  editingId === p.id ? "#fff" : "var(--muted)",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {editingId === p.id ? "✕" : "✏️ Editar"}
+                            </button>
+                            <button
+                              onClick={() => handleDelete(p.id)}
+                              className={styles.iconBtn}
+                              title="Eliminar"
+                            >
+                              🗑️
+                            </button>
+                          </div>
                         </div>
                       </div>
+                    </div>
+                    {editingId === p.id && (
+                      <EditForm
+                        prod={p}
+                        onSave={(u) => handleSaveEdit(p.id, u)}
+                        onCancel={() => setEditingId(null)}
+                        saving={savingEdit}
+                        userId={userId}
+                        empId={empId}
+                        supabase={supabase}
+                      />
                     )}
                   </div>
                 ))}
