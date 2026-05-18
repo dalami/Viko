@@ -6,51 +6,6 @@ import styles from "../dashboard/View.module.css";
 import { Emprendimiento } from "../../app/(dashboard)/dashboard/DashboardClient";
 import { parsePlantilla, COLORES, LAYOUTS } from "../../lib/plantillas";
 
-const TEMAS: Record<
-  string,
-  {
-    bg: string;
-    accent: string;
-    text: string;
-    card: string;
-    border: string;
-    muted: string;
-  }
-> = {
-  minimalista: {
-    bg: "#FAFAF7",
-    accent: "#6B7A5A",
-    text: "#1A1814",
-    card: "#fff",
-    border: "#E8E4DC",
-    muted: "#8A8680",
-  },
-  oscura: {
-    bg: "#1A1814",
-    accent: "#C9A84C",
-    text: "#FAFAF7",
-    card: "#2D2B26",
-    border: "#3A3835",
-    muted: "rgba(255,255,255,0.45)",
-  },
-  vibrante: {
-    bg: "#FFF5EC",
-    accent: "#E8660A",
-    text: "#1A1814",
-    card: "#fff",
-    border: "#FFD4B0",
-    muted: "#8A5A40",
-  },
-  natural: {
-    bg: "#F0F4EC",
-    accent: "#3D6B35",
-    text: "#1A1814",
-    card: "#fff",
-    border: "#C8D9C4",
-    muted: "#5A7A55",
-  },
-};
-
 export function ViewLanding({
   emp,
   slug,
@@ -158,9 +113,48 @@ export function ViewLanding({
       {/* URL */}
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>Tu URL en Viko</h3>
-        <div className={styles.urlRow}>
-          <span className={styles.urlText}>{displayUrl}</span>
-          <button className={styles.copyBtn} onClick={copyUrl}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "12px 16px",
+            background: "var(--cream)",
+            borderRadius: 12,
+            border: "1px solid var(--border)",
+            overflow: "hidden",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 13,
+              color: "var(--muted)",
+              fontFamily: "monospace",
+              flex: 1,
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {displayUrl}
+          </span>
+          <button
+            onClick={copyUrl}
+            style={{
+              flexShrink: 0,
+              padding: "6px 14px",
+              borderRadius: 100,
+              border: "1px solid var(--border)",
+              background: copied ? "var(--olive)" : "var(--white)",
+              color: copied ? "#fff" : "var(--muted)",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              whiteSpace: "nowrap",
+            }}
+          >
             {copied ? "✅ Copiado" : "Copiar"}
           </button>
         </div>
