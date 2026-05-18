@@ -394,6 +394,16 @@
 
 /* Ocultar botón mobile en desktop */
 @media (min-width: 769px) {
+ .main {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  .content {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
   .mobileMenuBtn {
     display: none;
   }
@@ -401,4 +411,6 @@
   .mobileNav {
     display: none;
   }
+
+
 }
