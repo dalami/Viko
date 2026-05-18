@@ -83,6 +83,7 @@ export default function DashboardClient({
   const [prods, setProds] = useState<Producto[]>(productos);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [mobileMenu, setMobileMenu] = useState(false);
 
   const supabase = createClient();
   const router = useRouter();
@@ -209,6 +210,12 @@ export default function DashboardClient({
             {NAV.find((n) => n.id === view)?.label || "Panel"}
           </span>
           <div className={styles.topbarRight}>
+            <button
+              className={styles.mobileMenuBtn}
+              onClick={() => setMobileMenu(true)}
+            >
+              ☰
+            </button>
             <Link href="/directorio" className={styles.topbarBackLink}>
               ← Directorio
             </Link>
@@ -261,6 +268,73 @@ export default function DashboardClient({
           )}
         </div>
       </div>
+      {/* Mobile bottom nav */}
+      <div className={styles.mobileNav}>
+        {NAV.map((n) => (
+          <button
+            key={n.id}
+            className={`${styles.mobileNavItem} ${view === n.id ? styles.mobileNavItemActive : ""}`}
+            onClick={() => setView(n.id)}
+          >
+            <span>{n.icon}</span>
+            <span>{n.label.split(" ")[0]}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Mobile menu drawer */}
+      {mobileMenu && (
+        <>
+          <div
+            className={styles.mobileMenuOverlay}
+            onClick={() => setMobileMenu(false)}
+          />
+          <div className={styles.mobileMenuDrawer}>
+            <div style={{ marginBottom: 24 }}>
+              <div className={styles.logo}>
+                Viko<span className={styles.logoDot}>.</span>
+              </div>
+              <p className={styles.logoSub}>Panel de emprendedor</p>
+            </div>
+            <div className={styles.planBadge} style={{ marginBottom: 16 }}>
+              <span className={styles.planLabel}>Plan actual</span>
+              <span className={styles.planName}>
+                {isPro ? "Viko Pro" : "Free"}
+              </span>
+            </div>
+            {!isPro && (
+              <button
+                className={styles.upgradeBtn}
+                onClick={() => {
+                  setView("planes");
+                  setMobileMenu(false);
+                }}
+                style={{ marginBottom: 12 }}
+              >
+                ⚡ Ver planes
+              </button>
+            )}
+            <Link
+              href="/directorio"
+              className={styles.sidebarLink}
+              style={{ padding: "10px 0" }}
+            >
+              ← Directorio
+            </Link>
+            <Link
+              href="/feed"
+              className={styles.sidebarLink}
+              style={{ padding: "10px 0" }}
+            >
+              💬 Comunidad
+            </Link>
+            <div style={{ flex: 1 }} />
+            <button className={styles.logoutBtn} onClick={handleLogout}>
+              Cerrar sesión
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

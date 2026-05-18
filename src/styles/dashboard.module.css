@@ -278,3 +278,94 @@
     padding: 20px 16px;
   }
 }
+
+/* ── MOBILE NAV ── */
+.mobileTopbar {
+  display: none;
+}
+
+.mobileNav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .shell { flex-direction: column; }
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .content { padding: 16px; padding-bottom: 80px; }
+
+  /* Bottom nav */
+  .mobileNav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    z-index: 50;
+    padding: 8px 0 env(safe-area-inset-bottom);
+  }
+
+  .mobileNavItem {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--muted);
+    transition: color 0.15s;
+  }
+
+  .mobileNavItem span:first-child {
+    font-size: 20px;
+  }
+
+  .mobileNavItemActive {
+    color: var(--olive);
+  }
+
+  /* Menú mobile en topbar */
+  .mobileMenuBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .mobileMenuOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,24,20,0.4);
+    z-index: 100;
+  }
+
+  .mobileMenuDrawer {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 240px;
+    background: var(--white);
+    z-index: 101;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px;
+    box-shadow: -4px 0 24px rgba(26,24,20,0.1);
+  }
+}
+
+/* Ocultar botón mobile en desktop */
+@media (min-width: 769px) {
+  .mobileMenuBtn { display: none; }
+  .mobileNav { display: none; }
+}
