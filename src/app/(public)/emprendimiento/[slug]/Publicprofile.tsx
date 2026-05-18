@@ -18,6 +18,9 @@ interface Producto {
   nombre: string;
   descripcion?: string;
   precio: number;
+  precio_descuento?: number;
+  stock?: number;
+  tags?: string[];
   imagen?: string;
   variantes?: Variante[];
   activo?: boolean;
@@ -44,57 +47,12 @@ interface Emp {
 interface Props {
   emp: Emp;
   productos: Producto[];
-  plantilla?: unknown;  
+  plantilla?: unknown;
 }
 
 function buildWA(whatsapp: string, texto: string) {
   return `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(texto)}`;
 }
-
-const TEMAS: Record<
-  string,
-  {
-    bg: string;
-    accent: string;
-    text: string;
-    card: string;
-    border: string;
-    muted: string;
-  }
-> = {
-  minimalista: {
-    bg: "#FAFAF7",
-    accent: "#6B7A5A",
-    text: "#1A1814",
-    card: "#fff",
-    border: "#E8E4DC",
-    muted: "#8A8680",
-  },
-  oscura: {
-    bg: "#1A1814",
-    accent: "#C9A84C",
-    text: "#FAFAF7",
-    card: "#2D2B26",
-    border: "#3A3835",
-    muted: "rgba(255,255,255,0.45)",
-  },
-  vibrante: {
-    bg: "#FFF5EC",
-    accent: "#E8660A",
-    text: "#1A1814",
-    card: "#fff",
-    border: "#FFD4B0",
-    muted: "#8A5A40",
-  },
-  natural: {
-    bg: "#F0F4EC",
-    accent: "#3D6B35",
-    text: "#1A1814",
-    card: "#fff",
-    border: "#C8D9C4",
-    muted: "#5A7A55",
-  },
-};
 
 function VarianteSelector({
   producto,
@@ -137,13 +95,13 @@ function VarianteSelector({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       {open &&
         variantes.map((v) => (
           <div key={v.tipo}>
             <p
               style={{
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: 700,
                 color: accentColor,
                 marginBottom: 4,
@@ -153,7 +111,7 @@ function VarianteSelector({
             >
               {v.tipo}
             </p>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
               {v.opciones.map((op) => (
                 <button
                   key={op}
@@ -161,12 +119,11 @@ function VarianteSelector({
                     setSelecciones((prev) => ({ ...prev, [v.tipo]: op }))
                   }
                   style={{
-                    padding: "5px 12px",
+                    padding: "4px 10px",
                     borderRadius: 100,
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 600,
                     cursor: "pointer",
-                    transition: "all 0.15s",
                     fontFamily: "inherit",
                     border: `1.5px solid ${selecciones[v.tipo] === op ? accentColor : borderColor}`,
                     background:
@@ -180,8 +137,7 @@ function VarianteSelector({
             </div>
           </div>
         ))}
-
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", gap: 6 }}>
         {isPro ? (
           <button
             className={styles.productoWa}
@@ -193,12 +149,14 @@ function VarianteSelector({
               color: accentColor,
               opacity:
                 open && variantes.length > 0 && !todasSeleccionadas ? 0.5 : 1,
+              fontSize: 12,
+              padding: "7px 12px",
             }}
           >
             {open && variantes.length > 0
               ? todasSeleccionadas
-                ? "✓ Agregar al carrito"
-                : "Elegí una opción"
+                ? "✓ Agregar"
+                : "Elegí opción"
               : variantes.length > 0
                 ? "Elegir opciones"
                 : "🛍️ Agregar"}
@@ -207,7 +165,13 @@ function VarianteSelector({
           <button
             className={styles.productoWa}
             onClick={onConsultar}
-            style={{ flex: 1, borderColor: accentColor, color: accentColor }}
+            style={{
+              flex: 1,
+              borderColor: accentColor,
+              color: accentColor,
+              fontSize: 12,
+              padding: "7px 12px",
+            }}
           >
             Consultar →
           </button>
@@ -219,8 +183,8 @@ function VarianteSelector({
               setSelecciones({});
             }}
             style={{
-              padding: "8px 12px",
-              borderRadius: 10,
+              padding: "7px 10px",
+              borderRadius: 8,
               border: `1.5px solid ${borderColor}`,
               background: "transparent",
               cursor: "pointer",
@@ -237,19 +201,15 @@ function VarianteSelector({
   );
 }
 
-export default function PublicProfile({
-  emp,
-  productos,
-  plantilla,
-}: Props) {
+export default function PublicProfile({ emp, productos, plantilla }: Props) {
   const config = parsePlantilla(plantilla ?? emp.plantilla);
   const tema = getTema(config);
   const [activeImg, setActiveImg] = useState(0);
   const images = emp.images?.filter(Boolean) ?? [];
   const { addItem } = useCart();
-
   const isPro = emp.plan === "premium";
   const productosActivos = productos.filter((p) => p.activo !== false);
+
   useEffect(() => {
     const supabase = createClient();
     supabase
@@ -284,7 +244,10 @@ export default function PublicProfile({
     addItem({
       productoId: producto.id,
       nombre: producto.nombre,
-      precio: producto.precio,
+      precio:
+        producto.precio_descuento && producto.precio_descuento < producto.precio
+          ? producto.precio_descuento
+          : producto.precio,
       imagen: producto.imagen,
       variante,
     });
@@ -502,67 +465,230 @@ export default function PublicProfile({
                 )}
               </div>
 
-              <div className={styles.productosGrid}>
-                {productosActivos.map((p) => (
-                  <div
-                    key={p.id}
-                    className={styles.productoCard}
-                    style={{ background: tema.card, borderColor: tema.border }}
-                  >
-                    {p.imagen && (
+              {/* Grid de productos — igual que dashboard */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+                  gap: 12,
+                }}
+              >
+                {productosActivos.map((p) => {
+                  const precioFinal =
+                    p.precio_descuento && p.precio_descuento < p.precio
+                      ? p.precio_descuento
+                      : p.precio;
+                  const tieneDescuento =
+                    p.precio_descuento && p.precio_descuento < p.precio;
+                  const descPct = tieneDescuento
+                    ? Math.round((1 - p.precio_descuento! / p.precio) * 100)
+                    : 0;
+
+                  return (
+                    <div
+                      key={p.id}
+                      style={{
+                        background: tema.card,
+                        borderRadius: 14,
+                        border: `1px solid ${tema.border}`,
+                        overflow: "hidden",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      {/* Imagen */}
                       <div
                         style={{
                           position: "relative",
                           width: "100%",
                           aspectRatio: "1",
-                          borderRadius: 10,
-                          overflow: "hidden",
-                          marginBottom: 10,
+                          background: tema.bg,
                         }}
                       >
-                        <Image
-                          src={p.imagen}
-                          alt={p.nombre}
-                          fill
-                          style={{ objectFit: "cover" }}
-                          sizes="200px"
+                        {p.imagen ? (
+                          <Image
+                            src={p.imagen}
+                            alt={p.nombre}
+                            fill
+                            style={{ objectFit: "cover" }}
+                            sizes="150px"
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 32,
+                            }}
+                          >
+                            🛍️
+                          </div>
+                        )}
+                        {/* Badges */}
+                        {tieneDescuento && (
+                          <div
+                            style={{ position: "absolute", top: 6, left: 6 }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 800,
+                                background: "#C4664A",
+                                color: "#fff",
+                                padding: "2px 6px",
+                                borderRadius: 100,
+                              }}
+                            >
+                              -{descPct}% OFF
+                            </span>
+                          </div>
+                        )}
+                        {p.stock !== undefined &&
+                          p.stock !== null &&
+                          p.stock <= 5 &&
+                          p.stock > 0 && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: tieneDescuento ? 24 : 6,
+                                left: 6,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  background: "#C9A84C",
+                                  color: "#1A1814",
+                                  padding: "2px 6px",
+                                  borderRadius: 100,
+                                }}
+                              >
+                                ¡Últimos {p.stock}!
+                              </span>
+                            </div>
+                          )}
+                      </div>
+
+                      {/* Info */}
+                      <div
+                        style={{
+                          padding: "10px 12px",
+                          flex: 1,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 4,
+                        }}
+                      >
+                        <p
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: tema.text,
+                            lineHeight: 1.3,
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {p.nombre}
+                        </p>
+                        {p.descripcion && (
+                          <p
+                            style={{
+                              fontSize: 11,
+                              color: tema.muted,
+                              lineHeight: 1.3,
+                              display: "-webkit-box",
+                              WebkitLineClamp: 1,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {p.descripcion}
+                          </p>
+                        )}
+                        {/* Precio */}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 5,
+                            marginTop: 2,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 15,
+                              fontWeight: 800,
+                              color: tieneDescuento ? "#C4664A" : tema.accent,
+                            }}
+                          >
+                            ${Number(precioFinal).toLocaleString("es-AR")}
+                          </span>
+                          {tieneDescuento && (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: tema.muted,
+                                textDecoration: "line-through",
+                              }}
+                            >
+                              ${Number(p.precio).toLocaleString("es-AR")}
+                            </span>
+                          )}
+                        </div>
+                        {/* Tags */}
+                        {p.tags && p.tags.length > 0 && (
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 3,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            {p.tags.slice(0, 2).map((t) => (
+                              <span
+                                key={t}
+                                style={{
+                                  fontSize: 9,
+                                  padding: "1px 6px",
+                                  borderRadius: 100,
+                                  background: tema.accent + "15",
+                                  color: tema.accent,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Botón */}
+                      <div
+                        style={{
+                          padding: "8px 12px",
+                          borderTop: `1px solid ${tema.border}`,
+                        }}
+                      >
+                        <VarianteSelector
+                          producto={p}
+                          isPro={isPro}
+                          accentColor={tema.accent}
+                          borderColor={tema.border}
+                          onAgregar={(variante) => handleAgregar(p, variante)}
+                          onConsultar={() => handleConsultar(p)}
                         />
                       </div>
-                    )}
-                    <div className={styles.productoInfo}>
-                      <span
-                        className={styles.productoNombre}
-                        style={{ color: tema.text }}
-                      >
-                        {p.nombre}
-                      </span>
-                      {p.descripcion && (
-                        <span
-                          className={styles.productoDesc}
-                          style={{ color: tema.muted }}
-                        >
-                          {p.descripcion}
-                        </span>
-                      )}
                     </div>
-                    <div className={styles.productoBottom}>
-                      <span
-                        className={styles.productoPrecio}
-                        style={{ color: tema.accent }}
-                      >
-                        ${Number(p.precio).toLocaleString("es-AR")}
-                      </span>
-                    </div>
-                    <VarianteSelector
-                      producto={p}
-                      isPro={isPro}
-                      accentColor={tema.accent}
-                      borderColor={tema.border}
-                      onAgregar={(variante) => handleAgregar(p, variante)}
-                      onConsultar={() => handleConsultar(p)}
-                    />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

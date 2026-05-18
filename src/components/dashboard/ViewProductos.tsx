@@ -62,6 +62,7 @@ const CATEGORIAS = [
   "Otro",
 ];
 
+// ─── EditForm con IA ─────────────────────────────────────────────────────────
 function EditForm({
   prod,
   onSave,
@@ -96,13 +97,17 @@ function EditForm({
   const [uploadingImg, setUploadingImg] = useState(false);
   const [nuevoTipo, setNuevoTipo] = useState("");
   const [nuevasOpc, setNuevasOpc] = useState("");
+  const [loadingAI, setLoadingAI] = useState<"desc" | "titulo" | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const editFileRef = useRef<HTMLInputElement>(null);
 
   async function handleImgUpload(file: File) {
     setUploadingImg(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${userId}/${empId}/${Date.now()}.${ext}`;
+      const ts = new Date().getTime();
+      const path = `${userId}/${empId}/${ts}.${ext}`;
       const { error } = await supabase.storage
         .from("productos")
         .upload(path, file, { upsert: true });
@@ -115,6 +120,95 @@ function EditForm({
       setUploadingImg(false);
     }
   }
+
+  async function sugerirDescripcion() {
+    if (!form.nombre) {
+      setAiError("Ingresá un nombre primero");
+      return;
+    }
+    setLoadingAI("desc");
+    setAiError(null);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [
+            {
+              role: "user",
+              content: `Sos un experto en copywriting para e-commerce latinoamericano.
+Generá una descripción atractiva y persuasiva para este producto:
+Nombre: ${form.nombre}
+Categoría: ${form.categoria || "sin categoría"}
+Precio: $${form.precio}
+Tags: ${form.tags || "ninguno"}
+
+La descripción debe ser corta (2-3 oraciones), en español rioplatense, destacar los beneficios y motivar la compra. Solo devolvé el texto, sin comillas ni explicaciones extra.`,
+            },
+          ],
+        }),
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text ?? "";
+      if (text) setForm((f) => ({ ...f, descripcion: text }));
+      else setAiError("No se pudo generar la descripción");
+    } catch {
+      setAiError("Error al conectar con la IA");
+    } finally {
+      setLoadingAI(null);
+    }
+  }
+
+  async function optimizarTitulo() {
+    if (!form.nombre) {
+      setAiError("Ingresá un nombre primero");
+      return;
+    }
+    setLoadingAI("titulo");
+    setAiError(null);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [
+            {
+              role: "user",
+              content: `Sos un experto en SEO y e-commerce latinoamericano.
+Optimizá este título de producto para que sea más atractivo, claro y vendible:
+Título actual: ${form.nombre}
+Categoría: ${form.categoria || "sin categoría"}
+Tags: ${form.tags || "ninguno"}
+
+Devolvé 3 opciones de título optimizado, una por línea, numeradas (1. 2. 3.). Sin explicaciones extra.`,
+            },
+          ],
+        }),
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text ?? "";
+      if (text) {
+        const opciones = text
+          .split("\n")
+          .filter((l: string) => l.trim())
+          .slice(0, 3);
+        const limpio = opciones.map((o: string) =>
+          o.replace(/^\d+\.\s*/, "").trim(),
+        );
+        setAiTitulos(limpio);
+      } else setAiError("No se pudieron generar títulos");
+    } catch {
+      setAiError("Error al conectar con la IA");
+    } finally {
+      setLoadingAI(null);
+    }
+  }
+
+  const [aiTitulos, setAiTitulos] = useState<string[]>([]);
 
   function agregarVariante() {
     if (!nuevoTipo.trim() || !nuevasOpc.trim()) return;
@@ -159,18 +253,26 @@ function EditForm({
     });
   }
 
-  const f = form;
+  const descuento =
+    form.precio_descuento &&
+    parseFloat(form.precio_descuento) < parseFloat(form.precio)
+      ? Math.round(
+          (1 - parseFloat(form.precio_descuento) / parseFloat(form.precio)) *
+            100,
+        )
+      : null;
 
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 12,
-        padding: "16px",
+        gap: 14,
+        padding: 16,
         background: "#fff",
         borderRadius: 14,
         border: "1px solid var(--border)",
+        boxShadow: "0 4px 20px rgba(26,24,20,0.06)",
       }}
     >
       <input
@@ -184,6 +286,231 @@ function EditForm({
         }}
       />
 
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <p
+          style={{
+            fontFamily: "Syne, sans-serif",
+            fontWeight: 800,
+            fontSize: 14,
+            color: "var(--black)",
+          }}
+        >
+          ✏️ Editando producto
+        </p>
+        <button
+          type="button"
+          onClick={() => setShowPreview(!showPreview)}
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: "var(--olive)",
+            background: "var(--olive-light)",
+            border: "none",
+            borderRadius: 100,
+            padding: "4px 12px",
+            cursor: "pointer",
+          }}
+        >
+          {showPreview ? "Cerrar preview" : "👁 Ver preview"}
+        </button>
+      </div>
+
+      {/* Preview */}
+      {showPreview && (
+        <div
+          style={{
+            background: "var(--cream)",
+            borderRadius: 12,
+            padding: 16,
+            border: "1px solid var(--border)",
+          }}
+        >
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: "var(--muted)",
+              marginBottom: 10,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}
+          >
+            Así se ve en tu tienda
+          </p>
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <div
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: 10,
+                overflow: "hidden",
+                background: "var(--white)",
+                border: "1px solid var(--border)",
+                flexShrink: 0,
+                position: "relative",
+              }}
+            >
+              {form.imagen ? (
+                <Image
+                  src={form.imagen}
+                  alt={form.nombre}
+                  fill
+                  style={{ objectFit: "cover" }}
+                  sizes="80px"
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 28,
+                  }}
+                >
+                  🛍️
+                </div>
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <p
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: "var(--black)",
+                  marginBottom: 4,
+                }}
+              >
+                {form.nombre || "Nombre del producto"}
+              </p>
+              {form.categoria && (
+                <p
+                  style={{
+                    fontSize: 10,
+                    color: "var(--muted)",
+                    marginBottom: 4,
+                  }}
+                >
+                  {form.categoria}
+                </p>
+              )}
+              {form.descripcion && (
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: "var(--muted)",
+                    marginBottom: 6,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {form.descripcion}
+                </p>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {descuento ? (
+                  <>
+                    <span
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 800,
+                        color: "#C4664A",
+                      }}
+                    >
+                      $
+                      {parseFloat(form.precio_descuento).toLocaleString(
+                        "es-AR",
+                      )}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                        textDecoration: "line-through",
+                      }}
+                    >
+                      ${parseFloat(form.precio).toLocaleString("es-AR")}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        background: "#C4664A",
+                        color: "#fff",
+                        padding: "2px 7px",
+                        borderRadius: 100,
+                      }}
+                    >
+                      {descuento}% OFF
+                    </span>
+                  </>
+                ) : (
+                  <span
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 800,
+                      color: "var(--olive-dark)",
+                    }}
+                  >
+                    ${parseFloat(form.precio || "0").toLocaleString("es-AR")}
+                  </span>
+                )}
+              </div>
+              {form.tags && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 4,
+                    flexWrap: "wrap",
+                    marginTop: 6,
+                  }}
+                >
+                  {form.tags
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter(Boolean)
+                    .map((t) => (
+                      <span
+                        key={t}
+                        style={{
+                          fontSize: 9,
+                          padding: "2px 7px",
+                          borderRadius: 100,
+                          background: "var(--olive-light)",
+                          color: "var(--olive-dark)",
+                        }}
+                      >
+                        {t}
+                      </span>
+                    ))}
+                </div>
+              )}
+              <div
+                style={{
+                  marginTop: 10,
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  border: "1.5px solid var(--olive)",
+                  color: "var(--olive)",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  textAlign: "center",
+                }}
+              >
+                🛍️ Agregar al carrito
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Imagen */}
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
         <div
@@ -196,12 +523,13 @@ function EditForm({
             background: "var(--cream)",
             flexShrink: 0,
             cursor: "pointer",
+            border: "1.5px dashed var(--border)",
           }}
           onClick={() => editFileRef.current?.click()}
         >
-          {f.imagen ? (
+          {form.imagen ? (
             <Image
-              src={f.imagen}
+              src={form.imagen}
               alt="preview"
               fill
               style={{ objectFit: "cover" }}
@@ -226,7 +554,7 @@ function EditForm({
               style={{
                 position: "absolute",
                 inset: 0,
-                background: "rgba(255,255,255,0.7)",
+                background: "rgba(255,255,255,0.8)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -266,40 +594,113 @@ function EditForm({
         </div>
       </div>
 
-      {/* Nombre y categoría */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        <div>
-          <label className="field-label" style={{ fontSize: 10 }}>
+      {/* Nombre + IA */}
+      <div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 6,
+          }}
+        >
+          <label className="field-label" style={{ fontSize: 10, margin: 0 }}>
             Nombre *
           </label>
-          <input
-            className="input-field"
-            value={f.nombre}
-            onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))}
-            placeholder="Nombre del producto"
-            style={{ fontSize: 13, padding: "8px 12px" }}
-          />
-        </div>
-        <div>
-          <label className="field-label" style={{ fontSize: 10 }}>
-            Categoría
-          </label>
-          <select
-            className="input-field"
-            value={f.categoria}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, categoria: e.target.value }))
-            }
-            style={{ fontSize: 13, padding: "8px 12px" }}
+          <button
+            type="button"
+            onClick={optimizarTitulo}
+            disabled={loadingAI === "titulo"}
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              color: "#7B5EA7",
+              background: "#F4EFF9",
+              border: "none",
+              borderRadius: 100,
+              padding: "3px 10px",
+              cursor: "pointer",
+              opacity: loadingAI === "titulo" ? 0.6 : 1,
+            }}
           >
-            <option value="">Sin categoría</option>
-            {CATEGORIAS.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+            {loadingAI === "titulo"
+              ? "✨ Generando..."
+              : "✨ Optimizar título con IA"}
+          </button>
         </div>
+        <input
+          className="input-field"
+          value={form.nombre}
+          onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))}
+          placeholder="Nombre del producto"
+          style={{ fontSize: 13, padding: "8px 12px" }}
+        />
+        {aiTitulos.length > 0 && (
+          <div
+            style={{
+              marginTop: 8,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+            }}
+          >
+            <p
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: "var(--muted)",
+                textTransform: "uppercase",
+              }}
+            >
+              Opciones generadas — hacé click para aplicar:
+            </p>
+            {aiTitulos.map((t, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  setForm((p) => ({ ...p, nombre: t }));
+                  setAiTitulos([]);
+                }}
+                style={{
+                  textAlign: "left",
+                  padding: "6px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #C8B0E0",
+                  background: "#F4EFF9",
+                  fontSize: 12,
+                  color: "#7B5EA7",
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Categoría */}
+      <div>
+        <label className="field-label" style={{ fontSize: 10 }}>
+          Categoría
+        </label>
+        <select
+          className="input-field"
+          value={form.categoria}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, categoria: e.target.value }))
+          }
+          style={{ fontSize: 13, padding: "8px 12px" }}
+        >
+          <option value="">Sin categoría</option>
+          {CATEGORIAS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Precios y stock */}
@@ -313,7 +714,7 @@ function EditForm({
           <input
             className="input-field"
             type="number"
-            value={f.precio}
+            value={form.precio}
             onChange={(e) => setForm((p) => ({ ...p, precio: e.target.value }))}
             placeholder="15000"
             style={{ fontSize: 13, padding: "8px 12px" }}
@@ -326,7 +727,7 @@ function EditForm({
           <input
             className="input-field"
             type="number"
-            value={f.precio_descuento}
+            value={form.precio_descuento}
             onChange={(e) =>
               setForm((p) => ({ ...p, precio_descuento: e.target.value }))
             }
@@ -336,12 +737,12 @@ function EditForm({
         </div>
         <div>
           <label className="field-label" style={{ fontSize: 10 }}>
-            Stock disponible
+            Stock
           </label>
           <input
             className="input-field"
             type="number"
-            value={f.stock}
+            value={form.stock}
             onChange={(e) => setForm((p) => ({ ...p, stock: e.target.value }))}
             placeholder="∞"
             style={{ fontSize: 13, padding: "8px 12px" }}
@@ -349,68 +750,93 @@ function EditForm({
         </div>
       </div>
 
-      {/* Descuento badge preview */}
-      {f.precio_descuento &&
-        parseFloat(f.precio_descuento) < parseFloat(f.precio) && (
-          <div
+      {/* Badge descuento preview */}
+      {descuento && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "6px 12px",
+            background: "#FEF2EE",
+            borderRadius: 8,
+            border: "1px solid #FFDDD0",
+          }}
+        >
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#C4664A" }}>
+            ${parseFloat(form.precio_descuento).toLocaleString("es-AR")}
+          </span>
+          <span
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "6px 12px",
-              background: "#FEF2EE",
-              borderRadius: 8,
-              border: "1px solid #FFDDD0",
+              fontSize: 12,
+              color: "var(--muted)",
+              textDecoration: "line-through",
             }}
           >
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#C4664A" }}>
-              ${parseFloat(f.precio_descuento).toLocaleString("es-AR")}
-            </span>
-            <span
-              style={{
-                fontSize: 12,
-                color: "var(--muted)",
-                textDecoration: "line-through",
-              }}
-            >
-              ${parseFloat(f.precio).toLocaleString("es-AR")}
-            </span>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#fff",
-                background: "#C4664A",
-                padding: "2px 8px",
-                borderRadius: 100,
-              }}
-            >
-              -
-              {Math.round(
-                (1 - parseFloat(f.precio_descuento) / parseFloat(f.precio)) *
-                  100,
-              )}
-              % OFF
-            </span>
-          </div>
-        )}
+            ${parseFloat(form.precio).toLocaleString("es-AR")}
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: "#fff",
+              background: "#C4664A",
+              padding: "2px 8px",
+              borderRadius: 100,
+            }}
+          >
+            {descuento}% OFF
+          </span>
+        </div>
+      )}
 
-      {/* Descripción */}
+      {/* Descripción + IA */}
       <div>
-        <label className="field-label" style={{ fontSize: 10 }}>
-          Descripción
-        </label>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 6,
+          }}
+        >
+          <label className="field-label" style={{ fontSize: 10, margin: 0 }}>
+            Descripción
+          </label>
+          <button
+            type="button"
+            onClick={sugerirDescripcion}
+            disabled={loadingAI === "desc"}
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              color: "#7B5EA7",
+              background: "#F4EFF9",
+              border: "none",
+              borderRadius: 100,
+              padding: "3px 10px",
+              cursor: "pointer",
+              opacity: loadingAI === "desc" ? 0.6 : 1,
+            }}
+          >
+            {loadingAI === "desc" ? "✨ Generando..." : "✨ Sugerir con IA"}
+          </button>
+        </div>
         <textarea
           className="input-field"
-          value={f.descripcion}
+          value={form.descripcion}
           onChange={(e) =>
             setForm((p) => ({ ...p, descripcion: e.target.value }))
           }
           placeholder="Descripción del producto..."
-          rows={2}
+          rows={3}
           style={{ fontSize: 13, padding: "8px 12px", resize: "none" }}
         />
       </div>
+
+      {aiError && (
+        <p style={{ fontSize: 11, color: "#C4664A", margin: 0 }}>{aiError}</p>
+      )}
 
       {/* Tags */}
       <div>
@@ -419,16 +845,16 @@ function EditForm({
         </label>
         <input
           className="input-field"
-          value={f.tags}
+          value={form.tags}
           onChange={(e) => setForm((p) => ({ ...p, tags: e.target.value }))}
           placeholder="Ej: verano, oferta, nuevo"
           style={{ fontSize: 13, padding: "8px 12px" }}
         />
-        {f.tags && (
+        {form.tags && (
           <div
             style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}
           >
-            {f.tags
+            {form.tags
               .split(",")
               .map((t) => t.trim())
               .filter(Boolean)
@@ -456,7 +882,7 @@ function EditForm({
         <label className="field-label" style={{ fontSize: 10 }}>
           Variantes
         </label>
-        {f.variantes.length > 0 && (
+        {form.variantes.length > 0 && (
           <div
             style={{
               display: "flex",
@@ -465,7 +891,7 @@ function EditForm({
               marginBottom: 8,
             }}
           >
-            {f.variantes.map((v, i) => (
+            {form.variantes.map((v, i) => (
               <div
                 key={i}
                 style={{
@@ -478,15 +904,7 @@ function EditForm({
                   border: "1px solid var(--border)",
                 }}
               >
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "var(--black)",
-                  }}
-                >
-                  {v.tipo}:
-                </span>
+                <span style={{ fontSize: 12, fontWeight: 700 }}>{v.tipo}:</span>
                 <span style={{ fontSize: 12, color: "var(--muted)", flex: 1 }}>
                   {v.opciones.join(", ")}
                 </span>
@@ -513,14 +931,14 @@ function EditForm({
             className="input-field"
             value={nuevoTipo}
             onChange={(e) => setNuevoTipo(e.target.value)}
-            placeholder="Tipo (ej: Color)"
+            placeholder="Tipo (Color)"
             style={{ flex: 1, fontSize: 12, padding: "6px 10px" }}
           />
           <input
             className="input-field"
             value={nuevasOpc}
             onChange={(e) => setNuevasOpc(e.target.value)}
-            placeholder="Opciones (ej: Rojo, Azul)"
+            placeholder="Opciones (Rojo, Azul)"
             style={{ flex: 2, fontSize: 12, padding: "6px 10px" }}
           />
           <button
@@ -538,12 +956,12 @@ function EditForm({
               whiteSpace: "nowrap",
             }}
           >
-            + Agregar
+            + Add
           </button>
         </div>
       </div>
 
-      {/* Estado activo */}
+      {/* Toggle activo */}
       <div
         style={{
           display: "flex",
@@ -571,7 +989,7 @@ function EditForm({
             borderRadius: 12,
             border: "none",
             cursor: "pointer",
-            background: f.activo ? "var(--olive)" : "var(--border)",
+            background: form.activo ? "var(--olive)" : "var(--border)",
             position: "relative",
             transition: "background 0.2s",
             flexShrink: 0,
@@ -581,7 +999,7 @@ function EditForm({
             style={{
               position: "absolute",
               top: 3,
-              left: f.activo ? 22 : 3,
+              left: form.activo ? 22 : 3,
               width: 18,
               height: 18,
               borderRadius: "50%",
@@ -594,7 +1012,7 @@ function EditForm({
       </div>
 
       {/* Acciones */}
-      <div style={{ display: "flex", gap: 8, paddingTop: 4 }}>
+      <div style={{ display: "flex", gap: 8 }}>
         <button
           onClick={handleSubmit}
           disabled={saving}
@@ -630,6 +1048,7 @@ function EditForm({
   );
 }
 
+// ─── Componente principal ─────────────────────────────────────────────────────
 export default function ViewProductos({
   empId,
   userId,
@@ -651,7 +1070,6 @@ export default function ViewProductos({
   const [tab, setTab] = useState<"productos" | "plantilla">("productos");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
-
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [newProd, setNewProd] = useState({
@@ -670,7 +1088,6 @@ export default function ViewProductos({
 
   const supabase = createClient();
   const limiteAlcanzado = !isPro && productos.length >= LIMITE_FREE;
-
   const slugify = (s: string) =>
     s
       .toLowerCase()
@@ -808,13 +1225,6 @@ export default function ViewProductos({
   async function handleDelete(id: string) {
     await supabase.from("productos").delete().eq("id", id);
     setProductos((prev) => prev.filter((p) => p.id !== id));
-  }
-
-  async function toggleActivo(id: string, activo: boolean) {
-    await supabase.from("productos").update({ activo: !activo }).eq("id", id);
-    setProductos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, activo: !activo } : p)),
-    );
   }
 
   async function moverOrden(id: string, direction: "up" | "down") {
@@ -1260,7 +1670,6 @@ export default function ViewProductos({
               </div>
             )}
 
-            {/* FORMULARIO AGREGAR */}
             {adding && !limiteAlcanzado && (
               <form onSubmit={handleAddProduct} className={styles.addForm}>
                 <div className={styles.field}>
@@ -1445,9 +1854,7 @@ export default function ViewProductos({
                   />
                 </div>
                 <div className={styles.field}>
-                  <label className="field-label">
-                    Tags (separados por coma)
-                  </label>
+                  <label className="field-label">Tags</label>
                   <input
                     className="input-field"
                     value={newProd.tags}
@@ -1458,7 +1865,7 @@ export default function ViewProductos({
                   />
                 </div>
                 <div className={styles.field}>
-                  <label className="field-label">Variantes (opcional)</label>
+                  <label className="field-label">Variantes</label>
                   {newProd.variantes.length > 0 && (
                     <div
                       style={{
@@ -1549,7 +1956,6 @@ export default function ViewProductos({
               </form>
             )}
 
-            {/* LISTA / GRID */}
             {productos.length === 0 && !adding ? (
               <div className={styles.emptyState}>
                 <span className={styles.emptyIcon}>🛍️</span>
@@ -1574,23 +1980,27 @@ export default function ViewProductos({
                     key={p.id}
                     style={{ display: "flex", flexDirection: "column", gap: 8 }}
                   >
+                    {/* Card fija */}
                     <div
                       style={{
                         background: "var(--cream)",
                         borderRadius: 14,
-                        border: "1px solid var(--border)",
+                        border: `1px solid ${editingId === p.id ? "var(--olive)" : "var(--border)"}`,
                         overflow: "hidden",
-                        opacity: p.activo === false ? 0.55 : 1,
+                        opacity: p.activo === false ? 0.6 : 1,
                         display: "flex",
                         flexDirection: "column",
+                        height: 300,
                       }}
                     >
+                      {/* Imagen */}
                       <div
                         style={{
                           position: "relative",
                           width: "100%",
-                          aspectRatio: "1",
+                          height: 160,
                           background: "var(--white)",
+                          flexShrink: 0,
                         }}
                       >
                         {p.imagen ? (
@@ -1609,13 +2019,12 @@ export default function ViewProductos({
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              fontSize: 32,
+                              fontSize: 36,
                             }}
                           >
                             🛍️
                           </div>
                         )}
-                        {/* Badges */}
                         <div
                           style={{
                             position: "absolute",
@@ -1623,7 +2032,7 @@ export default function ViewProductos({
                             left: 6,
                             display: "flex",
                             flexDirection: "column",
-                            gap: 4,
+                            gap: 3,
                           }}
                         >
                           {p.activo === false && (
@@ -1656,7 +2065,7 @@ export default function ViewProductos({
                                 {Math.round(
                                   (1 - p.precio_descuento / p.precio) * 100,
                                 )}
-                                % OFF
+                                %
                               </span>
                             )}
                           {p.stock !== undefined &&
@@ -1677,13 +2086,24 @@ export default function ViewProductos({
                             )}
                         </div>
                       </div>
-                      <div style={{ padding: "10px 12px", flex: 1 }}>
+                      {/* Info — altura fija */}
+                      <div
+                        style={{
+                          padding: "10px 12px",
+                          flex: 1,
+                          overflow: "hidden",
+                        }}
+                      >
                         <p
                           style={{
                             fontSize: 13,
                             fontWeight: 600,
                             color: "var(--black)",
                             marginBottom: 2,
+                            overflow: "hidden",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 1,
+                            WebkitBoxOrient: "vertical",
                           }}
                         >
                           {p.nombre}
@@ -1693,7 +2113,7 @@ export default function ViewProductos({
                             style={{
                               fontSize: 10,
                               color: "var(--muted)",
-                              marginBottom: 4,
+                              marginBottom: 3,
                             }}
                           >
                             {p.categoria}
@@ -1703,7 +2123,7 @@ export default function ViewProductos({
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 6,
+                            gap: 5,
                           }}
                         >
                           {p.precio_descuento &&
@@ -1723,7 +2143,7 @@ export default function ViewProductos({
                               </span>
                               <span
                                 style={{
-                                  fontSize: 11,
+                                  fontSize: 10,
                                   color: "var(--muted)",
                                   textDecoration: "line-through",
                                 }}
@@ -1769,6 +2189,7 @@ export default function ViewProductos({
                           </div>
                         )}
                       </div>
+                      {/* Acciones */}
                       <div
                         style={{
                           padding: "6px 10px",
@@ -1776,6 +2197,7 @@ export default function ViewProductos({
                           gap: 4,
                           borderTop: "1px solid var(--border)",
                           alignItems: "center",
+                          flexShrink: 0,
                         }}
                       >
                         <button
@@ -1784,7 +2206,7 @@ export default function ViewProductos({
                           }
                           style={{
                             flex: 1,
-                            padding: "4px 0",
+                            padding: "5px 0",
                             borderRadius: 100,
                             fontSize: 10,
                             fontWeight: 600,
@@ -1803,7 +2225,7 @@ export default function ViewProductos({
                           onClick={() => moverOrden(p.id, "up")}
                           disabled={idx === 0}
                           style={{
-                            padding: "4px 6px",
+                            padding: "5px 7px",
                             borderRadius: 8,
                             border: "1px solid var(--border)",
                             background: "transparent",
@@ -1818,7 +2240,7 @@ export default function ViewProductos({
                           onClick={() => moverOrden(p.id, "down")}
                           disabled={idx === productosSorted.length - 1}
                           style={{
-                            padding: "4px 6px",
+                            padding: "5px 7px",
                             borderRadius: 8,
                             border: "1px solid var(--border)",
                             background: "transparent",
@@ -1833,7 +2255,7 @@ export default function ViewProductos({
                         <button
                           onClick={() => handleDelete(p.id)}
                           style={{
-                            padding: "4px 6px",
+                            padding: "5px 7px",
                             borderRadius: 8,
                             border: "1px solid var(--border)",
                             background: "transparent",
@@ -1845,6 +2267,7 @@ export default function ViewProductos({
                         </button>
                       </div>
                     </div>
+                    {/* EditForm debajo de la card */}
                     {editingId === p.id && (
                       <EditForm
                         prod={p}
@@ -1871,9 +2294,9 @@ export default function ViewProductos({
                       style={{
                         background: "var(--cream)",
                         borderRadius: 14,
-                        border: "1px solid var(--border)",
+                        border: `1px solid ${editingId === p.id ? "var(--olive)" : "var(--border)"}`,
                         overflow: "hidden",
-                        opacity: p.activo === false ? 0.55 : 1,
+                        opacity: p.activo === false ? 0.6 : 1,
                       }}
                     >
                       <div
@@ -2032,10 +2455,35 @@ export default function ViewProductos({
                                     p.stock <= 5 ? "#C9A84C" : "var(--muted)",
                                 }}
                               >
-                                Stock: {p.stock}
+                                · Stock: {p.stock}
                               </span>
                             )}
                           </div>
+                          {p.tags && p.tags.length > 0 && (
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 4,
+                                flexWrap: "wrap",
+                                marginTop: 4,
+                              }}
+                            >
+                              {p.tags.slice(0, 3).map((t) => (
+                                <span
+                                  key={t}
+                                  style={{
+                                    fontSize: 9,
+                                    padding: "1px 6px",
+                                    borderRadius: 100,
+                                    background: "var(--olive-light)",
+                                    color: "var(--olive-dark)",
+                                  }}
+                                >
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div
                           style={{

@@ -178,7 +178,7 @@ export default function DirectorioClient({
         </div>
 
         <div className={styles.heroTrust}>
-          <span>Gratis para siempre</span>
+          <span>Publicación gratuita</span>
           <span>Sin comisiones por venta</span>
           <span>Configuración en 5 minutos</span>
         </div>
