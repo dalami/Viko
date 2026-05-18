@@ -289,16 +289,42 @@
 }
 
 @media (max-width: 768px) {
-  .shell { flex-direction: column; }
-  .sidebar { display: none; }
-  .main { margin-left: 0; }
-  .content { padding: 16px; padding-bottom: 80px; }
+  .shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .main {
+    margin-left: 0;
+  }
+
+  .content {
+    padding: 16px;
+    padding-bottom: 80px;
+  }
+
+  .urlRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .urlText {
+    font-size: 12px;
+    word-break: break-all;
+    white-space: normal;
+  }
 
   /* Bottom nav */
   .mobileNav {
     display: flex;
     position: fixed;
-    bottom: 0; left: 0; right: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
     background: var(--white);
     border-top: 1px solid var(--border);
     z-index: 50;
@@ -347,25 +373,32 @@
   .mobileMenuOverlay {
     position: fixed;
     inset: 0;
-    background: rgba(26,24,20,0.4);
+    background: rgba(26, 24, 20, 0.4);
     z-index: 100;
   }
 
   .mobileMenuDrawer {
     position: fixed;
-    top: 0; right: 0; bottom: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
     width: 240px;
     background: var(--white);
     z-index: 101;
     display: flex;
     flex-direction: column;
     padding: 24px 20px;
-    box-shadow: -4px 0 24px rgba(26,24,20,0.1);
+    box-shadow: -4px 0 24px rgba(26, 24, 20, 0.1);
   }
 }
 
 /* Ocultar botón mobile en desktop */
 @media (min-width: 769px) {
-  .mobileMenuBtn { display: none; }
-  .mobileNav { display: none; }
+  .mobileMenuBtn {
+    display: none;
+  }
+
+  .mobileNav {
+    display: none;
+  }
 }

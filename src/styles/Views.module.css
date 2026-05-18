@@ -398,6 +398,7 @@
   background: var(--olive-light);
   border-radius: 12px;
   margin-bottom: 12px;
+  overflow: hidden;
 }
 
 .urlText {
@@ -405,6 +406,9 @@
   color: var(--olive-dark);
   font-weight: 600;
   flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .copyBtn {
