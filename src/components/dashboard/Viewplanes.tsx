@@ -35,6 +35,27 @@ export default function ViewPlanes({ currentPlan, onUpgrade }: Props) {
   const precio = periodo === "anual" ? "5.940" : "9.900";
   const ahorro = periodo === "anual";
 
+  const [cancelando, setCancelando] = useState(false);
+  const [cancelMsg, setCancelMsg] = useState<string | null>(null);
+
+  async function handleCancelar() {
+    if (
+      !confirm(
+        "¿Confirmás que querés cancelar el plan Pro? Tu cuenta pasará a Free.",
+      )
+    )
+      return;
+    setCancelando(true);
+    const res = await fetch("/api/mp/cancelar", { method: "POST" });
+    const data = await res.json();
+    if (data.ok) {
+      setCancelMsg("Plan cancelado. Tu cuenta pasará a Free en breve.");
+    } else {
+      setCancelMsg("Error al cancelar. Contactanos por email.");
+    }
+    setCancelando(false);
+  }
+
   return (
     <div className={styles.wrap}>
       {/* Header */}
@@ -49,7 +70,6 @@ export default function ViewPlanes({ currentPlan, onUpgrade }: Props) {
           Sin comisiones por venta. Cancelás cuando quieras.
         </p>
       </div>
-
       {/* Toggle mensual / anual */}
       <div className={styles.toggleWrap}>
         <button
@@ -66,10 +86,8 @@ export default function ViewPlanes({ currentPlan, onUpgrade }: Props) {
           <span className={styles.toggleBadge}>40% off</span>
         </button>
       </div>
-
       {/* Cards */}
       <div className={styles.cards}>
-
         {/* FREE */}
         <div className={styles.card}>
           <div className={styles.cardTop}>
@@ -78,14 +96,15 @@ export default function ViewPlanes({ currentPlan, onUpgrade }: Props) {
               <span className={styles.priceNum}>$0</span>
               <span className={styles.pricePer}>/mes</span>
             </div>
-            <p className={styles.planDesc}>
-              Tu presencia online, sin costo.
-            </p>
+            <p className={styles.planDesc}>Tu presencia online, sin costo.</p>
           </div>
 
           <ul className={styles.features}>
             {FREE_FEATURES.map((f) => (
-              <li key={f.label} className={f.included ? styles.featureOn : styles.featureOff}>
+              <li
+                key={f.label}
+                className={f.included ? styles.featureOn : styles.featureOff}
+              >
                 <span className={styles.featureIcon}>
                   {f.included ? "✓" : "✕"}
                 </span>
@@ -104,11 +123,9 @@ export default function ViewPlanes({ currentPlan, onUpgrade }: Props) {
             )}
           </div>
         </div>
-
         {/* PRO */}
         <div className={`${styles.card} ${styles.cardPro}`}>
           <div className={styles.recoBadge}>⭐ Recomendado</div>
-
           <div className={styles.cardTop}>
             <div className={styles.planLabel}>VIKO PRO</div>
             <div className={styles.planPrice}>
@@ -124,7 +141,6 @@ export default function ViewPlanes({ currentPlan, onUpgrade }: Props) {
               Todo lo que necesitás para vender más.
             </p>
           </div>
-
           <ul className={styles.features}>
             {PRO_FEATURES.map((f) => (
               <li key={f.label} className={styles.featureOn}>
@@ -133,10 +149,41 @@ export default function ViewPlanes({ currentPlan, onUpgrade }: Props) {
               </li>
             ))}
           </ul>
-
           <div className={styles.cardBottom}>
             {isPro ? (
-              <div className={styles.currentBadgePro}>✦ Tu plan actual</div>
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 10 }}
+              >
+                <div className={styles.currentBadgePro}>✦ Tu plan actual</div>
+                {cancelMsg ? (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "#C4664A",
+                      textAlign: "center",
+                    }}
+                  >
+                    {cancelMsg}
+                  </p>
+                ) : (
+                  <button
+                    onClick={handleCancelar}
+                    disabled={cancelando}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: 12,
+                      color: "var(--muted)",
+                      textDecoration: "underline",
+                      padding: 0,
+                      opacity: cancelando ? 0.5 : 1,
+                    }}
+                  >
+                    {cancelando ? "Cancelando..." : "Cancelar plan Pro"}
+                  </button>
+                )}
+              </div>
             ) : (
               <button
                 className={styles.btnPro}
@@ -148,13 +195,13 @@ export default function ViewPlanes({ currentPlan, onUpgrade }: Props) {
               </button>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* Nota al pie */}
+        </div>{" "}
+        {/* ← cierra card PRO */}
+      </div>{" "}
+      {/* ← cierra cards */}
       <p className={styles.footNote}>
-        Al suscribirte aceptás los términos de uso. El cobro se realiza vía MercadoPago.
-        Podés cancelar en cualquier momento desde Mi cuenta.
+        Al suscribirte aceptás los términos de uso. El cobro se realiza vía
+        MercadoPago. Podés cancelar en cualquier momento desde Mi cuenta.
       </p>
     </div>
   );

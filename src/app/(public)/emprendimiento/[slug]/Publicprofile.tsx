@@ -7,27 +7,10 @@ import { createClient } from "../../../../lib/supabase";
 import { useCart } from "../../../../context/CartContext";
 import Image from "next/image";
 import { parsePlantilla, getTema } from "../../../../lib/plantillas";
-import type { Producto } from "../../../../lib/types";
-
-interface Emp {
-  id: number;
-  nombre: string;
-  tagline?: string;
-  rubro?: string;
-  ubicacion?: string;
-  envios?: boolean;
-  descripcion?: string;
-  whatsapp: string;
-  instagram?: string;
-  web?: string;
-  images?: string[];
-  plan?: string;
-  mp_connected?: boolean;
-  plantilla?: unknown;
-}
+import type { Producto, EmpPublic } from "../../../../lib/types";
 
 interface Props {
-  emp: Emp;
+  emp: EmpPublic;
   productos: Producto[];
   plantilla?: unknown;
 }

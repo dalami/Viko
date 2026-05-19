@@ -91,8 +91,7 @@ function EditDrawer({
     setUploadingImg(true);
     try {
       const ext = file.name.split(".").pop();
-      const ts = new Date().getTime();
-      const path = `${userId}/${empId}/${ts}.${ext}`;
+      const path = `${userId}/${empId}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from("productos")
         .upload(path, file, { upsert: true });
@@ -233,7 +232,6 @@ function EditDrawer({
 
   return (
     <>
-      {/* Overlay */}
       <div
         onClick={onClose}
         style={{
@@ -245,8 +243,6 @@ function EditDrawer({
           animation: "fadeIn 0.2s ease",
         }}
       />
-
-      {/* Drawer */}
       <div
         style={{
           position: "fixed",
@@ -1116,7 +1112,6 @@ function EditDrawer({
           </button>
         </div>
       </div>
-
       <style>{`
         @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
         @keyframes slideIn { from { transform: translateX(100%) } to { transform: translateX(0) } }
@@ -1148,6 +1143,9 @@ export default function ViewProductos({
   const [tab, setTab] = useState<"productos" | "plantilla">("productos");
   const [editingProd, setEditingProd] = useState<Producto | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [showAumento, setShowAumento] = useState(false);
+  const [porcentajeAumento, setPorcentajeAumento] = useState("");
+  const [aplicandoAumento, setAplicandoAumento] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [newProd, setNewProd] = useState({
@@ -1180,8 +1178,7 @@ export default function ViewProductos({
     setUploadingImg(true);
     try {
       const ext = file.name.split(".").pop();
-      const ts = new Date().getTime();
-      const path = `${userId}/${empId}/${ts}.${ext}`;
+      const path = `${userId}/${empId}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage
         .from("productos")
         .upload(path, file, { upsert: true });
@@ -1295,10 +1292,10 @@ export default function ViewProductos({
     const idx = sorted.findIndex((p) => p.id === id);
     const swapIdx = direction === "up" ? idx - 1 : idx + 1;
     if (swapIdx < 0 || swapIdx >= sorted.length) return;
-    const a = sorted[idx];
-    const b = sorted[swapIdx];
-    const ordenA = a.orden ?? idx;
-    const ordenB = b.orden ?? swapIdx;
+    const a = sorted[idx],
+      b = sorted[swapIdx];
+    const ordenA = a.orden ?? idx,
+      ordenB = b.orden ?? swapIdx;
     await Promise.all([
       supabase.from("productos").update({ orden: ordenB }).eq("id", a.id),
       supabase.from("productos").update({ orden: ordenA }).eq("id", b.id),
@@ -1312,14 +1309,48 @@ export default function ViewProductos({
     );
   }
 
+  async function handleAumentoMasivo() {
+    const pct = parseFloat(porcentajeAumento);
+    if (!pct || pct <= 0 || pct > 500) return;
+    setAplicandoAumento(true);
+    const updates = productos.map((p) => ({
+      id: p.id,
+      precio: Math.round(p.precio * (1 + pct / 100)),
+      precio_descuento: p.precio_descuento
+        ? Math.round(p.precio_descuento * (1 + pct / 100))
+        : null,
+    }));
+    await Promise.all(
+      updates.map((u) =>
+        supabase
+          .from("productos")
+          .update({ precio: u.precio, precio_descuento: u.precio_descuento })
+          .eq("id", u.id),
+      ),
+    );
+    setProductos((prev) =>
+      prev.map((p) => {
+        const u = updates.find((x) => x.id === p.id)!;
+        return {
+          ...p,
+          precio: u.precio,
+          precio_descuento: u.precio_descuento ?? undefined,
+        };
+      }),
+    );
+    setShowAumento(false);
+    setPorcentajeAumento("");
+    setAplicandoAumento(false);
+  }
+
   const productosSorted = [...productos].sort(
     (a, b) => (a.orden ?? 0) - (b.orden ?? 0),
   );
 
   return (
     <>
-      {/* Edit Drawer */}
       <EditDrawer
+        key={editingProd?.id ?? "empty"} 
         prod={editingProd}
         onSave={handleSaveEdit}
         onClose={() => setEditingProd(null)}
@@ -1334,6 +1365,56 @@ export default function ViewProductos({
           {isPro && (
             <MpBanner mpConnected={mpConnected} empNombre={empNombre} />
           )}
+
+          {/* Banner stock crítico */}
+          {(() => {
+            const criticos = productos.filter(
+              (p) => p.stock !== undefined && p.stock !== null && p.stock <= 5,
+            );
+            if (criticos.length === 0) return null;
+            return (
+              <div
+                style={{
+                  background: "#FEF2EE",
+                  border: "1px solid #FFDDD0",
+                  borderRadius: 12,
+                  padding: "12px 16px",
+                  marginBottom: 16,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#C4664A",
+                    marginBottom: 6,
+                  }}
+                >
+                  ⚠️ Stock bajo en {criticos.length} producto
+                  {criticos.length > 1 ? "s" : ""}
+                </p>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 3 }}
+                >
+                  {criticos.map((p) => (
+                    <p key={p.id} style={{ fontSize: 12, color: "#8A8680" }}>
+                      <strong style={{ color: "#1A1814" }}>{p.nombre}</strong>
+                      {" — "}
+                      {p.stock === 0 ? (
+                        <span style={{ color: "#C4664A", fontWeight: 700 }}>
+                          Sin stock
+                        </span>
+                      ) : (
+                        <span style={{ color: "#C9A84C", fontWeight: 600 }}>
+                          Quedan {p.stock} unidad{p.stock === 1 ? "" : "es"}
+                        </span>
+                      )}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Tabs */}
           <div
@@ -1677,6 +1758,24 @@ export default function ViewProductos({
                       ⊞
                     </button>
                   </div>
+                  {isPro && productos.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAumento(!showAumento)}
+                      style={{
+                        padding: "8px 14px",
+                        borderRadius: 8,
+                        border: "1px solid var(--border)",
+                        background: "transparent",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "var(--muted)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      📈 Aumentar precios
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn btn-primary"
@@ -1692,6 +1791,97 @@ export default function ViewProductos({
                   </button>
                 </div>
               </div>
+
+              {/* Modal aumento masivo */}
+              {showAumento && (
+                <div
+                  style={{
+                    background: "var(--cream)",
+                    borderRadius: 14,
+                    padding: "16px 20px",
+                    border: "1px solid var(--border)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "var(--black)",
+                      flex: 1,
+                    }}
+                  >
+                    Aumentar todos los precios en:
+                  </p>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <input
+                      type="number"
+                      value={porcentajeAumento}
+                      onChange={(e) => setPorcentajeAumento(e.target.value)}
+                      placeholder="Ej: 15"
+                      min="1"
+                      max="500"
+                      style={{
+                        width: 80,
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                        border: "1px solid var(--border)",
+                        fontSize: 14,
+                        fontFamily: "inherit",
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "var(--muted)",
+                      }}
+                    >
+                      %
+                    </span>
+                    <button
+                      onClick={handleAumentoMasivo}
+                      disabled={aplicandoAumento || !porcentajeAumento}
+                      style={{
+                        padding: "8px 18px",
+                        borderRadius: 8,
+                        border: "none",
+                        background: "var(--olive)",
+                        color: "#fff",
+                        fontFamily: "Syne, sans-serif",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        cursor: "pointer",
+                        opacity: !porcentajeAumento ? 0.5 : 1,
+                      }}
+                    >
+                      {aplicandoAumento ? "Aplicando..." : "Aplicar"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAumento(false);
+                        setPorcentajeAumento("");
+                      }}
+                      style={{
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                        border: "1px solid var(--border)",
+                        background: "transparent",
+                        fontSize: 13,
+                        cursor: "pointer",
+                        color: "var(--muted)",
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {limiteAlcanzado && (
                 <div

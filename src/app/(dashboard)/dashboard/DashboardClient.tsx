@@ -13,6 +13,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { slugify, planLabel } from "../../../lib/utils";
 import type { Emprendimiento, Producto } from "../../../lib/types";
+import ViewPedidos from "../../../components/dashboard/Viewpedidos";
 
 interface User {
   id: string;
@@ -22,6 +23,7 @@ interface User {
 const NAV = [
   { id: "perfil", label: "Mi perfil", icon: "👤" },
   { id: "productos", label: "Productos", icon: "🛍️" },
+  { id: "pedidos", label: "Pedidos", icon: "📦" },
   { id: "metricas", label: "Métricas", icon: "📊" },
   { id: "landing", label: "Mi landing", icon: "🌐" },
   { id: "planes", label: "Planes", icon: "⚡" },
@@ -215,6 +217,8 @@ export default function DashboardClient({
               }
             />
           )}
+
+          {view === "pedidos" && <ViewPedidos empId={emp.id} />}
           {view === "metricas" && (
             <ViewMetricas
               empId={emp.id}

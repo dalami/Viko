@@ -5,6 +5,7 @@ import Link from "next/link";
 import styles from "../directorio/directorio.module.css";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { slugify } from "../../../lib/utils";
 
 interface Emp {
   id: number;
@@ -44,17 +45,119 @@ const CATEGORIAS = [
   { label: "🧶 Macrame", value: "Macrame" },
 ];
 
-function slugify(nombre: string) {
-  return nombre
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // ← esto falta
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-}
+const FAQS = [
+  {
+    grupo: "Sobre publicar",
+    items: [
+      {
+        q: "¿Es gratis publicar mi emprendimiento?",
+        a: "Sí, el plan Free es gratis para siempre. Sin tarjeta de crédito ni costos ocultos.",
+      },
+      {
+        q: "¿Cuánto tarda en estar visible mi ficha?",
+        a: "En minutos. Apenas completás el registro tu perfil ya aparece en el directorio.",
+      },
+      {
+        q: "¿Necesito saber de tecnología?",
+        a: "No. La configuración es simple y guiada, sin conocimientos técnicos necesarios.",
+      },
+    ],
+  },
+  {
+    grupo: "Sobre los planes",
+    items: [
+      {
+        q: "¿Qué diferencia hay entre Free y Pro?",
+        a: "Free incluye hasta 3 productos y perfil básico. Pro agrega carrito de compras, pagos con MercadoPago, métricas detalladas, landing page y QR propio.",
+      },
+      {
+        q: "¿Puedo cancelar el plan Pro cuando quiera?",
+        a: "Sí, sin permanencia ni penalidad. Cancelás cuando quieras desde tu panel.",
+      },
+      {
+        q: "¿Hay descuento pagando anual?",
+        a: "Sí, 40% off pagando el año completo. En lugar de $9.900/mes pagás $5.940/mes.",
+      },
+    ],
+  },
+  {
+    grupo: "Sobre ventas",
+    items: [
+      {
+        q: "¿Viko cobra comisión por mis ventas?",
+        a: "No. Cero comisiones. Lo que vendés es completamente tuyo.",
+      },
+      {
+        q: "¿Cómo recibo los pagos?",
+        a: "Directo en tu cuenta de MercadoPago, sin intermediarios. El dinero va a tu cuenta al instante.",
+      },
+      {
+        q: "¿Puedo vender sin MercadoPago?",
+        a: "Sí, podés recibir pagos por transferencia bancaria o efectivo. El cliente elige cómo pagar.",
+      },
+    ],
+  },
+];
 
 function buildWA(whatsapp: string, nombre: string) {
   return `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(`Hola ${nombre}! Vi tu ficha en Viko.`)}`;
+}
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div
+      onClick={() => setOpen(!open)}
+      style={{
+        borderBottom: "1px solid var(--border)",
+        padding: "18px 0",
+        cursor: "pointer",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 16,
+        }}
+      >
+        <p
+          style={{
+            fontSize: 15,
+            fontWeight: 600,
+            color: "var(--black)",
+            lineHeight: 1.4,
+          }}
+        >
+          {q}
+        </p>
+        <span
+          style={{
+            fontSize: 18,
+            color: "var(--muted)",
+            flexShrink: 0,
+            transition: "transform 0.2s",
+            transform: open ? "rotate(45deg)" : "none",
+          }}
+        >
+          +
+        </span>
+      </div>
+      {open && (
+        <p
+          style={{
+            fontSize: 14,
+            color: "var(--muted)",
+            marginTop: 10,
+            lineHeight: 1.7,
+          }}
+        >
+          {a}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function DirectorioClient({
@@ -117,6 +220,7 @@ export default function DirectorioClient({
       badges.push({ label: "🏪 Activo", color: "#7A756A" });
     return badges;
   }
+
   return (
     <div className={styles.page}>
       {/* NAV */}
@@ -124,7 +228,6 @@ export default function DirectorioClient({
         <Link href="/" className={styles.navLogo}>
           Viko<span className={styles.navDot}>.</span>
         </Link>
-
         <div className={styles.navCenter}>
           <a href="#grid" className={styles.navLink}>
             Emprendimientos
@@ -135,6 +238,9 @@ export default function DirectorioClient({
           <Link href="/feed" className={styles.navLink}>
             Comunidad
           </Link>
+          <a href="#faq" className={styles.navLink}>
+            Preguntas frecuentes
+          </a>
           <Link href="/register" className={styles.navLinkPublicar}>
             Publicar
           </Link>
@@ -157,7 +263,6 @@ export default function DirectorioClient({
         <p className={styles.heroSub}>
           Sin comisiones. Sin tarjeta de crédito. Tu ficha lista en minutos.
         </p>
-
         <div className={styles.heroCtaRow}>
           <input
             className={styles.heroInput}
@@ -176,13 +281,11 @@ export default function DirectorioClient({
             Empezar gratis →
           </Link>
         </div>
-
         <div className={styles.heroTrust}>
           <span>Publicación gratuita</span>
           <span>Sin comisiones por venta</span>
           <span>Configuración en 5 minutos</span>
         </div>
-
         <div className={styles.heroStats}>
           <div className={styles.stat}>
             <span className={styles.statNum}>{emprendimientos.length}</span>
@@ -308,11 +411,9 @@ export default function DirectorioClient({
                       )}
                     </div>
                   </div>
-
                   <div className={styles.cardBody}>
                     <p className={styles.cardName}>{e.nombre}</p>
                     <p className={styles.cardTag}>{e.tagline}</p>
-
                     {badges.length > 0 && (
                       <div
                         style={{
@@ -340,12 +441,10 @@ export default function DirectorioClient({
                         ))}
                       </div>
                     )}
-
                     <div className={styles.cardMeta}>
                       {e.ubicacion && <span>📍 {e.ubicacion}</span>}
                       <span>{e.envios ? "🚚 Envíos" : "🏪 Local"}</span>
                     </div>
-
                     <div
                       className={styles.cardFooter}
                       onClick={(ev) => ev.stopPropagation()}
@@ -398,9 +497,7 @@ export default function DirectorioClient({
             <br />
             <em>más visibilidad</em>
           </h2>
-
           <div className={styles.planesGrid}>
-            {/* FREE */}
             <div className={styles.planCard}>
               <div className={styles.planCardLabel}>FREE</div>
               <div className={styles.planCardPrice}>
@@ -422,8 +519,6 @@ export default function DirectorioClient({
                 {isLoggedIn ? "Ver mi plan →" : "Empezar gratis →"}
               </Link>
             </div>
-
-            {/* PRO */}
             <div className={`${styles.planCard} ${styles.planCardPro}`}>
               <div className={styles.planCardReco}>⭐ Recomendado</div>
               <div className={styles.planCardLabel}>VIKO PRO</div>
@@ -441,7 +536,6 @@ export default function DirectorioClient({
                 <li>✓ Métricas completas</li>
                 <li>✓ Landing page + QR propio</li>
               </ul>
-
               {isLoggedIn ? (
                 <div
                   style={{ display: "flex", flexDirection: "column", gap: 8 }}
@@ -469,6 +563,57 @@ export default function DirectorioClient({
               )}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section
+        id="faq"
+        style={{ background: "var(--white)", padding: "72px 5vw" }}
+      >
+        <div style={{ maxWidth: 760, margin: "0 auto" }}>
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+              color: "var(--muted)",
+              marginBottom: 8,
+            }}
+          >
+            FAQ
+          </p>
+          <h2
+            style={{
+              fontFamily: "'DM Serif Display', serif",
+              fontSize: 32,
+              color: "var(--black)",
+              letterSpacing: -0.5,
+              marginBottom: 48,
+            }}
+          >
+            Preguntas frecuentes
+          </h2>
+          {FAQS.map((grupo) => (
+            <div key={grupo.grupo} style={{ marginBottom: 40 }}>
+              <p
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  textTransform: "uppercase",
+                  color: "var(--olive)",
+                  marginBottom: 4,
+                }}
+              >
+                {grupo.grupo}
+              </p>
+              {grupo.items.map((item) => (
+                <FaqItem key={item.q} q={item.q} a={item.a} />
+              ))}
+            </div>
+          ))}
         </div>
       </section>
 

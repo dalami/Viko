@@ -46,3 +46,32 @@ export interface Emprendimiento {
   plantilla?: { layout: string; color: string } | string;
   slug?: string;
 }
+
+export interface EmpPublic {
+  id: number;
+  nombre: string;
+  tagline?: string;
+  rubro?: string;
+  ubicacion?: string;
+  envios?: boolean;
+  descripcion?: string;
+  whatsapp: string;
+  instagram?: string;
+  web?: string;
+  images?: string[];
+  plan?: string;
+  mp_connected?: boolean;
+  plantilla?: unknown;
+}
+
+export interface CartEmp {
+  id: number;
+  nombre: string;
+  whatsapp?: string;
+  isPro: boolean;
+  mpConnected: boolean;
+  envios?: boolean;
+  transferenciaActiva?: boolean;
+  transferenciaCbu?: string;
+  efectivoActivo?: boolean;
+}
