@@ -11,49 +11,8 @@ import { ViewLanding } from "../../../components/dashboard/Viewmetricaslanding";
 import ViewPlanes from "../../../components/dashboard/Viewplanes";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-
-export interface Emprendimiento {
-  id: number;
-  nombre: string;
-  rubro: string;
-  tagline: string;
-  descripcion: string;
-  ubicacion: string;
-  whatsapp: string;
-  instagram: string;
-  email: string;
-  web: string;
-  envios: boolean;
-  visible: boolean;
-  images?: string[];
-  plan?: "basic" | "featured" | "premium";
-  historia_origen?: string;
-  historia_diferencia?: string;
-  historia_cliente?: string;
-  highlights?: { icono: string; texto: string }[] | null;
-  mp_connected?: boolean;
-  mp_access_token?: string;
-  transferencia_activa?: boolean;
-  transferencia_cbu?: string;
-  efectivo_activo?: boolean;
-  plantilla?: { layout: string; color: string } | string;
-}
-
-export interface Producto {
-  id: string;
-  nombre: string;
-  precio: number;
-  precio_descuento?: number;
-  stock?: number;
-  tags?: string[];
-  orden?: number;
-  descripcion?: string;
-  categoria?: string;
-  imagen?: string;
-  variantes?: { tipo: string; opciones: string[] }[];
-  activo?: boolean;
-  emprendimiento_id?: number;
-}
+import { slugify, planLabel } from "../../../lib/utils";
+import type { Emprendimiento, Producto } from "../../../lib/types";
 
 interface User {
   id: string;
@@ -142,12 +101,7 @@ export default function DashboardClient({
 
   const isPro = emp.plan === "premium";
   const initials = (emp.nombre || user.email || "V").slice(0, 2).toUpperCase();
-  const slug = (emp.nombre || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
+  const slug = slugify(emp.nombre || "");
 
   return (
     <div className={styles.shell}>
@@ -184,13 +138,7 @@ export default function DashboardClient({
         <div className={styles.sidebarBottom}>
           <div className={styles.planBadge}>
             <span className={styles.planLabel}>Plan actual</span>
-            <span className={styles.planName}>
-              {isPro
-                ? "Viko Pro"
-                : emp.plan === "featured"
-                  ? "Destacado"
-                  : "Free"}
-            </span>
+            <span className={styles.planName}>{planLabel(emp.plan)}</span>
           </div>
 
           {!isPro && (
@@ -244,7 +192,12 @@ export default function DashboardClient({
 
         <div className={styles.content}>
           {view === "perfil" && (
-            <ViewPerfil emp={emp} setEmp={setEmp} userId={user.id} />
+            <ViewPerfil
+              emp={emp}
+              setEmp={setEmp}
+              userId={user.id}
+              onUpgrade={handleUpgrade}
+            />
           )}
           {view === "productos" && (
             <ViewProductos
@@ -256,16 +209,27 @@ export default function DashboardClient({
               productos={prods}
               setProductos={setProds}
               plantilla={emp.plantilla}
+              onUpgrade={handleUpgrade}
               onPlantillaChange={(p) =>
                 setEmp((prev) => ({ ...prev, plantilla: p }))
               }
             />
           )}
           {view === "metricas" && (
-            <ViewMetricas empId={emp.id} isPro={isPro} emp={emp} />
+            <ViewMetricas
+              empId={emp.id}
+              isPro={isPro}
+              emp={emp}
+              onUpgrade={handleUpgrade}
+            />
           )}
           {view === "landing" && (
-            <ViewLanding emp={emp} slug={slug} isPro={isPro} />
+            <ViewLanding
+              emp={emp}
+              slug={slug}
+              isPro={isPro}
+              onUpgrade={handleUpgrade}
+            />
           )}
           {view === "planes" && (
             <ViewPlanes currentPlan={emp.plan} onUpgrade={handleUpgrade} />
@@ -302,9 +266,7 @@ export default function DashboardClient({
             </div>
             <div className={styles.planBadge} style={{ marginBottom: 16 }}>
               <span className={styles.planLabel}>Plan actual</span>
-              <span className={styles.planName}>
-                {isPro ? "Viko Pro" : "Free"}
-              </span>
+              <span className={styles.planName}>{planLabel(emp.plan)}</span>
             </div>
             {!isPro && (
               <button

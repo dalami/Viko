@@ -102,7 +102,7 @@ export default async function EmprendimientoPage({ params }: PageProps) {
 
   return (
     <CartProvider>
-      <main>
+      <main style={{ width: "100%" }}>
         <PublicProfile
           emp={emp}
           productos={emp.productos ?? []}

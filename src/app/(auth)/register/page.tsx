@@ -5,22 +5,25 @@ import { createClient } from "@/src/lib/supabase";
 import Link from "next/link";
 import styles from "../../../styles/auth.module.css";
 import regStyles from "../../../register.module.css";
+import { slugify } from "../../../lib/utils";
 
 const RUBROS = [
-  "Gastronomía","Deco","Regalos","Moda","Servicios","Belleza","Eventos",
-  "Digital","Masajes","Sublimados","Accesorios","Velas","Suplementos","Aromas","Macrame",
+  "Gastronomía",
+  "Deco",
+  "Regalos",
+  "Moda",
+  "Servicios",
+  "Belleza",
+  "Eventos",
+  "Digital",
+  "Masajes",
+  "Sublimados",
+  "Accesorios",
+  "Velas",
+  "Suplementos",
+  "Aromas",
+  "Macrame",
 ];
-
-function slugify(nombre: string) {
-  return nombre
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
-    .trim();
-}
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -80,7 +83,11 @@ export default function RegisterPage() {
     }
 
     // Si el usuario ya existía, Supabase devuelve identities vacío
-    if (data.user && data.user.identities && data.user.identities.length === 0) {
+    if (
+      data.user &&
+      data.user.identities &&
+      data.user.identities.length === 0
+    ) {
       setError("Este email ya tiene una cuenta. ¿Querés iniciar sesión?");
       setLoading(false);
       return;
@@ -95,14 +102,18 @@ export default function RegisterPage() {
       <div className={regStyles.successWrap}>
         <div className={regStyles.successCard}>
           <div className={styles.authLogo}>
-            Viko<span className={styles.logoDot}>.</span>
+            Viko <span className={styles.logoDot}>.</span>
           </div>
           <div className={regStyles.successIcon}>✦</div>
           <h2 className={regStyles.successTitle}>¡Ya sos parte de Viko!</h2>
           <p className={regStyles.successSub}>
-            Revisá tu email para confirmar tu cuenta y luego completá tu perfil desde el panel.
+            Revisá tu email para confirmar tu cuenta y luego completá tu perfil
+            desde el panel.
           </p>
-          <Link href="/login" className={`btn btn-olive ${regStyles.successBtn}`}>
+          <Link
+            href="/login"
+            className={`btn btn-olive ${regStyles.successBtn}`}
+          >
             Ir al login →
           </Link>
         </div>
@@ -144,12 +155,20 @@ export default function RegisterPage() {
                 required
               >
                 <option value="">Elegí una categoría</option>
-                {RUBROS.map((r) => <option key={r}>{r}</option>)}
+                {RUBROS.map((r) => (
+                  <option key={r}>{r}</option>
+                ))}
               </select>
             </div>
           </div>
 
-          <hr style={{ border: "none", borderTop: "1px solid rgba(26,24,20,0.12)", margin: "8px 0" }} />
+          <hr
+            style={{
+              border: "none",
+              borderTop: "1px solid rgba(26,24,20,0.12)",
+              margin: "8px 0",
+            }}
+          />
 
           <div className={styles.fieldGroup}>
             <label className="field-label">Email de acceso</label>
@@ -190,7 +209,9 @@ export default function RegisterPage() {
 
         <p className={styles.authFooter}>
           ¿Ya tenés cuenta?{" "}
-          <Link href="/login" className={styles.authLink}>Ingresá acá</Link>
+          <Link href="/login" className={styles.authLink}>
+            Ingresá acá
+          </Link>
         </p>
         <Link href="/directorio" className={styles.backLink}>
           ← Volver al directorio

@@ -3,17 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import styles from "../dashboard/View.module.css";
-import { Emprendimiento } from "../../app/(dashboard)/dashboard/DashboardClient";
+import type { Emprendimiento } from "../../lib/types";
 import { parsePlantilla, COLORES, LAYOUTS } from "../../lib/plantillas";
 
 export function ViewLanding({
   emp,
   slug,
   isPro,
+  onUpgrade,
 }: {
   emp: Emprendimiento;
   slug: string;
   isPro: boolean;
+  onUpgrade?: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
@@ -21,11 +23,6 @@ export function ViewLanding({
   const tema = COLORES[config.color] ?? COLORES.oliva;
   const url = `https://viko-ryk4.vercel.app/emprendimiento/${slug || "tu-emprendimiento"}`;
   const displayUrl = `viko-ryk4.vercel.app/emprendimiento/${slug || "tu-emprendimiento"}`;
-  async function handleUpgrade() {
-    const res = await fetch("/api/checkout", { method: "POST" });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
-  }
 
   function copyUrl() {
     navigator.clipboard.writeText(url);
@@ -87,7 +84,7 @@ export function ViewLanding({
               Tu URL propia, QR descargable y vista previa de tu ficha.
             </p>
             <button
-              onClick={handleUpgrade}
+              onClick={() => onUpgrade?.()}
               style={{
                 background: "#C9A84C",
                 border: "none",

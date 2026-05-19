@@ -65,12 +65,7 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
 
-    console.log("MP status:", response.status);
-    console.log("MP response:", JSON.stringify(data, null, 2));
-    console.log("back_url usada:", `${baseUrl}/dashboard?pago=exitoso`);
-
     if (!response.ok) {
-      console.error("MP suscripción error:", data);
       return NextResponse.json(
         { error: "Error al crear suscripción", detail: data },
         { status: 500 },
@@ -78,8 +73,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ url: data.init_point });
-  } catch (err) {
-    console.error("MP error:", err);
+  } catch {
     return NextResponse.json(
       { error: "Error al crear suscripción" },
       { status: 500 },

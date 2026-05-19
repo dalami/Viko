@@ -39,7 +39,6 @@ export async function POST(req: NextRequest) {
         ? process.env.NEXT_PUBLIC_BASE_URL
         : "https://viko-ryk4.vercel.app";
 
-    // Preference base
     const preferenceBody: Record<string, unknown> = {
       items: items.map(
         (i: {
@@ -76,7 +75,6 @@ export async function POST(req: NextRequest) {
       statement_descriptor: emp.nombre,
     };
 
-    // Si es efectivo → solo Pago Fácil y Rapipago
     if (metodo === "efectivo") {
       preferenceBody.payment_methods = {
         excluded_payment_types: [
@@ -102,15 +100,8 @@ export async function POST(req: NextRequest) {
     );
 
     const data = await response.json();
-    console.log(
-      "MP status:",
-      response.status,
-      "| metodo:",
-      metodo ?? "tarjeta",
-    );
 
     if (!response.ok) {
-      console.error("MP error:", data);
       return NextResponse.json(
         { error: "Error al crear preferencia", detail: data },
         { status: 500 },
@@ -118,8 +109,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ url: data.init_point });
-  } catch (err) {
-    console.error("Cart checkout error:", err);
+  } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

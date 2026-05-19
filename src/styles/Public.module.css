@@ -62,34 +62,31 @@
 .profilePage {
   background: var(--white);
   min-height: 100vh;
+   overflow-x: hidden;
 }
 
-.profileWrap {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 48px 5vw;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 56px;
-  align-items: start;
+.productosWrap {
+  width: 100%;
+  padding: 0 5vw 40px;
+  box-sizing: border-box;
 }
 
 /* GALERÍA */
 .gallery {
-  position: sticky;
-  top: 80px;
+  position: static;
+  align-self: auto;
 }
 
 .mainImage {
   width: 100%;
-  aspect-ratio: 4/3;
+  aspect-ratio: 16/9;
   border-radius: 20px;
   overflow: hidden;
   position: relative;
   background: #F0EDE8;
-  box-shadow: 0 2px 24px rgba(26,24,20,0.08);
+  box-shadow: 0 2px 24px rgba(26, 24, 20, 0.08);
   min-height: 260px;
-  display: block;
+
 }
 
 .mainImage img {
@@ -146,8 +143,14 @@
   flex-shrink: 0;
   transition: border-color 0.15s, transform 0.15s;
 }
-.thumb:hover { transform: scale(1.04); }
-.thumbActive { border-color: #6B7A5A; }
+
+.thumb:hover {
+  transform: scale(1.04);
+}
+
+.thumbActive {
+  border-color: #6B7A5A;
+}
 
 .thumb img {
   width: 100%;
@@ -505,6 +508,12 @@
 
 .directorioFooter {
   text-align: center;
+}
+
+.productosWrap {
+  width: 100%;
+  padding: 0 5vw 40px;
+  box-sizing: border-box;
 }
 
 /* Mobile */

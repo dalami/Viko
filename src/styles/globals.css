@@ -39,7 +39,7 @@ body {
   font-family: 'Syne', sans-serif;
   background: var(--white);
   color: var(--black);
-  overflow-x: hidden;
+  
   -webkit-font-smoothing: antialiased;
   max-width: 100%;
 }
