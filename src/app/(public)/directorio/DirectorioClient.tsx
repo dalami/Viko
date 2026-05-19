@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import styles from "../directorio/directorio.module.css";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { slugify } from "../../../lib/utils";
+import { useState, useEffect } from "react";
 
 interface Emp {
   id: number;
@@ -171,6 +171,12 @@ export default function DirectorioClient({
   const [search, setSearch] = useState("");
   const [zona, setZona] = useState("all");
   const router = useRouter();
+  const [banner, setBanner] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setBanner(false), 15000);
+    return () => clearTimeout(t);
+  }, []);
 
   const zonas = [
     "all",
@@ -223,6 +229,50 @@ export default function DirectorioClient({
 
   return (
     <div className={styles.page}>
+      {banner && (
+        <div
+          style={{
+            background: "#1A3C6E",
+            color: "#F5F0E8",
+            textAlign: "center",
+            padding: "12px 20px",
+            fontSize: 14,
+            fontFamily: "Syne, sans-serif",
+            fontWeight: 600,
+            letterSpacing: 0.3,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            position: "relative",
+            animation: "slideDown 0.4s ease",
+          }}
+        >
+          <span>🇦🇷</span>
+          <span>
+            Juntos hacemos grande a la Argentina — comprá local, apoyá al
+            emprendedor nacional
+          </span>
+          <span>🇦🇷</span>
+          <button
+            onClick={() => setBanner(false)}
+            style={{
+              position: "absolute",
+              right: 16,
+              background: "none",
+              border: "none",
+              color: "#F5F0E8",
+              fontSize: 16,
+              cursor: "pointer",
+              opacity: 0.6,
+              lineHeight: 1,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* NAV */}
       <nav className={styles.nav}>
         <Link href="/" className={styles.navLogo}>
@@ -253,24 +303,27 @@ export default function DirectorioClient({
       </nav>
 
       {/* HERO */}
+      {/* HERO */}
       <section className={styles.hero}>
-        <div className={styles.heroBadge}>Directorio de emprendimientos</div>
+        <div className={styles.heroBadge}>
+          Directorio de emprendimientos argentinos
+        </div>
+
         <h1 className={styles.heroTitle}>
-          Publicá tu emprendimiento
+          Todo lo que buscás,
           <br />
-          <em>gratis</em> y llegá a más clientes
+          hecho por <em>manos argentinas.</em>
         </h1>
+
         <p className={styles.heroSub}>
-          Sin comisiones. Sin tarjeta de crédito. Tu ficha lista en minutos.
+          Descubrí los mejores emprendimientos locales en un solo lugar. Comprá
+          directo, apoyá el talento nacional y conectá con la red de creadores
+          más grande del país.
         </p>
+
         <div className={styles.heroCtaRow}>
-          <input
-            className={styles.heroInput}
-            type="email"
-            placeholder="tu@email.com"
-          />
-          <Link
-            href="/register"
+          <a
+            href="#grid"
             className={styles.heroBtn}
             style={{
               display: "flex",
@@ -278,25 +331,50 @@ export default function DirectorioClient({
               textDecoration: "none",
             }}
           >
-            Empezar gratis →
+            Explorar Emprendimientos →
+          </a>
+
+          <Link
+            href="/register"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              textDecoration: "none",
+              padding: "0 28px",
+              height: "48px",
+              borderRadius: "100px",
+              border: "1.5px solid var(--black)",
+              color: "var(--black)",
+              fontFamily: "Syne, sans-serif",
+              fontWeight: 700,
+              fontSize: 14,
+              background: "transparent",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Sumar mi Negocio →
           </Link>
         </div>
+
         <div className={styles.heroTrust}>
           <span>Publicación gratuita</span>
           <span>Sin comisiones por venta</span>
           <span>Configuración en 5 minutos</span>
         </div>
+
         <div className={styles.heroStats}>
           <div className={styles.stat}>
             <span className={styles.statNum}>{emprendimientos.length}</span>
             <span className={styles.statLabel}>Emprendimientos</span>
           </div>
+
           <div className={styles.stat}>
             <span className={styles.statNum}>
               {new Set(emprendimientos.map((e) => e.rubro)).size}
             </span>
             <span className={styles.statLabel}>Categorías</span>
           </div>
+
           <div className={styles.stat}>
             <span className={styles.statNum}>AR</span>
             <span className={styles.statLabel}>Independiente</span>
