@@ -349,6 +349,7 @@ export default function ViewPerfil({
               value={emp.whatsapp || ""}
               onChange={(e) => update("whatsapp", e.target.value)}
               placeholder="5491100000000"
+              required
             />
           </div>
           <div className={styles.field}>
@@ -358,6 +359,7 @@ export default function ViewPerfil({
               value={emp.instagram || ""}
               onChange={(e) => update("instagram", e.target.value)}
               placeholder="tuemprendimiento"
+              required
             />
           </div>
           <div className={styles.field}>
@@ -368,6 +370,7 @@ export default function ViewPerfil({
               value={emp.email || ""}
               onChange={(e) => update("email", e.target.value)}
               placeholder="hola@tuemprendimiento.com"
+              required
             />
           </div>
           <div className={styles.field}>

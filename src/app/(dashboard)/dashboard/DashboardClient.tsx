@@ -54,6 +54,11 @@ export default function DashboardClient({
   const router = useRouter();
 
   async function handleSaveProfile() {
+    if (!emp.images?.[0]) {
+      setSaveMsg("⚠️ Necesitás subir al menos una foto antes de guardar.");
+      setTimeout(() => setSaveMsg(null), 3000);
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from("emprendimientos")

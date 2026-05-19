@@ -112,8 +112,20 @@ export default function RegisterPage() {
           <div className={regStyles.successIcon}>✦</div>
           <h2 className={regStyles.successTitle}>¡Ya sos parte de Viko!</h2>
           <p className={regStyles.successSub}>
-            Revisá tu email para confirmar tu cuenta y luego completá tu perfil
-            desde el panel.
+            Te enviamos un email de confirmación a <strong>{form.email}</strong>
+            . Revisá tu bandeja de entrada (y la carpeta de spam) y hacé clic en
+            el enlace para activar tu cuenta.
+          </p>
+          <p
+            style={{
+              fontSize: 13,
+              color: "#888",
+              marginTop: 8,
+              marginBottom: 24,
+              textAlign: "center",
+            }}
+          >
+            Una vez confirmado, podés iniciar sesión y completar tu perfil.
           </p>
           <Link
             href="/login"
