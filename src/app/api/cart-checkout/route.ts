@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_BASE_URL &&
       !process.env.NEXT_PUBLIC_BASE_URL.includes("localhost")
         ? process.env.NEXT_PUBLIC_BASE_URL
-        : "https://viko-ryk4.vercel.app";
+        : "https://viko.com.ar";
 
     const preferenceBody: Record<string, unknown> = {
       items: items.map(

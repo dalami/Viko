@@ -21,8 +21,8 @@ export function ViewLanding({
   const [copied, setCopied] = useState(false);
   const config = parsePlantilla(emp.plantilla);
   const tema = COLORES[config.color] ?? COLORES.oliva;
-  const url = `https://viko-ryk4.vercel.app/emprendimiento/${slug || "tu-emprendimiento"}`;
-  const displayUrl = `viko-ryk4.vercel.app/emprendimiento/${slug || "tu-emprendimiento"}`;
+  const url = `https://viko.com.ar/emprendimiento/${slug || "tu-emprendimiento"}`;
+  const displayUrl = `viko.com.ar/emprendimiento/${slug || "tu-emprendimiento"}`;
 
   function copyUrl() {
     navigator.clipboard.writeText(url);
