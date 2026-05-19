@@ -203,6 +203,7 @@ export default function ViewPerfil({
               value={emp.nombre || ""}
               onChange={(e) => update("nombre", e.target.value)}
               placeholder="Nombre de tu marca"
+              required
             />
           </div>
           <div className={styles.field}>
@@ -236,6 +237,7 @@ export default function ViewPerfil({
               value={emp.ubicacion || ""}
               onChange={(e) => update("ubicacion", e.target.value)}
               placeholder="Ciudad, Provincia"
+              required
             />
           </div>
         </div>
@@ -263,6 +265,16 @@ export default function ViewPerfil({
             <p className={styles.sectionSub}>
               Hasta 5 fotos. Hacé clic en cada slot para subir.
             </p>
+            <p
+              style={{
+                fontSize: 11,
+                color: "#888",
+                marginTop: -8,
+                marginBottom: 12,
+              }}
+            >
+              Tamaño recomendado: 1200 × 675 px (horizontal 16:9)
+            </p>
             <div className={styles.imageGrid}>
               {SLOT_LABELS.map((label, i) => (
                 <ImageSlot
@@ -282,6 +294,16 @@ export default function ViewPerfil({
             <p className={styles.sectionSub}>
               Con el plan básico podés subir 1 foto. Activá Pro para subir hasta
               5.
+            </p>
+            <p
+              style={{
+                fontSize: 11,
+                color: "#888",
+                marginTop: -8,
+                marginBottom: 12,
+              }}
+            >
+              Tamaño recomendado: 1200 × 675 px (horizontal 16:9)
             </p>
             <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
               <div style={{ width: 120 }}>

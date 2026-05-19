@@ -35,7 +35,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
   const supabase = createClient();
 
   function handleChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
@@ -47,11 +46,12 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
 
-    // Verificar nombre duplicado
+    const slug = slugify(form.nombre);
+
     const { data: existing } = await supabase
       .from("emprendimientos")
       .select("id")
-      .eq("slug", slugify(form.nombre))
+      .eq("slug", slug)
       .maybeSingle();
 
     if (existing) {
@@ -60,7 +60,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Crear usuario
     const { data, error: authError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
@@ -73,24 +72,30 @@ export default function RegisterPage() {
     });
 
     if (authError) {
-      if (authError.message.includes("already registered")) {
-        setError("Este email ya tiene una cuenta. ¿Querés iniciar sesión?");
-      } else {
-        setError(authError.message);
-      }
+      setError(
+        authError.message.includes("already registered")
+          ? "Este email ya tiene una cuenta. ¿Querés iniciar sesión?"
+          : authError.message,
+      );
       setLoading(false);
       return;
     }
 
-    // Si el usuario ya existía, Supabase devuelve identities vacío
-    if (
-      data.user &&
-      data.user.identities &&
-      data.user.identities.length === 0
-    ) {
+    if (data.user?.identities?.length === 0) {
       setError("Este email ya tiene una cuenta. ¿Querés iniciar sesión?");
       setLoading(false);
       return;
+    }
+
+    if (data.user) {
+      await supabase.from("emprendimientos").insert({
+        user_id: data.user.id,
+        nombre: form.nombre,
+        rubro: form.rubro,
+        slug: slug,
+        plan: "basic",
+        visible: false,
+      });
     }
 
     setSuccess(true);
