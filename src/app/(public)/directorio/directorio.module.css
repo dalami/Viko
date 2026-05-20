@@ -605,9 +605,12 @@
   text-decoration: none;
   transition: opacity 0.15s;
   box-sizing: border-box;
-  pointer-events: all;   /* ← clave */
-  position: relative;    /* ← clave */
-  z-index: 1;            /* ← clave */
+  pointer-events: all;
+  /* ← clave */
+  position: relative;
+  /* ← clave */
+  z-index: 1;
+  /* ← clave */
 }
 
 .planCta:hover {
@@ -824,7 +827,14 @@
 }
 
 @media (max-width: 600px) {
-  .planesGrid { grid-template-columns: 1fr; }
+  .planesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroCtaRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .planCardLabel {
@@ -902,7 +912,9 @@
   transition: opacity 0.15s;
   width: 100%;
   cursor: pointer;
-   box-sizing: border-box;
+  box-sizing: border-box;
 }
 
-.planCtaSecondary:hover { opacity: 0.7; }
+.planCtaSecondary:hover {
+  opacity: 0.7;
+}
