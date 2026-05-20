@@ -15,7 +15,7 @@ export async function GET() {
   const clientId = process.env.MP_CLIENT_ID!;
   const redirectUri = `https://www.viko.com.ar/api/mp/callback`;
 
-  const authUrl = `https://auth.mercadopago.com/authorization?client_id=${clientId}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(redirectUri)}&state=${user.id}`;
+  const authUrl = `https://auth.mercadopago.com/authorization?client_id=${clientId}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(redirectUri)}&state=${user.id}&locale=es_AR`
 
   return NextResponse.redirect(authUrl);
 }
