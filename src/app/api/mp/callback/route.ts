@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
         client_secret: process.env.MP_CLIENT_SECRET,
         grant_type: "authorization_code",
         code,
-        redirect_uri: `${process.env.NEXT_PUBLIC_BASE_URL}/api/mp/callback`,
+        redirect_uri: `https://www.viko.com.ar/api/mp/callback`,
       }),
     });
 
