@@ -14,6 +14,7 @@ import Link from "next/link";
 import { slugify, planLabel } from "../../../lib/utils";
 import type { Emprendimiento, Producto } from "../../../lib/types";
 import ViewPedidos from "../../../components/dashboard/Viewpedidos";
+import ViewMercadoLibre from "../../../components/dashboard/ViewMercadoLibre";
 
 interface User {
   id: string;
@@ -27,6 +28,7 @@ const NAV = [
   { id: "metricas", label: "Métricas", icon: "📊" },
   { id: "landing", label: "Mi tienda", icon: "🌐" },
   { id: "planes", label: "Planes", icon: "⚡" },
+  { id: "mercadolibre", label: "Mercado Libre", icon: "🛒" },
 ] as const;
 
 type ViewId = (typeof NAV)[number]["id"];
@@ -243,6 +245,10 @@ export default function DashboardClient({
           )}
           {view === "planes" && (
             <ViewPlanes currentPlan={emp.plan} onUpgrade={handleUpgrade} />
+          )}
+
+          {view === "mercadolibre" && (
+            <ViewMercadoLibre emp={emp} productos={prods} />
           )}
         </div>
       </div>

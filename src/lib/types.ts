@@ -46,6 +46,10 @@ export interface Emprendimiento {
   plantilla?: { layout: string; color: string } | string;
   slug?: string;
   rubros?: string[];
+  ml_connected?: boolean;
+  ml_access_token?: string;
+  ml_refresh_token?: string;
+  ml_user_id?: string;
 }
 
 export interface EmpPublic {
