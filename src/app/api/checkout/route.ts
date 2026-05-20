@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
           transaction_amount: monto,
           currency_id: "ARS",
         },
-        payer_email: "test_user_1887417817478272980@testuser.com",
+        payer_email: user.email!,
         back_url: `${baseUrl}/dashboard?pago=exitoso`,
         external_reference: `${user.id}|${emp.id}|${periodo}`,
         status: "pending",
