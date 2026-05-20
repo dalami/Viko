@@ -82,6 +82,7 @@ export default function DashboardClient({
         transferencia_cbu: emp.transferencia_cbu,
         efectivo_activo: emp.efectivo_activo,
         plantilla: emp.plantilla,
+        rubros: emp.rubros ?? [],
       })
       .eq("user_id", user.id);
 

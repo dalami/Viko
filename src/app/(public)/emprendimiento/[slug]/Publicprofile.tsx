@@ -174,7 +174,7 @@ function descuento(p: Producto) {
     : 0;
 }
 
-function BadgesProducto({ p, tema }: { p: Producto; tema: Tema }) {
+function BadgesProducto({ p }: { p: Producto }) {
   const pct = descuento(p);
   return (
     <div
@@ -259,6 +259,430 @@ function PrecioProducto({
   );
 }
 
+function GridRevista({
+  productos,
+  isPro,
+  tema,
+  onAgregar,
+  onConsultar,
+}: GridProps) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      {productos.map((p, i) => (
+        <div
+          key={p.id}
+          style={{
+            display: "grid",
+            gridTemplateColumns: i % 2 === 0 ? "1fr 1fr" : "1fr 1fr",
+            gap: 0,
+            borderBottom: `1px solid ${tema.border}`,
+            minHeight: 300,
+          }}
+        >
+          <div style={{ position: "relative", order: i % 2 === 0 ? 0 : 1 }}>
+            {p.imagen ? (
+              <Image
+                src={p.imagen}
+                alt={p.nombre}
+                fill
+                style={{ objectFit: "cover" }}
+                sizes="50vw"
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  minHeight: 300,
+                  background: tema.accent + "20",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 48,
+                }}
+              >
+                🛍️
+              </div>
+            )}
+          </div>
+          <div
+            style={{
+              padding: "40px 48px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              order: i % 2 === 0 ? 1 : 0,
+              background: i % 2 === 0 ? tema.bg : tema.card,
+            }}
+          >
+            <p
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: tema.accent,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                marginBottom: 12,
+              }}
+            >
+              Producto destacado
+            </p>
+            <p
+              style={{
+                fontSize: 24,
+                fontWeight: 800,
+                color: tema.text,
+                lineHeight: 1.2,
+                marginBottom: 12,
+              }}
+            >
+              {p.nombre}
+            </p>
+            {p.descripcion && (
+              <p
+                style={{
+                  fontSize: 14,
+                  color: tema.muted,
+                  lineHeight: 1.7,
+                  marginBottom: 20,
+                }}
+              >
+                {p.descripcion}
+              </p>
+            )}
+            <div style={{ marginBottom: 20 }}>
+              <PrecioProducto p={p} tema={tema} size={22} />
+            </div>
+            <VarianteSelector
+              producto={p}
+              isPro={isPro}
+              accentColor={tema.accent}
+              borderColor={tema.border}
+              onAgregar={(v) => onAgregar(p, v)}
+              onConsultar={() => onConsultar(p)}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GridPortfolio({
+  productos,
+  isPro,
+  tema,
+  onAgregar,
+  onConsultar,
+}: GridProps) {
+  return (
+    <div style={{ columns: "2", gap: 12 }}>
+      {productos.map((p, i) => (
+        <div
+          key={p.id}
+          style={{
+            breakInside: "avoid",
+            marginBottom: 12,
+            borderRadius: 16,
+            overflow: "hidden",
+            border: `1px solid ${tema.border}`,
+            background: tema.card,
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              paddingBottom:
+                i % 3 === 0 ? "130%" : i % 3 === 1 ? "80%" : "100%",
+              background: tema.bg,
+            }}
+          >
+            <div style={{ position: "absolute", inset: 0 }}>
+              {p.imagen ? (
+                <Image
+                  src={p.imagen}
+                  alt={p.nombre}
+                  fill
+                  style={{ objectFit: "cover" }}
+                  sizes="50vw"
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 40,
+                    background: tema.accent + "15",
+                  }}
+                >
+                  🛍️
+                </div>
+              )}
+            </div>
+            <BadgesProducto p={p}  />
+          </div>
+          <div style={{ padding: "14px 16px" }}>
+            <p
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: tema.text,
+                marginBottom: 4,
+              }}
+            >
+              {p.nombre}
+            </p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <PrecioProducto p={p} tema={tema} size={15} />
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <VarianteSelector
+                producto={p}
+                isPro={isPro}
+                accentColor={tema.accent}
+                borderColor={tema.border}
+                onAgregar={(v) => onAgregar(p, v)}
+                onConsultar={() => onConsultar(p)}
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GridPremium({
+  productos,
+  isPro,
+ 
+  onAgregar,
+  onConsultar,
+}: GridProps) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+        gap: 2,
+      }}
+    >
+      {productos.map((p) => (
+        <div
+          key={p.id}
+          style={{
+            position: "relative",
+            minHeight: 380,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+            background: "#0A0A0A",
+          }}
+        >
+          {p.imagen && (
+            <Image
+              src={p.imagen}
+              alt={p.nombre}
+              fill
+              style={{ objectFit: "cover", opacity: 0.7 }}
+              sizes="33vw"
+            />
+          )}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)",
+            }}
+          />
+          <div
+            style={{ position: "relative", padding: "24px 20px", zIndex: 1 }}
+          >
+            <p
+              style={{
+                fontSize: 9,
+                fontWeight: 700,
+                color: "#C9A84C",
+                letterSpacing: 3,
+                textTransform: "uppercase",
+                marginBottom: 8,
+              }}
+            >
+              ✦ Exclusivo
+            </p>
+            <p
+              style={{
+                fontSize: 18,
+                fontWeight: 800,
+                color: "#fff",
+                marginBottom: 6,
+                lineHeight: 1.2,
+              }}
+            >
+              {p.nombre}
+            </p>
+            {p.descripcion && (
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.6)",
+                  marginBottom: 12,
+                  lineHeight: 1.5,
+                }}
+              >
+                {p.descripcion}
+              </p>
+            )}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 14,
+              }}
+            >
+              <span style={{ fontSize: 20, fontWeight: 800, color: "#C9A84C" }}>
+                $
+                {Number(
+                  p.precio_descuento && p.precio_descuento < p.precio
+                    ? p.precio_descuento
+                    : p.precio,
+                ).toLocaleString("es-AR")}
+              </span>
+            </div>
+            <VarianteSelector
+              producto={p}
+              isPro={isPro}
+              accentColor="#C9A84C"
+              borderColor="rgba(201,168,76,0.4)"
+              onAgregar={(v) => onAgregar(p, v)}
+              onConsultar={() => onConsultar(p)}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GridMercado({
+  productos,
+  isPro,
+  tema,
+  onAgregar,
+  onConsultar,
+}: GridProps) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+        gap: 8,
+      }}
+    >
+      {productos.map((p) => (
+        <div
+          key={p.id}
+          style={{
+            background: tema.card,
+            borderRadius: 10,
+            border: `1px solid ${tema.border}`,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              paddingBottom: "100%",
+              background: tema.bg,
+            }}
+          >
+            <div style={{ position: "absolute", inset: 0 }}>
+              {p.imagen ? (
+                <Image
+                  src={p.imagen}
+                  alt={p.nombre}
+                  fill
+                  style={{ objectFit: "cover" }}
+                  sizes="20vw"
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 28,
+                  }}
+                >
+                  🛍️
+                </div>
+              )}
+            </div>
+            <BadgesProducto p={p}  />
+          </div>
+          <div
+            style={{
+              padding: "8px 10px",
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              gap: 6,
+            }}
+          >
+            <p
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: tema.text,
+                lineHeight: 1.3,
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {p.nombre}
+            </p>
+            <div>
+              <PrecioProducto p={p} tema={tema} size={14} />
+              <div style={{ marginTop: 6 }}>
+                <VarianteSelector
+                  producto={p}
+                  isPro={isPro}
+                  accentColor={tema.accent}
+                  borderColor={tema.border}
+                  onAgregar={(v) => onAgregar(p, v)}
+                  onConsultar={() => onConsultar(p)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Grids ────────────────────────────────────────────────────────────────────
 function GridClasica({
   productos,
@@ -317,7 +741,7 @@ function GridClasica({
                 🛍️
               </div>
             )}
-            <BadgesProducto p={p} tema={tema} />
+            <BadgesProducto p={p}  />
           </div>
           <div style={{ padding: "10px 12px", flex: 1 }}>
             <p
@@ -434,7 +858,7 @@ function GridTienda({
                 </div>
               )}
             </div>
-            <BadgesProducto p={p} tema={tema} />
+            <BadgesProducto p={p}  />
           </div>
           <div style={{ padding: "14px 16px", flex: 1 }}>
             <p
@@ -990,6 +1414,10 @@ export default function PublicProfile({ emp, productos, plantilla }: Props) {
     bold: <GridBold {...gridProps} />,
     minimalista: <GridMinimalista {...gridProps} />,
     catalogo: <GridCatalogo {...gridProps} />,
+    revista: <GridRevista {...gridProps} />,
+    portfolio: <GridPortfolio {...gridProps} />,
+    premium: <GridPremium {...gridProps} />,
+    mercado: <GridMercado {...gridProps} />,
   };
 
   return (

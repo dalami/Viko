@@ -109,6 +109,213 @@ function ImageSlot({
   );
 }
 
+function RubroSelector({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (rubros: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [custom, setCustom] = useState("");
+  const allRubros = [...RUBROS, ...selected.filter((r) => !RUBROS.includes(r))];
+
+  function toggle(r: string) {
+    if (selected.includes(r)) {
+      onChange(selected.filter((x) => x !== r));
+    } else {
+      if (selected.length >= 3) return;
+      onChange([...selected, r]);
+    }
+  }
+
+  function addCustom() {
+    const val = custom.trim();
+    if (!val || selected.includes(val) || selected.length >= 3) return;
+    onChange([...selected, val]);
+    setCustom("");
+  }
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="input-field"
+        style={{
+          width: "100%",
+          textAlign: "left",
+          cursor: "pointer",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background: "#fff",
+        }}
+      >
+        <span style={{ color: selected.length === 0 ? "#8A8680" : "#1A1814" }}>
+          {selected.length === 0
+            ? "Seleccioná categorías..."
+            : selected.join(", ")}
+        </span>
+        <span
+          style={{
+            fontSize: 12,
+            color: "#8A8680",
+            transition: "transform 0.2s",
+            display: "inline-block",
+            transform: open ? "rotate(180deg)" : "none",
+          }}
+        >
+          ▼
+        </span>
+      </button>
+
+      {open && (
+        <>
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% + 4px)",
+              left: 0,
+              right: 0,
+              background: "#fff",
+              border: "1.5px solid #E8E4DC",
+              borderRadius: 12,
+              zIndex: 100,
+              maxHeight: 280,
+              overflowY: "auto",
+              boxShadow: "0 8px 24px rgba(26,24,20,0.12)",
+            }}
+          >
+            {allRubros.map((r) => {
+              const isSelected = selected.includes(r);
+              const disabled = !isSelected && selected.length >= 3;
+              return (
+                <label
+                  key={r}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 16px",
+                    cursor: disabled ? "not-allowed" : "pointer",
+                    opacity: disabled ? 0.4 : 1,
+                    borderBottom: "1px solid #F5F2EC",
+                    background: isSelected ? "#F5F2EC" : "transparent",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    disabled={disabled}
+                    onChange={() => toggle(r)}
+                    style={{
+                      accentColor: "#6B7A5A",
+                      width: 16,
+                      height: 16,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 13,
+                      color: "#1A1814",
+                      fontWeight: isSelected ? 600 : 400,
+                    }}
+                  >
+                    {r}
+                  </span>
+                  {isSelected && (
+                    <span
+                      style={{
+                        marginLeft: "auto",
+                        fontSize: 11,
+                        color: "#6B7A5A",
+                      }}
+                    >
+                      ✓
+                    </span>
+                  )}
+                </label>
+              );
+            })}
+
+            {/* Opción Otro */}
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 16px",
+                cursor: selected.length >= 3 ? "not-allowed" : "pointer",
+                opacity: selected.length >= 3 ? 0.4 : 1,
+                borderTop: "1px solid #E8E4DC",
+                background: "transparent",
+              }}
+            >
+              <span style={{ fontSize: 13, color: "#6B7A5A", fontWeight: 600 }}>
+                + Otro
+              </span>
+              <input
+                type="text"
+                value={custom}
+                onChange={(e) => setCustom(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addCustom()}
+                placeholder="Escribí una categoría..."
+                onClick={(e) => e.stopPropagation()}
+                disabled={selected.length >= 3}
+                style={{
+                  flex: 1,
+                  padding: "5px 10px",
+                  borderRadius: 8,
+                  border: "1px solid #E8E4DC",
+                  fontSize: 12,
+                  fontFamily: "inherit",
+                  outline: "none",
+                }}
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addCustom();
+                }}
+                disabled={!custom.trim() || selected.length >= 3}
+                style={{
+                  padding: "5px 10px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: "#6B7A5A",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  opacity: !custom.trim() || selected.length >= 3 ? 0.4 : 1,
+                  flexShrink: 0,
+                }}
+              >
+                Agregar
+              </button>
+            </label>
+
+            <div style={{ padding: "8px 16px", background: "#FAFAF7" }}>
+              <p style={{ fontSize: 11, color: "#8A8680" }}>
+                {selected.length}/3 seleccionadas
+                {selected.length >= 3 && " — máximo alcanzado"}
+              </p>
+            </div>
+          </div>
+
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 99 }}
+            onClick={() => setOpen(false)}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function ViewPerfil({
   emp,
   setEmp,
@@ -171,8 +378,6 @@ export default function ViewPerfil({
     }
   }
 
-
-  
   async function handleRemoveImage(index: number) {
     const currentImages = emp.images ?? [];
     if (!currentImages[index]) return;
@@ -208,30 +413,7 @@ export default function ViewPerfil({
               required
             />
           </div>
-          <div className={styles.field}>
-            <label className="field-label">Categoría</label>
-            <select
-              className="input-field"
-              value={emp.rubro || ""}
-              onChange={(e) => update("rubro", e.target.value)}
-            >
-              <option value="">Seleccioná</option>
-              {RUBROS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.field}>
-            <label className="field-label">Tagline</label>
-            <input
-              className="input-field"
-              value={emp.tagline || ""}
-              onChange={(e) => update("tagline", e.target.value)}
-              placeholder="Una frase que defina tu marca"
-            />
-          </div>
+
           <div className={styles.field}>
             <label className="field-label">Ubicación</label>
             <input
@@ -242,8 +424,32 @@ export default function ViewPerfil({
               required
             />
           </div>
+
+          <div className={styles.field}>
+            <label className="field-label">Tagline</label>
+            <input
+              className="input-field"
+              value={emp.tagline || ""}
+              onChange={(e) => update("tagline", e.target.value)}
+              placeholder="Una frase que defina tu marca"
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label className="field-label">Categorías (hasta 3)</label>
+            <RubroSelector
+              selected={emp.rubros ?? (emp.rubro ? [emp.rubro] : [])}
+              onChange={(rubros) => setEmp((prev) => ({ ...prev, rubros }))}
+            />
+            {(emp.rubros ?? []).length === 0 && (
+              <p style={{ fontSize: 11, color: "#C4664A", marginTop: 6 }}>
+                Seleccioná al menos una categoría
+              </p>
+            )}
+          </div>
         </div>
-        <div className={styles.field}>
+
+        <div className={styles.field} style={{ marginTop: 16 }}>
           <label className="field-label">Descripción</label>
           <textarea
             className="input-field"
@@ -394,7 +600,6 @@ export default function ViewPerfil({
           Elegí qué métodos de pago ofrecés a tus clientes.
         </p>
 
-        {/* MercadoPago */}
         <div className={styles.toggleRow}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 20 }}>💳</span>
@@ -442,7 +647,6 @@ export default function ViewPerfil({
           )}
         </div>
 
-        {/* Transferencia */}
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           <div className={styles.toggleRow}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -487,7 +691,6 @@ export default function ViewPerfil({
           )}
         </div>
 
-        {/* Efectivo */}
         <div className={styles.toggleRow}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 20 }}>💵</span>

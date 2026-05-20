@@ -45,6 +45,7 @@ export interface Emprendimiento {
   efectivo_activo?: boolean;
   plantilla?: { layout: string; color: string } | string;
   slug?: string;
+  rubros?: string[];
 }
 
 export interface EmpPublic {
@@ -52,6 +53,7 @@ export interface EmpPublic {
   nombre: string;
   tagline?: string;
   rubro?: string;
+  rubros?: string[];
   ubicacion?: string;
   envios?: boolean;
   descripcion?: string;

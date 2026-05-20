@@ -69,6 +69,9 @@ function calcPerfil(emp: Emprendimiento, isPro: boolean) {
   if (emp.ubicacion) {
     score += 10;
   } else items.push({ msg: "Agregá tu ubicación", pts: 10 });
+  if (emp.mp_connected) {
+    score += 5;
+  } else items.push({ msg: "Conectá tu MercadoPago", pts: 5 });
 
   const fotoBase = Math.min(fotos, 1) * 4;
   const fotosExtra = Math.min(Math.max(fotos - 1, 0), 4) * 4;
