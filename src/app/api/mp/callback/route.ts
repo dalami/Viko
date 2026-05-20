@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
     });
 
     const tokenData = await tokenRes.json();
+    console.log("MP TOKEN RESPONSE:", JSON.stringify(tokenData));
 
     if (!tokenData.access_token) {
       return NextResponse.redirect(
@@ -40,12 +41,13 @@ export async function GET(req: NextRequest) {
         mp_access_token: tokenData.access_token,
         mp_connected: true,
       })
-      .eq("id", empId);
+      .eq("user_id", empId);
 
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?mp=conectado`,
     );
-  } catch {
+  } catch (e) {
+    console.log("MP CALLBACK ERROR:", e);
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?mp=error`,
     );
