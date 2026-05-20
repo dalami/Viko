@@ -16,7 +16,7 @@ const FREE_FEATURES = [
   { label: "Carrito + MercadoPago", included: false },
   { label: "Productos ilimitados", included: false },
   { label: "Métricas completas", included: false },
-  { label: "Landing page + QR propio", included: false },
+  { label: "Tienda online + QR propio", included: false },
 ];
 
 const PRO_FEATURES = [
@@ -25,7 +25,7 @@ const PRO_FEATURES = [
   { label: "Productos ilimitados", included: true },
   { label: "Carrito + pago con MercadoPago", included: true },
   { label: "Métricas completas", included: true },
-  { label: "Landing page profesional + QR", included: true },
+  { label: "Tienda online profesional + QR", included: true },
 ];
 
 export default function ViewPlanes({ currentPlan, onUpgrade }: Props) {

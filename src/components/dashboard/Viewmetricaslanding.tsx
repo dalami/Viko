@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import styles from "../dashboard/View.module.css";
 import type { Emprendimiento } from "../../lib/types";
 import { parsePlantilla, COLORES, LAYOUTS } from "../../lib/plantillas";
+import Image from "next/image";
 
 export function ViewLanding({
   emp,
@@ -52,7 +53,7 @@ export function ViewLanding({
     return (
       <div className={styles.view}>
         <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Mi landing</h3>
+          <h3 className={styles.sectionTitle}>Mi Tienda</h3>
           <div
             style={{
               background: "linear-gradient(135deg, #1A1814, #2D2B26)",
@@ -71,7 +72,7 @@ export function ViewLanding({
                 marginBottom: 6,
               }}
             >
-              Landing page — Viko Pro
+              Mi Tienda — Viko Pro
             </p>
             <p
               style={{
@@ -242,82 +243,172 @@ export function ViewLanding({
 
       {/* VISTA PREVIA */}
       <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>Vista previa de tu landing</h3>
+        <h3 className={styles.sectionTitle}>Vista previa de tu tienda</h3>
         <p className={styles.sectionSub}>
           Así ven tu página los clientes cuando entran al link.
         </p>
         <div
-          className={styles.previewFrame}
-          style={{ background: tema.bg, borderColor: tema.border }}
+          style={{
+            border: "1px solid var(--border)",
+            borderRadius: 16,
+            overflow: "hidden",
+            maxWidth: 360,
+            background: tema.bg,
+          }}
         >
+          {/* Foto de portada */}
           <div
-            className={styles.previewNav}
             style={{
-              background: `${tema.bg}f0`,
-              borderBottomColor: tema.border,
+              width: "100%",
+              height: 180,
+              background: tema.card,
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            <span className={styles.previewLogo} style={{ color: tema.text }}>
-              Viko<span style={{ color: tema.accent }}>.</span>
-            </span>
-          </div>
-          <div className={styles.previewHero}>
-            <p className={styles.previewRubro} style={{ color: tema.accent }}>
-              {emp.rubro || "Categoría"}
-            </p>
-            <h2 className={styles.previewName} style={{ color: tema.text }}>
-              {emp.nombre || "Tu emprendimiento"}
-            </h2>
-            <p className={styles.previewTagline} style={{ color: tema.muted }}>
-              {emp.tagline || "Tu tagline aparece acá"}
-            </p>
-            {emp.descripcion && (
-              <p
-                className={styles.previewTagline}
-                style={{ fontSize: 13, color: tema.muted, marginTop: -8 }}
+            {emp.images?.[0] ? (
+              <Image
+                src={emp.images[0]}
+                alt={emp.nombre}
+                fill
+                style={{ objectFit: "cover" }}
+                sizes="360px"
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 40,
+                }}
               >
-                {emp.descripcion}
-              </p>
+                📷
+              </div>
             )}
-            <div className={styles.previewBtns}>
-              <span className={styles.previewBtnWa}>💬 WhatsApp</span>
-              <span
-                className={styles.previewBtnIg}
-                style={{ background: tema.accent, color: "#fff" }}
-              >
-                📷 Instagram
-              </span>
-            </div>
-            {/* Mini preview de productos */}
             <div
               style={{
-                display: "flex",
-                gap: 8,
-                marginTop: 12,
-                flexWrap: "wrap",
+                position: "absolute",
+                top: 10,
+                left: 10,
+                background: tema.accent,
+                color: "#fff",
+                fontSize: 10,
+                fontWeight: 700,
+                padding: "3px 10px",
+                borderRadius: 100,
+                zIndex: 1,
               }}
             >
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
+              {emp.rubro || "Categoría"}
+            </div>
+          </div>
+
+          {/* Info */}
+          <div style={{ padding: "16px 18px" }}>
+            <h2
+              style={{
+                fontSize: 18,
+                fontWeight: 800,
+                color: tema.text,
+                margin: "0 0 4px",
+                fontFamily: "Syne, sans-serif",
+              }}
+            >
+              {emp.nombre || "Tu emprendimiento"}
+            </h2>
+            <p style={{ fontSize: 13, color: tema.muted, margin: "0 0 8px" }}>
+              {emp.tagline || "Tu tagline aparece acá"}
+            </p>
+            {emp.ubicacion && (
+              <p
+                style={{ fontSize: 12, color: tema.muted, margin: "0 0 12px" }}
+              >
+                📍 {emp.ubicacion}
+              </p>
+            )}
+
+            {/* Botones */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              {emp.whatsapp && (
+                <span
                   style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 8,
-                    background: tema.card,
-                    border: `1px solid ${tema.border}`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 20,
+                    background: "#25D366",
+                    color: "#fff",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: "6px 12px",
+                    borderRadius: 100,
                   }}
                 >
-                  🛍️
-                </div>
-              ))}
+                  💬 WhatsApp
+                </span>
+              )}
+              {emp.instagram && (
+                <span
+                  style={{
+                    background: tema.accent,
+                    color: "#fff",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: "6px 12px",
+                    borderRadius: 100,
+                  }}
+                >
+                  📷 Instagram
+                </span>
+              )}
+            </div>
+
+            {/* Fotos adicionales */}
+            {(emp.images?.filter(Boolean).length ?? 0) > 1 && (
+              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                {emp.images
+                  ?.filter(Boolean)
+                  .slice(1, 4)
+                  .map((img, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        background: tema.card,
+                        flexShrink: 0,
+                        position: "relative",
+                      }}
+                    >
+                      <Image
+                        src={img}
+                        alt=""
+                        fill
+                        style={{ objectFit: "cover" }}
+                        sizes="56px"
+                      />
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {/* Badge Viko */}
+            <div
+              style={{
+                borderTop: `1px solid ${tema.border}`,
+                paddingTop: 10,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <span style={{ fontSize: 11, color: tema.muted }}>
+                ✦ Emprendimiento en <strong>Viko.</strong>
+              </span>
             </div>
           </div>
         </div>
+
         <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
           Plantilla activa:{" "}
           <strong style={{ color: "var(--black)" }}>

@@ -241,7 +241,7 @@ export default function RegisterPage() {
             &quot;Tu marca merece estar en el mejor lugar.&quot;
           </p>
           <p className={styles.decorSub}>
-            Directorio curado · Landing page propia · Métricas reales
+            Directorio curado · Presencia online · Métricas reales
           </p>
         </div>
       </div>

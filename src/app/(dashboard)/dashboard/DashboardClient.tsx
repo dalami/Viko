@@ -25,7 +25,7 @@ const NAV = [
   { id: "productos", label: "Productos", icon: "🛍️" },
   { id: "pedidos", label: "Pedidos", icon: "📦" },
   { id: "metricas", label: "Métricas", icon: "📊" },
-  { id: "landing", label: "Mi landing", icon: "🌐" },
+  { id: "landing", label: "Mi tienda", icon: "🌐" },
   { id: "planes", label: "Planes", icon: "⚡" },
 ] as const;
 

@@ -187,13 +187,15 @@ export default function DirectorioClient({
 
   const filtered = emprendimientos.filter((e) => {
     const matchCat = cat === "all" || e.rubro === cat;
-    const matchZona = zona === "all" || e.ubicacion === zona;
+    const matchZona =
+      zona === "all" || e.ubicacion === zona || e.envios === true;
     const q = search.toLowerCase();
     const matchSearch =
       !q ||
       e.nombre.toLowerCase().includes(q) ||
       e.rubro.toLowerCase().includes(q) ||
       (e.ubicacion?.toLowerCase().includes(q) ?? false) ||
+      (e.envios === true && q.length > 0) ||
       e.tagline.toLowerCase().includes(q) ||
       (e.productos_nombres?.some((p) => p.toLowerCase().includes(q)) ?? false);
     return matchCat && matchZona && matchSearch;
@@ -533,7 +535,7 @@ export default function DirectorioClient({
                 {
                   icon: "🪪",
                   t: "Perfil profesional",
-                  s: "Landing page propia con tu URL en Viko",
+                  s: "Tu tienda propia con URL en Viko",
                 },
                 {
                   icon: "👕",
@@ -874,7 +876,7 @@ export default function DirectorioClient({
                 <li>✓ Hasta 3 productos</li>
                 <li className={styles.featureOff}>✕ Carrito + MercadoPago</li>
                 <li className={styles.featureOff}>✕ Métricas completas</li>
-                <li className={styles.featureOff}>✕ Landing page + QR</li>
+                <li className={styles.featureOff}>✕ Tienda online + QR</li>
               </ul>
               <Link
                 href={isLoggedIn ? "/dashboard?view=planes" : "/register"}
@@ -898,7 +900,7 @@ export default function DirectorioClient({
                 <li>✓ Productos ilimitados</li>
                 <li>✓ Carrito + pago con MercadoPago</li>
                 <li>✓ Métricas completas</li>
-                <li>✓ Landing page + QR propio</li>
+                <li>✓ Tienda online + QR propio</li>
               </ul>
               {isLoggedIn ? (
                 <div

@@ -171,6 +171,8 @@ export default function ViewPerfil({
     }
   }
 
+
+  
   async function handleRemoveImage(index: number) {
     const currentImages = emp.images ?? [];
     if (!currentImages[index]) return;
