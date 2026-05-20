@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     const accessToken = emp.mp_access_token ?? process.env.MP_PLATFORM_TOKEN;
 
-    if (emp.plan !== "premium" || !accessToken) {
+    if (!emp.mp_access_token) {
       return NextResponse.json(
         { error: "El emprendimiento no tiene MercadoPago activo" },
         { status: 403 },
