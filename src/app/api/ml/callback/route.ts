@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const userId = searchParams.get("state");
 
   if (!code || !userId) {
-    return NextResponse.redirect(`https://www.viko.com.ar/dashboard?ml=error`);
+    return NextResponse.redirect(`https://viko.com.ar/dashboard?ml=error`);
   }
 
   try {
@@ -27,9 +27,7 @@ export async function GET(req: NextRequest) {
     console.log("ML TOKEN RESPONSE:", JSON.stringify(tokenData));
 
     if (!tokenData.access_token) {
-      return NextResponse.redirect(
-        `https://www.viko.com.ar/dashboard?ml=error`,
-      );
+      return NextResponse.redirect(`https://www.viko.com.ar/dashboard?ml=error`);
     }
 
     const supabase = await createClient();
@@ -44,10 +42,10 @@ export async function GET(req: NextRequest) {
       .eq("user_id", userId);
 
     return NextResponse.redirect(
-      `https://www.viko.com.ar/dashboard?view=mercadolibre&ml=conectado`,
+      `https://viko.com.ar/dashboard?view=mercadolibre&ml=conectado`
     );
   } catch (e) {
     console.log("ML CALLBACK ERROR:", e);
-    return NextResponse.redirect(`https://www.viko.com.ar/dashboard?ml=error`);
+    return NextResponse.redirect(`https://viko.com.ar/dashboard?ml=error`);
   }
 }
