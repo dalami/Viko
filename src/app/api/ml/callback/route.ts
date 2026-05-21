@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     console.log("ML TOKEN RESPONSE:", JSON.stringify(tokenData));
 
     if (!tokenData.access_token) {
-      return NextResponse.redirect(`https://www.viko.com.ar/dashboard?ml=error`);
+      return NextResponse.redirect(`https://viko.com.ar/dashboard?ml=error`);
     }
 
     const supabase = await createClient();

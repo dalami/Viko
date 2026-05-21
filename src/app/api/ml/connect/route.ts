@@ -10,7 +10,7 @@ export async function GET() {
   );
 
   const clientId = process.env.ML_CLIENT_ID!;
-  const redirectUri = `https://viko.com.ar/api/ml/callback`;
+  const redirectUri = `https://www.viko.com.ar/api/ml/callback`;
 
   const authUrl = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${user.id}`;
 
