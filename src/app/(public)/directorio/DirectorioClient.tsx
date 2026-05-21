@@ -24,27 +24,8 @@ interface Emp {
   descripcion?: string;
   slug?: string;
   productos_nombres?: string[];
+  rubros?: string[];
 }
-
-const CATEGORIAS = [
-  { label: "✦ Todos", value: "all" },
-  { label: "🍽️ Gastronomía", value: "Gastronomía" },
-  { label: "🪴 Deco", value: "Deco" },
-  { label: "🎁 Regalos", value: "Regalos" },
-  { label: "👗 Moda", value: "Moda" },
-  { label: "⚡ Servicios", value: "Servicios" },
-  { label: "✨ Belleza", value: "Belleza" },
-  { label: "🎉 Eventos", value: "Eventos" },
-  { label: "💻 Digital", value: "Digital" },
-  { label: "🧖 Masajes", value: "Masajes" },
-  { label: "🖨️ Sublimados", value: "Sublimados" },
-  { label: "💍 Accesorios", value: "Accesorios" },
-  { label: "🕯️ Velas", value: "Velas" },
-  { label: "🫙 Suplementos", value: "Suplementos" },
-  { label: "🛍️ Bolsas", value: "Bolsas" },
-  { label: "🌸 Aromas", value: "Aromas" },
-  { label: "🧶 Macrame", value: "Macrame" },
-];
 
 const FAQS = [
   {
@@ -109,51 +90,23 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   return (
     <div
       onClick={() => setOpen(!open)}
-      style={{
-        borderBottom: "1px solid var(--border)",
-        padding: "18px 0",
-        cursor: "pointer",
-      }}
+      style={{ borderBottom: "1px solid var(--border)", padding: "18px 0", cursor: "pointer" }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 16,
-        }}
-      >
-        <p
-          style={{
-            fontSize: 15,
-            fontWeight: 600,
-            color: "var(--black)",
-            lineHeight: 1.4,
-          }}
-        >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+        <p style={{ fontSize: 15, fontWeight: 600, color: "var(--black)", lineHeight: 1.4 }}>
           {q}
         </p>
         <span
           style={{
-            fontSize: 18,
-            color: "var(--muted)",
-            flexShrink: 0,
-            transition: "transform 0.2s",
-            transform: open ? "rotate(45deg)" : "none",
+            fontSize: 18, color: "var(--muted)", flexShrink: 0,
+            transition: "transform 0.2s", transform: open ? "rotate(45deg)" : "none",
           }}
         >
           +
         </span>
       </div>
       {open && (
-        <p
-          style={{
-            fontSize: 14,
-            color: "var(--muted)",
-            marginTop: 10,
-            lineHeight: 1.7,
-          }}
-        >
+        <p style={{ fontSize: 14, color: "var(--muted)", marginTop: 10, lineHeight: 1.7 }}>
           {a}
         </p>
       )}
@@ -180,17 +133,31 @@ export default function DirectorioClient({
     return () => clearTimeout(t);
   }, []);
 
+  // Categorías dinámicas — combina rubro y rubros[] de cada emprendimiento
+  const categoriasExtra = Array.from(
+    new Set(
+      emprendimientos
+        .flatMap((e) => [e.rubro, ...(e.rubros ?? [])])
+        .filter(Boolean)
+    )
+  ).sort() as string[];
+
+  const CATEGORIAS_DINAMICAS = [
+    { label: "✦ Todos", value: "all" },
+    ...categoriasExtra.map((c) => ({ label: c, value: c })),
+  ];
+
   const zonas = [
     "all",
     ...Array.from(
-      new Set(emprendimientos.map((e) => e.ubicacion).filter(Boolean)),
+      new Set(emprendimientos.map((e) => e.ubicacion).filter(Boolean))
     ),
   ] as string[];
 
   const filtered = emprendimientos.filter((e) => {
-    const matchCat = cat === "all" || e.rubro === cat;
-    const matchZona =
-      zona === "all" || e.ubicacion === zona || e.envios === true;
+    const empRubros = [e.rubro, ...(e.rubros ?? [])].filter(Boolean);
+    const matchCat = cat === "all" || empRubros.includes(cat);
+    const matchZona = zona === "all" || e.ubicacion === zona || e.envios === true;
     const q = search.toLowerCase();
     const matchSearch =
       !q ||
@@ -215,16 +182,8 @@ export default function DirectorioClient({
 
   function getBadges(e: Emp) {
     const badges = [];
-    if (e.plan === "premium")
-      badges.push({ label: "⭐ Pro", color: "#C9A84C" });
-    if (
-      e.nombre &&
-      e.rubro &&
-      e.tagline &&
-      e.descripcion &&
-      e.images &&
-      e.images.filter(Boolean).length > 0
-    )
+    if (e.plan === "premium") badges.push({ label: "⭐ Pro", color: "#C9A84C" });
+    if (e.nombre && e.rubro && e.tagline && e.descripcion && e.images && e.images.filter(Boolean).length > 0)
       badges.push({ label: "✅ Verificado", color: "#6B7A5A" });
     if (!e.images || e.images.filter(Boolean).length === 0)
       badges.push({ label: "🏪 Activo", color: "#7A756A" });
@@ -236,39 +195,20 @@ export default function DirectorioClient({
       {banner && (
         <div
           style={{
-            background: "#1A3C6E",
-            color: "#F5F0E8",
-            textAlign: "center",
-            padding: "12px 20px",
-            fontSize: 14,
-            fontFamily: "Syne, sans-serif",
-            fontWeight: 600,
-            letterSpacing: 0.3,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 12,
-            position: "relative",
+            background: "#1A3C6E", color: "#F5F0E8", textAlign: "center",
+            padding: "12px 20px", fontSize: 14, fontFamily: "Syne, sans-serif",
+            fontWeight: 600, letterSpacing: 0.3, display: "flex",
+            alignItems: "center", justifyContent: "center", gap: 12, position: "relative",
           }}
         >
           <span>🇦🇷</span>
-          <span>
-            Juntos hacemos grande a la Argentina — comprá local, apoyá al
-            emprendedor nacional
-          </span>
+          <span>Juntos hacemos grande a la Argentina — comprá local, apoyá al emprendedor nacional</span>
           <span>🇦🇷</span>
           <button
             onClick={() => setBanner(false)}
             style={{
-              position: "absolute",
-              right: 16,
-              background: "none",
-              border: "none",
-              color: "#F5F0E8",
-              fontSize: 16,
-              cursor: "pointer",
-              opacity: 0.6,
-              lineHeight: 1,
+              position: "absolute", right: 16, background: "none", border: "none",
+              color: "#F5F0E8", fontSize: 16, cursor: "pointer", opacity: 0.6, lineHeight: 1,
             }}
           >
             ✕
@@ -280,9 +220,7 @@ export default function DirectorioClient({
 
       {/* HERO */}
       <section className={styles.hero}>
-        <div className={styles.heroBadge}>
-          Directorio de emprendimientos argentinos
-        </div>
+        <div className={styles.heroBadge}>Directorio de emprendimientos argentinos</div>
         <h1 className={styles.heroTitle}>
           Todo lo que buscás,
           <br />
@@ -304,19 +242,11 @@ export default function DirectorioClient({
           <Link
             href="/register"
             style={{
-              display: "flex",
-              alignItems: "center",
-              textDecoration: "none",
-              padding: "0 28px",
-              height: "48px",
-              borderRadius: "100px",
-              border: "1.5px solid var(--black)",
-              color: "var(--black)",
-              fontFamily: "Syne, sans-serif",
-              fontWeight: 700,
-              fontSize: 14,
-              background: "transparent",
-              whiteSpace: "nowrap",
+              display: "flex", alignItems: "center", textDecoration: "none",
+              padding: "0 28px", height: "48px", borderRadius: "100px",
+              border: "1.5px solid var(--black)", color: "var(--black)",
+              fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 14,
+              background: "transparent", whiteSpace: "nowrap",
             }}
           >
             Sumar mi Negocio →
@@ -333,9 +263,7 @@ export default function DirectorioClient({
             <span className={styles.statLabel}>Emprendimientos</span>
           </div>
           <div className={styles.stat}>
-            <span className={styles.statNum}>
-              {new Set(emprendimientos.map((e) => e.rubro)).size}
-            </span>
+            <span className={styles.statNum}>{categoriasExtra.length}</span>
             <span className={styles.statLabel}>Categorías</span>
           </div>
           <div className={styles.stat}>
@@ -360,13 +288,8 @@ export default function DirectorioClient({
             <button
               onClick={() => setSearch("")}
               style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontSize: 16,
-                color: "var(--muted)",
-                padding: "0 4px",
-                lineHeight: 1,
+                background: "none", border: "none", cursor: "pointer",
+                fontSize: 16, color: "var(--muted)", padding: "0 4px", lineHeight: 1,
               }}
             >
               ✕
@@ -375,10 +298,10 @@ export default function DirectorioClient({
         </div>
       </div>
 
-      {/* CATEGORÍAS */}
+      {/* CATEGORÍAS — dinámicas */}
       <div className={styles.catsWrap}>
         <div className={styles.cats}>
-          {CATEGORIAS.map((c) => (
+          {CATEGORIAS_DINAMICAS.map((c) => (
             <button
               key={c.value}
               className={`${styles.pill} ${cat === c.value ? styles.pillActive : ""}`}
@@ -425,9 +348,7 @@ export default function DirectorioClient({
                 <div
                   key={e.id}
                   className={styles.card}
-                  onClick={() =>
-                    router.push(`/emprendimiento/${slugify(e.nombre)}`)
-                  }
+                  onClick={() => router.push(`/emprendimiento/${slugify(e.nombre)}`)}
                   style={{ cursor: "pointer" }}
                 >
                   <div className={styles.cardImg}>
@@ -444,37 +365,22 @@ export default function DirectorioClient({
                     )}
                     <div className={styles.cardBadges}>
                       <span className={styles.badgeCat}>{e.rubro}</span>
-                      {e.plan === "featured" && (
-                        <span className={styles.badgeFeatured}>Destacado</span>
-                      )}
-                      {e.plan === "premium" && (
-                        <span className={styles.badgePremium}>Premium</span>
-                      )}
+                      {e.plan === "featured" && <span className={styles.badgeFeatured}>Destacado</span>}
+                      {e.plan === "premium" && <span className={styles.badgePremium}>Premium</span>}
                     </div>
                   </div>
                   <div className={styles.cardBody}>
                     <p className={styles.cardName}>{e.nombre}</p>
                     <p className={styles.cardTag}>{e.tagline}</p>
                     {badges.length > 0 && (
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 6,
-                          flexWrap: "wrap",
-                          marginBottom: 8,
-                        }}
-                      >
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                         {badges.map((b) => (
                           <span
                             key={b.label}
                             style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              padding: "3px 8px",
-                              borderRadius: 100,
-                              background: b.color + "20",
-                              color: b.color,
-                              border: `1px solid ${b.color}40`,
+                              fontSize: 10, fontWeight: 700, padding: "3px 8px",
+                              borderRadius: 100, background: b.color + "20",
+                              color: b.color, border: `1px solid ${b.color}40`,
                             }}
                           >
                             {b.label}
@@ -486,39 +392,15 @@ export default function DirectorioClient({
                       {e.ubicacion && <span>📍 {e.ubicacion}</span>}
                       <span>{e.envios ? "🚚 Envíos" : "🏪 Local"}</span>
                     </div>
-                    <div
-                      className={styles.cardFooter}
-                      onClick={(ev) => ev.stopPropagation()}
-                    >
+                    <div className={styles.cardFooter} onClick={(ev) => ev.stopPropagation()}>
                       {e.whatsapp && (
-                        <a
-                          href={buildWA(e.whatsapp, e.nombre)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.cardBtn}
-                        >
-                          💬
-                        </a>
+                        <a href={buildWA(e.whatsapp, e.nombre)} target="_blank" rel="noopener noreferrer" className={styles.cardBtn}>💬</a>
                       )}
                       {e.instagram && (
-                        <a
-                          href={`https://instagram.com/${e.instagram}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.cardBtn}
-                        >
-                          📷
-                        </a>
+                        <a href={`https://instagram.com/${e.instagram}`} target="_blank" rel="noopener noreferrer" className={styles.cardBtn}>📷</a>
                       )}
                       {e.web && (
-                        <a
-                          href={e.web}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.cardBtn}
-                        >
-                          🌐
-                        </a>
+                        <a href={e.web} target="_blank" rel="noopener noreferrer" className={styles.cardBtn}>🌐</a>
                       )}
                     </div>
                   </div>
@@ -541,9 +423,7 @@ export default function DirectorioClient({
           <div className={styles.planesGrid}>
             <div className={styles.planCard}>
               <div className={styles.planCardLabel}>FREE</div>
-              <div className={styles.planCardPrice}>
-                $0<span>/mes</span>
-              </div>
+              <div className={styles.planCardPrice}>$0<span>/mes</span></div>
               <ul className={styles.planCardFeatures}>
                 <li>✓ 3 fotos</li>
                 <li>✓ WhatsApp, Instagram y redes</li>
@@ -553,22 +433,15 @@ export default function DirectorioClient({
                 <li className={styles.featureOff}>✕ Métricas completas</li>
                 <li className={styles.featureOff}>✕ Tienda online + QR</li>
               </ul>
-              <Link
-                href={isLoggedIn ? "/dashboard?view=planes" : "/register"}
-                className={styles.planCtaSecondary}
-              >
+              <Link href={isLoggedIn ? "/dashboard?view=planes" : "/register"} className={styles.planCtaSecondary}>
                 {isLoggedIn ? "Ver mi plan →" : "Empezar gratis →"}
               </Link>
             </div>
             <div className={`${styles.planCard} ${styles.planCardPro}`}>
               <div className={styles.planCardReco}>⭐ Recomendado</div>
               <div className={styles.planCardLabel}>VIKO PRO</div>
-              <div className={styles.planCardPrice}>
-                $9.900<span>/mes</span>
-              </div>
-              <p className={styles.planCardAnual}>
-                o $5.940/mes abonando anual — 40% off
-              </p>
+              <div className={styles.planCardPrice}>$9.900<span>/mes</span></div>
+              <p className={styles.planCardAnual}>o $5.940/mes abonando anual — 40% off</p>
               <ul className={styles.planCardFeatures}>
                 <li>✓ Todo lo del plan Free</li>
                 <li>✓ 5 fotos</li>
@@ -579,11 +452,7 @@ export default function DirectorioClient({
               </ul>
               {isLoggedIn ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => handleUpgrade("mensual")}
-                    className={styles.planCta}
-                  >
+                  <button type="button" onClick={() => handleUpgrade("mensual")} className={styles.planCta}>
                     ⚡ Activar mensual — $9.900/mes
                   </button>
                   <button
@@ -596,9 +465,7 @@ export default function DirectorioClient({
                   </button>
                 </div>
               ) : (
-                <Link href="/register" className={styles.planCta}>
-                  Quiero formar parte →
-                </Link>
+                <Link href="/register" className={styles.planCta}>Quiero formar parte →</Link>
               )}
             </div>
           </div>
@@ -606,78 +473,37 @@ export default function DirectorioClient({
       </section>
 
       {/* FAQ */}
-      <section
-        id="faq"
-        style={{ background: "var(--white)", padding: "72px 5vw" }}
-      >
+      <section id="faq" style={{ background: "var(--white)", padding: "72px 5vw" }}>
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <div
             style={{
-              cursor: "pointer",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: faqOpen ? 48 : 0,
+              cursor: "pointer", display: "flex", justifyContent: "space-between",
+              alignItems: "center", marginBottom: faqOpen ? 48 : 0,
             }}
             onClick={() => setFaqOpen(!faqOpen)}
           >
             <div>
-              <p
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: 2,
-                  textTransform: "uppercase",
-                  color: "var(--muted)",
-                  marginBottom: 8,
-                }}
-              >
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 }}>
                 FAQ
               </p>
-              <h2
-                style={{
-                  fontFamily: "'DM Serif Display', serif",
-                  fontSize: 32,
-                  color: "var(--black)",
-                  letterSpacing: -0.5,
-                  margin: 0,
-                }}
-              >
+              <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, color: "var(--black)", letterSpacing: -0.5, margin: 0 }}>
                 Preguntas frecuentes
               </h2>
             </div>
             <span
               style={{
-                fontSize: 18,
-                color: "var(--muted)",
-                transition: "transform 0.3s",
-                transform: faqOpen ? "rotate(45deg)" : "none",
-                display: "inline-block",
+                fontSize: 18, color: "var(--muted)", transition: "transform 0.3s",
+                transform: faqOpen ? "rotate(45deg)" : "none", display: "inline-block",
               }}
             >
               +
             </span>
           </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateRows: faqOpen ? "1fr" : "0fr",
-              transition: "grid-template-rows 0.4s ease",
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateRows: faqOpen ? "1fr" : "0fr", transition: "grid-template-rows 0.4s ease" }}>
             <div style={{ overflow: "hidden" }}>
               {FAQS.map((grupo) => (
                 <div key={grupo.grupo} style={{ marginBottom: 40 }}>
-                  <p
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: 1.5,
-                      textTransform: "uppercase",
-                      color: "var(--olive)",
-                      marginBottom: 4,
-                    }}
-                  >
+                  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--olive)", marginBottom: 4 }}>
                     {grupo.grupo}
                   </p>
                   {grupo.items.map((item) => (
@@ -692,22 +518,10 @@ export default function DirectorioClient({
 
       {/* FOOTER */}
       <footer className={styles.footer}>
-        <Link href="/" className={styles.footerLogo}>
-          Viko.
-        </Link>
-        <Link
-          href="/admin"
-          style={{ fontSize: 10, color: "rgba(26,24,20,0.2)", textDecoration: "none" }}
-        >
-          Admin
-        </Link>
-        <span className={styles.footerCopy}>
-          © 2026 Viko — Directorio de emprendimientos seleccionados.
-        </span>
-        <a
-          href="mailto:diegoalami@gmail.com"
-          style={{ fontSize: 12, color: "var(--muted)", textDecoration: "none" }}
-        >
+        <Link href="/" className={styles.footerLogo}>Viko.</Link>
+        <Link href="/admin" style={{ fontSize: 10, color: "rgba(26,24,20,0.2)", textDecoration: "none" }}>Admin</Link>
+        <span className={styles.footerCopy}>© 2026 Viko — Directorio de emprendimientos seleccionados.</span>
+        <a href="mailto:diegoalami@gmail.com" style={{ fontSize: 12, color: "var(--muted)", textDecoration: "none" }}>
           Contacto: diegoalami@gmail.com
         </a>
       </footer>
