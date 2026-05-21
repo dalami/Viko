@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState,  useEffect } from "react";
 import { createClient } from "../../../lib/supabase";
 import { useRouter } from "next/navigation";
 import styles from "../../../styles/dashboard.module.css";
@@ -55,6 +55,12 @@ export default function DashboardClient({
 
   const supabase = createClient();
   const router = useRouter();
+ 
+  useEffect(() => {
+  if (mlStatus === "conectado") {
+    router.refresh();
+  }
+}, [mlStatus, router]);
 
   async function handleSaveProfile() {
     if (!emp.images?.[0]) {
