@@ -1,6 +1,6 @@
 "use client";
 
-import { useState,  useEffect } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "../../../lib/supabase";
 import { useRouter } from "next/navigation";
 import styles from "../../../styles/dashboard.module.css";
@@ -47,7 +47,10 @@ export default function DashboardClient({
   const mlStatus = searchParams.get("ml");
   const initialView = (searchParams.get("view") as ViewId) ?? "perfil";
   const [view, setView] = useState<ViewId>(initialView);
-  const [emp, setEmp] = useState<Emprendimiento>(emprendimiento);
+  const [emp, setEmp] = useState<Emprendimiento>({
+    ...emprendimiento,
+    ml_connected: mlStatus === "conectado" ? true : emprendimiento.ml_connected,
+  });
   const [prods, setProds] = useState<Producto[]>(productos);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
@@ -55,13 +58,8 @@ export default function DashboardClient({
 
   const supabase = createClient();
   const router = useRouter();
- 
-  useEffect(() => {
-  if (mlStatus === "conectado") {
-    router.refresh();
-  }
-}, [mlStatus, router]);
 
+  
   async function handleSaveProfile() {
     if (!emp.images?.[0]) {
       setSaveMsg("⚠️ Necesitás subir al menos una foto antes de guardar.");
