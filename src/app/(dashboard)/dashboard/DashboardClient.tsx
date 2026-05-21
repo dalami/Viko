@@ -144,9 +144,13 @@ export default function DashboardClient({
             >
               <span className={styles.navIcon}>{n.icon}</span>
               {n.label}
-              {!isPro && (n.id === "metricas" || n.id === "landing") && (
-                <span className={styles.navItemPro}>Pro</span>
-              )}
+              {!isPro &&
+                (n.id === "metricas" ||
+                  n.id === "landing" ||
+                  n.id === "pedidos" ||
+                  n.id === "mercadolibre") && (
+                  <span className={styles.navItemPro}>Pro</span>
+                )}
             </button>
           ))}
         </nav>
@@ -238,7 +242,12 @@ export default function DashboardClient({
             />
           )}
 
-          {view === "pedidos" && <ViewPedidos empId={emp.id} />}
+          {view === "pedidos" &&
+            (isPro ? (
+              <ViewPedidos empId={emp.id} />
+            ) : (
+              <ViewPlanes currentPlan={emp.plan} onUpgrade={handleUpgrade} />
+            ))}
           {view === "metricas" && (
             <ViewMetricas
               empId={emp.id}
@@ -258,9 +267,12 @@ export default function DashboardClient({
           {view === "planes" && (
             <ViewPlanes currentPlan={emp.plan} onUpgrade={handleUpgrade} />
           )}
-          {view === "mercadolibre" && (
-            <ViewMercadoLibre emp={emp} productos={prods} />
-          )}
+          {view === "mercadolibre" &&
+            (isPro ? (
+              <ViewMercadoLibre emp={emp} productos={prods} />
+            ) : (
+              <ViewPlanes currentPlan={emp.plan} onUpgrade={handleUpgrade} />
+            ))}
           {view === "tutorial" && <ViewTutorial />}
         </div>
       </div>

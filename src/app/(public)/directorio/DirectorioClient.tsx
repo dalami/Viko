@@ -522,7 +522,7 @@ export default function DirectorioClient({
         <Link href="/admin" style={{ fontSize: 10, color: "rgba(26,24,20,0.2)", textDecoration: "none" }}>Admin</Link>
         <span className={styles.footerCopy}>© 2026 Viko — Directorio de emprendimientos seleccionados.</span>
         <a href="mailto:diegoalami@gmail.com" style={{ fontSize: 12, color: "var(--muted)", textDecoration: "none" }}>
-          Contacto: diegoalami@gmail.com
+          Soporte: diegoalami@gmail.com
         </a>
       </footer>
     </div>
