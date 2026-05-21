@@ -60,7 +60,7 @@ export default function DashboardClient({
 
   const supabase = createClient();
   const router = useRouter();
-  
+
   async function handleSaveProfile() {
     if (!emp.images?.[0]) {
       setSaveMsg("⚠️ Necesitás subir al menos una foto antes de guardar.");
@@ -72,7 +72,7 @@ export default function DashboardClient({
       .from("emprendimientos")
       .update({
         nombre: emp.nombre,
-        rubro: emp.rubro,
+        rubro: emp.rubros?.[0] ?? emp.rubro ?? "",
         tagline: emp.tagline,
         descripcion: emp.descripcion,
         ubicacion: emp.ubicacion,
@@ -211,7 +211,7 @@ export default function DashboardClient({
             <div className={styles.avatar}>{initials}</div>
           </div>
         </div>
-        
+
         <div className={styles.content}>
           {view === "perfil" && (
             <ViewPerfil
@@ -330,7 +330,6 @@ export default function DashboardClient({
           </div>
         </>
       )}
-     
     </div>
   );
 }
