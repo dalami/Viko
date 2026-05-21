@@ -20,15 +20,12 @@ export default function ViewMercadoLibre({
     titulo: string;
     precio: number;
   } | null>(null);
+  const [previewEdits, setPreviewEdits] = useState<{
+    titulo: string;
+    precio: string;
+  }>({ titulo: "", precio: "" });
   const [results, setResults] = useState<
-    Record<
-      string,
-      {
-        ok: boolean;
-        permalink?: string;
-        error?: string;
-      }
-    >
+    Record<string, { ok: boolean; permalink?: string; error?: string }>
   >({});
 
   async function handlePreview(producto: Producto) {
@@ -42,6 +39,10 @@ export default function ViewMercadoLibre({
       const data = await res.json();
       if (data.preview) {
         setPreview({ producto, ...data });
+        setPreviewEdits({
+          titulo: data.titulo,
+          precio: String(data.precio),
+        });
       }
     } catch {
       setResults((prev) => ({
@@ -60,7 +61,12 @@ export default function ViewMercadoLibre({
       const res = await fetch("/api/ml/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ producto: preview.producto, confirmar: true }),
+        body: JSON.stringify({
+          producto: preview.producto,
+          confirmar: true,
+          titulo: previewEdits.titulo,
+          precio: Number(previewEdits.precio),
+        }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -90,7 +96,6 @@ export default function ViewMercadoLibre({
       <div className={styles.view}>
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>Mercado Libre</h3>
-
           <div
             style={{
               background: "linear-gradient(135deg, #FFE600, #F5D000)",
@@ -99,15 +104,7 @@ export default function ViewMercadoLibre({
               textAlign: "center",
             }}
           >
-            <div
-              style={{
-                fontSize: 40,
-                marginBottom: 12,
-              }}
-            >
-              🛒
-            </div>
-
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🛒</div>
             <p
               style={{
                 fontWeight: 800,
@@ -118,7 +115,6 @@ export default function ViewMercadoLibre({
             >
               Publicá en Mercado Libre
             </p>
-
             <p
               style={{
                 fontSize: 14,
@@ -130,7 +126,6 @@ export default function ViewMercadoLibre({
               Conectá tu cuenta de Mercado Libre y publicá tus productos con un
               clic directamente desde Viko.
             </p>
-
             <a
               href="/api/ml/connect"
               style={{
@@ -159,7 +154,6 @@ export default function ViewMercadoLibre({
     <div className={styles.view}>
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>Mercado Libre</h3>
-
         <div
           style={{
             display: "flex",
@@ -173,7 +167,6 @@ export default function ViewMercadoLibre({
           }}
         >
           <span style={{ fontSize: 20 }}>✅</span>
-
           <div>
             <p
               style={{
@@ -185,18 +178,10 @@ export default function ViewMercadoLibre({
             >
               Cuenta conectada
             </p>
-
-            <p
-              style={{
-                fontSize: 12,
-                color: "#8A8680",
-                margin: 0,
-              }}
-            >
+            <p style={{ fontSize: 12, color: "#8A8680", margin: 0 }}>
               Podés publicar tus productos directamente en ML
             </p>
           </div>
-
           <a
             href="/api/ml/connect"
             style={{
@@ -215,31 +200,20 @@ export default function ViewMercadoLibre({
 
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>Tus productos</h3>
-
         <p className={styles.sectionSub}>
-          Elegí qué productos querés publicar en Mercado Libre.
+          Elegí qué productos querés publicar en Mercado Libre. Podés ajustar el
+          título y precio antes de confirmar.
         </p>
 
         {productos.filter((p) => p.activo !== false).length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "40px 0",
-            }}
-          >
+          <div style={{ textAlign: "center", padding: "40px 0" }}>
             <p style={{ fontSize: 14, color: "#8A8680" }}>
               No tenés productos cargados. Agregá productos en la sección
               &quot;Productos&quot; primero.
             </p>
           </div>
         ) : (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-            }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {productos
               .filter((p) => p.activo !== false)
               .map((p) => {
@@ -306,7 +280,6 @@ export default function ViewMercadoLibre({
                       >
                         {p.nombre}
                       </p>
-
                       <p
                         style={{
                           fontSize: 13,
@@ -320,7 +293,6 @@ export default function ViewMercadoLibre({
                           "es-AR",
                         )}
                       </p>
-
                       {result?.ok && result.permalink && (
                         <a
                           href={result.permalink}
@@ -335,14 +307,9 @@ export default function ViewMercadoLibre({
                           Ver en ML →
                         </a>
                       )}
-
                       {result?.error && (
                         <p
-                          style={{
-                            fontSize: 11,
-                            color: "#C4664A",
-                            margin: 0,
-                          }}
+                          style={{ fontSize: 11, color: "#C4664A", margin: 0 }}
                         >
                           ⚠️ {result.error}
                         </p>
@@ -388,6 +355,8 @@ export default function ViewMercadoLibre({
                   </div>
                 );
               })}
+
+            {/* Modal de confirmación con edición */}
             {preview && (
               <div
                 style={{
@@ -406,7 +375,7 @@ export default function ViewMercadoLibre({
                     background: "#FAFAF7",
                     borderRadius: 20,
                     padding: "32px 28px",
-                    maxWidth: 400,
+                    maxWidth: 420,
                     width: "100%",
                   }}
                 >
@@ -416,11 +385,21 @@ export default function ViewMercadoLibre({
                       fontWeight: 800,
                       fontSize: 18,
                       color: "#1A1814",
-                      marginBottom: 20,
+                      marginBottom: 6,
                     }}
                   >
                     Confirmar publicación en ML
                   </h3>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "#8A8680",
+                      marginBottom: 20,
+                    }}
+                  >
+                    Podés editar el título y precio antes de publicar. Estos
+                    cambios solo aplican a Mercado Libre.
+                  </p>
 
                   <div
                     style={{
@@ -450,28 +429,95 @@ export default function ViewMercadoLibre({
                         />
                       </div>
                     )}
-                    <div>
-                      <p
+
+                    <div style={{ flex: 1 }}>
+                      <label
                         style={{
-                          fontSize: 15,
-                          fontWeight: 700,
+                          fontSize: 11,
+                          color: "#8A8680",
+                          display: "block",
+                          marginBottom: 4,
+                        }}
+                      >
+                        Título en ML
+                      </label>
+                      <input
+                        value={previewEdits.titulo}
+                        onChange={(e) =>
+                          setPreviewEdits((p) => ({
+                            ...p,
+                            titulo: e.target.value,
+                          }))
+                        }
+                        style={{
+                          width: "100%",
+                          fontSize: 14,
+                          fontWeight: 600,
                           color: "#1A1814",
-                          margin: "0 0 4px",
+                          border: "1px solid #E8E4DC",
+                          borderRadius: 8,
+                          padding: "7px 10px",
+                          fontFamily: "inherit",
+                          boxSizing: "border-box",
+                          marginBottom: 10,
+                        }}
+                      />
+
+                      <label
+                        style={{
+                          fontSize: 11,
+                          color: "#8A8680",
+                          display: "block",
+                          marginBottom: 4,
                         }}
                       >
-                        {preview.titulo}
-                      </p>
+                        Precio en ML (ARS)
+                      </label>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: "#6B7A5A",
+                          }}
+                        >
+                          $
+                        </span>
+                        <input
+                          type="number"
+                          value={previewEdits.precio}
+                          onChange={(e) =>
+                            setPreviewEdits((p) => ({
+                              ...p,
+                              precio: e.target.value,
+                            }))
+                          }
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: "#6B7A5A",
+                            border: "1px solid #E8E4DC",
+                            borderRadius: 8,
+                            padding: "7px 10px",
+                            fontFamily: "inherit",
+                            width: 160,
+                          }}
+                        />
+                      </div>
+
                       <p
                         style={{
-                          fontSize: 13,
-                          color: "#6B7A5A",
-                          fontWeight: 700,
-                          margin: "0 0 4px",
+                          fontSize: 11,
+                          color: "#8A8680",
+                          margin: "8px 0 0",
                         }}
                       >
-                        ${Number(preview.precio).toLocaleString("es-AR")}
-                      </p>
-                      <p style={{ fontSize: 11, color: "#8A8680", margin: 0 }}>
                         Categoría ML: {preview.categoryName}
                       </p>
                     </div>
@@ -523,7 +569,7 @@ export default function ViewMercadoLibre({
                         fontWeight: 700,
                         fontSize: 14,
                         color: "#1A1814",
-                        cursor: "pointer",
+                        cursor: publishing ? "not-allowed" : "pointer",
                         opacity: publishing ? 0.6 : 1,
                       }}
                     >

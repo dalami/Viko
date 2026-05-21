@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createClient } from "../../../lib/supabase";
 import { useRouter } from "next/navigation";
 import styles from "../../../styles/dashboard.module.css";
@@ -15,6 +15,7 @@ import { slugify, planLabel } from "../../../lib/utils";
 import type { Emprendimiento, Producto } from "../../../lib/types";
 import ViewPedidos from "../../../components/dashboard/Viewpedidos";
 import ViewMercadoLibre from "../../../components/dashboard/ViewMercadoLibre";
+import ViewTutorial from "../../../components/dashboard/ViewTutorial";
 
 interface User {
   id: string;
@@ -29,6 +30,7 @@ const NAV = [
   { id: "landing", label: "Mi tienda", icon: "🌐" },
   { id: "planes", label: "Planes", icon: "⚡" },
   { id: "mercadolibre", label: "Mercado Libre", icon: "🛒" },
+  { id: "tutorial", label: "Ayuda", icon: "❓" },
 ] as const;
 
 type ViewId = (typeof NAV)[number]["id"];
@@ -58,7 +60,6 @@ export default function DashboardClient({
 
   const supabase = createClient();
   const router = useRouter();
-
   
   async function handleSaveProfile() {
     if (!emp.images?.[0]) {
@@ -206,10 +207,11 @@ export default function DashboardClient({
                 {saving ? "Guardando..." : "Guardar cambios"}
               </button>
             )}
+
             <div className={styles.avatar}>{initials}</div>
           </div>
         </div>
-
+        
         <div className={styles.content}>
           {view === "perfil" && (
             <ViewPerfil
@@ -259,6 +261,7 @@ export default function DashboardClient({
           {view === "mercadolibre" && (
             <ViewMercadoLibre emp={emp} productos={prods} />
           )}
+          {view === "tutorial" && <ViewTutorial />}
         </div>
       </div>
 
@@ -327,6 +330,7 @@ export default function DashboardClient({
           </div>
         </>
       )}
+     
     </div>
   );
 }

@@ -24,7 +24,7 @@ const RUBROS = [
   "Macrame",
 ];
 
-const SLOT_LABELS = ["Producto", "Lifestyle", "Branding", "Packaging", "Promo"];
+const SLOT_LABELS = ["Portada", "Producto", "Marca", "Packaging", "Promo"];
 
 function ImageSlot({
   index,
