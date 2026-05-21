@@ -13,7 +13,13 @@ export default function ViewMercadoLibre({
   productos: Producto[];
 }) {
   const [publishing, setPublishing] = useState<string | null>(null);
-
+  const [preview, setPreview] = useState<{
+    producto: Producto;
+    categoryId: string;
+    categoryName: string;
+    titulo: string;
+    precio: number;
+  } | null>(null);
   const [results, setResults] = useState<
     Record<
       string,
@@ -25,47 +31,57 @@ export default function ViewMercadoLibre({
     >
   >({});
 
-  async function handlePublish(producto: Producto) {
+  async function handlePreview(producto: Producto) {
     setPublishing(producto.id);
-
     try {
       const res = await fetch("/api/ml/publish", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ producto }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ producto, confirmar: false }),
       });
-
       const data = await res.json();
+      if (data.preview) {
+        setPreview({ producto, ...data });
+      }
+    } catch {
+      setResults((prev) => ({
+        ...prev,
+        [producto.id]: { ok: false, error: "Error de conexión" },
+      }));
+    } finally {
+      setPublishing(null);
+    }
+  }
 
+  async function handleConfirm() {
+    if (!preview) return;
+    setPublishing(preview.producto.id);
+    try {
+      const res = await fetch("/api/ml/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ producto: preview.producto, confirmar: true }),
+      });
+      const data = await res.json();
       if (data.ok) {
         setResults((prev) => ({
           ...prev,
-          [producto.id]: {
-            ok: true,
-            permalink: data.permalink,
-          },
+          [preview.producto.id]: { ok: true, permalink: data.permalink },
         }));
       } else {
         setResults((prev) => ({
           ...prev,
-          [producto.id]: {
-            ok: false,
-            error: data.error,
-          },
+          [preview.producto.id]: { ok: false, error: data.error },
         }));
       }
     } catch {
       setResults((prev) => ({
         ...prev,
-        [producto.id]: {
-          ok: false,
-          error: "Error de conexión",
-        },
+        [preview.producto.id]: { ok: false, error: "Error de conexión" },
       }));
     } finally {
       setPublishing(null);
+      setPreview(null);
     }
   }
 
@@ -349,7 +365,7 @@ export default function ViewMercadoLibre({
                         </span>
                       ) : (
                         <button
-                          onClick={() => handlePublish(p)}
+                          onClick={() => handlePreview(p)}
                           disabled={isPublishing}
                           style={{
                             background: "#FFE600",
@@ -365,13 +381,158 @@ export default function ViewMercadoLibre({
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {isPublishing ? "Publicando..." : "📤 Publicar en ML"}
+                          {isPublishing ? "Cargando..." : "📤 Publicar en ML"}
                         </button>
                       )}
                     </div>
                   </div>
                 );
               })}
+            {preview && (
+              <div
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  background: "rgba(26,24,20,0.7)",
+                  zIndex: 1100,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 24,
+                }}
+              >
+                <div
+                  style={{
+                    background: "#FAFAF7",
+                    borderRadius: 20,
+                    padding: "32px 28px",
+                    maxWidth: 400,
+                    width: "100%",
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontFamily: "Syne, sans-serif",
+                      fontWeight: 800,
+                      fontSize: 18,
+                      color: "#1A1814",
+                      marginBottom: 20,
+                    }}
+                  >
+                    Confirmar publicación en ML
+                  </h3>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 14,
+                      marginBottom: 20,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    {preview.producto.imagen && (
+                      <div
+                        style={{
+                          width: 72,
+                          height: 72,
+                          borderRadius: 10,
+                          overflow: "hidden",
+                          position: "relative",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Image
+                          src={preview.producto.imagen}
+                          alt={preview.titulo}
+                          fill
+                          style={{ objectFit: "cover" }}
+                          sizes="72px"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <p
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: "#1A1814",
+                          margin: "0 0 4px",
+                        }}
+                      >
+                        {preview.titulo}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 13,
+                          color: "#6B7A5A",
+                          fontWeight: 700,
+                          margin: "0 0 4px",
+                        }}
+                      >
+                        ${Number(preview.precio).toLocaleString("es-AR")}
+                      </p>
+                      <p style={{ fontSize: 11, color: "#8A8680", margin: 0 }}>
+                        Categoría ML: {preview.categoryName}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: "#FFFDE7",
+                      borderRadius: 10,
+                      padding: "10px 14px",
+                      marginBottom: 20,
+                      border: "1px solid #FFE600",
+                    }}
+                  >
+                    <p style={{ fontSize: 12, color: "#7A6800", margin: 0 }}>
+                      ⚠️ Esta publicación quedará activa en Mercado Libre. Podés
+                      pausarla o eliminarla desde tu cuenta de ML.
+                    </p>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      onClick={() => setPreview(null)}
+                      style={{
+                        flex: 1,
+                        padding: "12px",
+                        borderRadius: 12,
+                        border: "1.5px solid #E8E4DC",
+                        background: "transparent",
+                        fontFamily: "Syne, sans-serif",
+                        fontWeight: 700,
+                        fontSize: 14,
+                        color: "#1A1814",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleConfirm}
+                      disabled={!!publishing}
+                      style={{
+                        flex: 2,
+                        padding: "12px",
+                        borderRadius: 12,
+                        border: "none",
+                        background: "#FFE600",
+                        fontFamily: "Syne, sans-serif",
+                        fontWeight: 700,
+                        fontSize: 14,
+                        color: "#1A1814",
+                        cursor: "pointer",
+                        opacity: publishing ? 0.6 : 1,
+                      }}
+                    >
+                      {publishing ? "Publicando..." : "✅ Confirmar y publicar"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>
