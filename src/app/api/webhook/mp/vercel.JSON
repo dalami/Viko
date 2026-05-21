@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/webhook/mp",
-      "schedule": "0 6 * * *"
-    }
-  ]
-}
