@@ -172,6 +172,7 @@ export default function DirectorioClient({
   const [zona, setZona] = useState("all");
   const router = useRouter();
   const [banner, setBanner] = useState(true);
+  const [faqOpen, setFaqOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setBanner(false), 15000);
@@ -383,8 +384,6 @@ export default function DirectorioClient({
           </div>
         </div>
       </section>
-
-     
 
       {/* BUSCADOR */}
       <div className={styles.searchWrap}>
@@ -654,48 +653,84 @@ export default function DirectorioClient({
         style={{ background: "var(--white)", padding: "72px 5vw" }}
       >
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
-          <p
+          <div
             style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              color: "var(--muted)",
-              marginBottom: 8,
+              cursor: "pointer",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: faqOpen ? 48 : 0,
             }}
+           
+           onClick={() => setFaqOpen(!faqOpen)}
           >
-            FAQ
-          </p>
-          <h2
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: 32,
-              color: "var(--black)",
-              letterSpacing: -0.5,
-              marginBottom: 48,
-            }}
-          >
-            Preguntas frecuentes
-          </h2>
-          {FAQS.map((grupo) => (
-            <div key={grupo.grupo} style={{ marginBottom: 40 }}>
+            <div>
               <p
                 style={{
                   fontSize: 11,
                   fontWeight: 700,
-                  letterSpacing: 1.5,
+                  letterSpacing: 2,
                   textTransform: "uppercase",
-                  color: "var(--olive)",
-                  marginBottom: 4,
+                  color: "var(--muted)",
+                  marginBottom: 8,
                 }}
               >
-                {grupo.grupo}
+                FAQ
               </p>
-              {grupo.items.map((item) => (
-                <FaqItem key={item.q} q={item.q} a={item.a} />
+              <h2
+                style={{
+                  fontFamily: "'DM Serif Display', serif",
+                  fontSize: 32,
+                  color: "var(--black)",
+                  letterSpacing: -0.5,
+                  margin: 0,
+                }}
+              >
+                Preguntas frecuentes
+              </h2>
+            </div>
+            <span
+              style={{
+                fontSize: 18,
+                color: "var(--muted)",
+                transition: "transform 0.3s",
+                transform: faqOpen ? "rotate(45deg)" : "none",
+                display: "inline-block",
+              }}
+            >
+              +
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateRows: faqOpen ? "1fr" : "0fr",
+              transition: "grid-template-rows 0.4s ease",
+            }}
+          >
+            <div style={{ overflow: "hidden" }}>
+              {FAQS.map((grupo) => (
+                <div key={grupo.grupo} style={{ marginBottom: 40 }}>
+                  <p
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: 1.5,
+                      textTransform: "uppercase",
+                      color: "var(--olive)",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {grupo.grupo}
+                  </p>
+                  {grupo.items.map((item) => (
+                    <FaqItem key={item.q} q={item.q} a={item.a} />
+                  ))}
+                </div>
               ))}
             </div>
-          ))}
+          </div>
         </div>
       </section>
 
@@ -704,6 +739,7 @@ export default function DirectorioClient({
         <Link href="/" className={styles.footerLogo}>
           Viko.
         </Link>
+
         <Link
           href="/admin"
           style={{
@@ -712,12 +748,23 @@ export default function DirectorioClient({
             textDecoration: "none",
           }}
         >
-          {" "}
           Admin
         </Link>
+
         <span className={styles.footerCopy}>
           © 2026 Viko — Directorio de emprendimientos seleccionados.
         </span>
+
+        <a
+          href="mailto:diegoalami@gmail.com"
+          style={{
+            fontSize: 12,
+            color: "var(--muted)",
+            textDecoration: "none",
+          }}
+        >
+          Contacto: diegoalami@gmail.com
+        </a>
       </footer>
     </div>
   );
