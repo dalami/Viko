@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { slugify } from "../../../lib/utils";
 import { useState, useEffect } from "react";
+import NavPublico from "../directorio/NavPublico";
 
 interface Emp {
   id: number;
@@ -248,7 +249,6 @@ export default function DirectorioClient({
             justifyContent: "center",
             gap: 12,
             position: "relative",
-            animation: "slideDown 0.4s ease",
           }}
         >
           <span>🇦🇷</span>
@@ -276,67 +276,31 @@ export default function DirectorioClient({
         </div>
       )}
 
-      {/* NAV */}
-      <nav className={styles.nav}>
-        <Link href="/" className={styles.navLogo}>
-          Viko<span className={styles.navDot}>.</span>
-        </Link>
-        <div className={styles.navCenter}>
-          <a href="#grid" className={styles.navLink}>
-            Emprendimientos
-          </a>
-          <Link href="/login" className={styles.navLink}>
-            Acceso emprendedores
-          </Link>
-          <Link href="/feed" className={styles.navLink}>
-            Comunidad
-          </Link>
-          <a href="#faq" className={styles.navLink}>
-            Preguntas frecuentes
-          </a>
-          <Link href="/register" className={styles.navLinkPublicar}>
-            Publicar
-          </Link>
-        </div>
-        <div className={styles.navRight}>
-          <Link href="/login" className={styles.navAcceder}>
-            Acceder
-          </Link>
-        </div>
-      </nav>
+      <NavPublico />
 
-      {/* HERO */}
       {/* HERO */}
       <section className={styles.hero}>
         <div className={styles.heroBadge}>
           Directorio de emprendimientos argentinos
         </div>
-
         <h1 className={styles.heroTitle}>
           Todo lo que buscás,
           <br />
           hecho por <em>manos argentinas.</em>
         </h1>
-
         <p className={styles.heroSub}>
           Descubrí los mejores emprendimientos locales en un solo lugar. Comprá
           directo, apoyá el talento nacional y conectá con la red de creadores
           más grande del país.
         </p>
-
         <div className={styles.heroCtaRow}>
           <a
             href="#grid"
             className={styles.heroBtn}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              textDecoration: "none",
-            }}
+            style={{ display: "flex", alignItems: "center", textDecoration: "none" }}
           >
             Explorar Emprendimientos →
           </a>
-
           <Link
             href="/register"
             style={{
@@ -358,26 +322,22 @@ export default function DirectorioClient({
             Sumar mi Negocio →
           </Link>
         </div>
-
         <div className={styles.heroTrust}>
           <span>Publicación gratuita</span>
           <span>Sin comisiones por venta</span>
           <span>Configuración en 5 minutos</span>
         </div>
-
         <div className={styles.heroStats}>
           <div className={styles.stat}>
             <span className={styles.statNum}>{emprendimientos.length}</span>
             <span className={styles.statLabel}>Emprendimientos</span>
           </div>
-
           <div className={styles.stat}>
             <span className={styles.statNum}>
               {new Set(emprendimientos.map((e) => e.rubro)).size}
             </span>
             <span className={styles.statLabel}>Categorías</span>
           </div>
-
           <div className={styles.stat}>
             <span className={styles.statNum}>AR</span>
             <span className={styles.statLabel}>Independiente</span>
@@ -618,9 +578,7 @@ export default function DirectorioClient({
                 <li>✓ Tienda online + QR propio</li>
               </ul>
               {isLoggedIn ? (
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
-                >
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <button
                     type="button"
                     onClick={() => handleUpgrade("mensual")}
@@ -661,8 +619,7 @@ export default function DirectorioClient({
               alignItems: "center",
               marginBottom: faqOpen ? 48 : 0,
             }}
-           
-           onClick={() => setFaqOpen(!faqOpen)}
+            onClick={() => setFaqOpen(!faqOpen)}
           >
             <div>
               <p
@@ -701,7 +658,6 @@ export default function DirectorioClient({
               +
             </span>
           </div>
-
           <div
             style={{
               display: "grid",
@@ -739,29 +695,18 @@ export default function DirectorioClient({
         <Link href="/" className={styles.footerLogo}>
           Viko.
         </Link>
-
         <Link
           href="/admin"
-          style={{
-            fontSize: 10,
-            color: "rgba(26,24,20,0.2)",
-            textDecoration: "none",
-          }}
+          style={{ fontSize: 10, color: "rgba(26,24,20,0.2)", textDecoration: "none" }}
         >
           Admin
         </Link>
-
         <span className={styles.footerCopy}>
           © 2026 Viko — Directorio de emprendimientos seleccionados.
         </span>
-
         <a
           href="mailto:diegoalami@gmail.com"
-          style={{
-            fontSize: 12,
-            color: "var(--muted)",
-            textDecoration: "none",
-          }}
+          style={{ fontSize: 12, color: "var(--muted)", textDecoration: "none" }}
         >
           Contacto: diegoalami@gmail.com
         </a>
