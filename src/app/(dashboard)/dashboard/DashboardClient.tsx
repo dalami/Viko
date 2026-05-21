@@ -44,6 +44,7 @@ export default function DashboardClient({
 }) {
   const searchParams = useSearchParams();
   const mpStatus = searchParams.get("mp");
+  const mlStatus = searchParams.get("ml");
   const initialView = (searchParams.get("view") as ViewId) ?? "perfil";
   const [view, setView] = useState<ViewId>(initialView);
   const [emp, setEmp] = useState<Emprendimiento>(emprendimiento);
@@ -186,6 +187,11 @@ export default function DashboardClient({
                 ✅ MercadoPago conectado
               </span>
             )}
+            {mlStatus === "conectado" && (
+              <span style={{ fontSize: 13, color: "#E5A800", fontWeight: 600 }}>
+                ✅ Mercado Libre conectado
+              </span>
+            )}
             {saveMsg && <span className={styles.saveMsg}>{saveMsg}</span>}
             {view === "perfil" && (
               <button
@@ -246,12 +252,12 @@ export default function DashboardClient({
           {view === "planes" && (
             <ViewPlanes currentPlan={emp.plan} onUpgrade={handleUpgrade} />
           )}
-
           {view === "mercadolibre" && (
             <ViewMercadoLibre emp={emp} productos={prods} />
           )}
         </div>
       </div>
+
       {/* Mobile bottom nav */}
       <div className={styles.mobileNav}>
         {NAV.map((n) => (
