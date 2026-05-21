@@ -12,7 +12,7 @@ export default async function DirectorioPage() {
 
   const { data: raw } = await supabase
     .from('emprendimientos')
-    .select('id, nombre, rubro, tagline, ubicacion, envios, whatsapp, instagram, web, images, plan, destacadoSemana, descripcion, slug, productos(nombre)')
+    .select('id, nombre, rubro, rubros, tagline, ubicacion, envios, whatsapp, instagram, web, images, plan, destacadoSemana, descripcion, slug, productos(nombre)')
     .eq('visible', true)
     .order('plan', { ascending: true })
 
