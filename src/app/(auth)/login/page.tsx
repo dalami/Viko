@@ -35,15 +35,19 @@ export default function LoginPage() {
   }
 
   async function handleGoogleLogin() {
-    console.log("Google login iniciado");
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: "https://viko.com.ar/dashboard",
+        skipBrowserRedirect: false,
       },
     });
+    if (data?.url) {
+      window.location.href = data.url;
+    }
     console.log("data:", data, "error:", error);
   }
+  
   return (
     <div className={styles.authWrap}>
       <div className={styles.authCard}>
