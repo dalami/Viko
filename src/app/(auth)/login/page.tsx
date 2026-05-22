@@ -34,20 +34,18 @@ export default function LoginPage() {
     }
   }
 
-  async function handleGoogleLogin() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: "https://viko.com.ar/dashboard",
-        skipBrowserRedirect: false,
-      },
-    });
-    if (data?.url) {
-      window.location.href = data.url;
-    }
-    console.log("data:", data, "error:", error);
+async function handleGoogleLogin() {
+  const { data } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: "https://viko.com.ar/dashboard",
+    },
+  });
+  if (data?.url) {
+    window.location.assign(data.url);
   }
-  
+}
+
   return (
     <div className={styles.authWrap}>
       <div className={styles.authCard}>
