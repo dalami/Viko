@@ -855,6 +855,39 @@ export function CartDrawer({ emp }: { emp: CartEmp }) {
                   {emp.transferenciaCbu}
                 </p>
               </div>
+
+              <div
+                style={{
+                  background: "#FFFDE7",
+                  border: "1px solid #F5D800",
+                  borderRadius: 12,
+                  padding: "12px 16px",
+                  marginBottom: 20,
+                  textAlign: "left",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#7A6800",
+                    marginBottom: 4,
+                  }}
+                >
+                  📦 Coordinación de envío
+                </p>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: "#5A5000",
+                    lineHeight: 1.6,
+                    margin: 0,
+                  }}
+                >
+                  Una vez confirmado el pago, el vendedor coordinará el envío
+                  con vos directamente.
+                </p>
+              </div>
               <div
                 style={{
                   background: "#F5F2EC",

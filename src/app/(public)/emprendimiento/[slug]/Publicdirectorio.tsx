@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import styles from './public.module.css'
 
 interface Emprendimiento {
@@ -45,7 +46,13 @@ export default function PublicDirectorio({ emprendimientos, titulo }: Props) {
                 >
                   <div className={styles.dirCardImg}>
                     {img ? (
-                      <img src={img} alt={e.nombre} />
+                      <Image
+                        src={img}
+                        alt={e.nombre}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        sizes="(max-width: 700px) 100vw, 33vw"
+                      />
                     ) : (
                       <div className={styles.dirCardImgPlaceholder}>📷</div>
                     )}
