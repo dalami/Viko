@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "../../../lib/server";
+import { ratelimitStrict, getIP } from "../../../lib/ratelimit";
 
 export async function POST(req: NextRequest) {
+  // Rate limiting — 10 requests por minuto por IP
+  const ip = getIP(req);
+  const { success } = await ratelimitStrict.limit(ip);
+  if (!success) {
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes. Intentá de nuevo en un minuto." },
+      { status: 429 }
+    );
+  }
+
   try {
     const supabase = await createClient();
     const body = await req.json();
@@ -11,6 +22,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
     }
 
+    if (!payer?.name || !payer?.phone) {
+      return NextResponse.json({ error: "Datos del comprador incompletos" }, { status: 400 });
+    }
+
     const { data: emp } = await supabase
       .from("emprendimientos")
       .select("id, nombre, mp_access_token, plan")
@@ -18,19 +33,34 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (!emp) {
-      return NextResponse.json(
-        { error: "Emprendimiento no encontrado" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Emprendimiento no encontrado" }, { status: 404 });
     }
 
-    const accessToken = emp.mp_access_token;
+    if (!emp.mp_access_token) {
+      return NextResponse.json({ error: "El emprendimiento no tiene MercadoPago activo" }, { status: 403 });
+    }
 
-    if (!accessToken) {
-      return NextResponse.json(
-        { error: "El emprendimiento no tiene MercadoPago activo" },
-        { status: 403 },
-      );
+    // Leer precios reales desde la DB
+    const itemIds = items.map((i: { id: string }) => i.id).filter(Boolean);
+    const { data: productos } = await supabase
+      .from("productos")
+      .select("id, nombre, precio, precio_descuento")
+      .in("id", itemIds);
+
+    const preciosReales = Object.fromEntries(
+      (productos ?? []).map((p) => [
+        p.id,
+        { precio: p.precio_descuento ?? p.precio, nombre: p.nombre },
+      ])
+    );
+
+    for (const item of items) {
+      if (!preciosReales[item.id]) {
+        return NextResponse.json(
+          { error: `Producto no encontrado: ${item.id}` },
+          { status: 400 }
+        );
+      }
     }
 
     const baseUrl =
@@ -40,25 +70,21 @@ export async function POST(req: NextRequest) {
         : "https://viko.com.ar";
 
     const preferenceBody: Record<string, unknown> = {
-      items: items.map(
-        (i: {
-          id: string;
-          title: string;
-          quantity: number;
-          unit_price: number;
-          picture_url?: string;
-        }) => ({
-          id: i.id,
-          title: i.title,
-          quantity: i.quantity,
-          unit_price: i.unit_price,
-          currency_id: "ARS",
-          picture_url: i.picture_url,
-        }),
-      ),
+      items: items.map((i: {
+        id: string;
+        quantity: number;
+        picture_url?: string;
+      }) => ({
+        id: i.id,
+        title: preciosReales[i.id].nombre,
+        quantity: Math.max(1, Math.floor(i.quantity)),
+        unit_price: preciosReales[i.id].precio,
+        currency_id: "ARS",
+        picture_url: i.picture_url,
+      })),
       payer: {
-        name: payer.name,
-        phone: { number: payer.phone },
+        name: String(payer.name).slice(0, 50),
+        phone: { number: String(payer.phone).replace(/\D/g, "").slice(0, 15) },
       },
       back_urls: {
         success: `${baseUrl}/emprendimiento/pedido-exitoso?emp=${emprendimientoId}`,
@@ -66,13 +92,8 @@ export async function POST(req: NextRequest) {
         pending: `${baseUrl}/emprendimiento/pedido-pendiente`,
       },
       auto_return: "approved",
-      external_reference: JSON.stringify({
-        emprendimientoId,
-        payer,
-        direccion,
-        notas,
-      }),
-      statement_descriptor: emp.nombre,
+      external_reference: JSON.stringify({ emprendimientoId, payer, direccion, notas }),
+      statement_descriptor: emp.nombre.slice(0, 22),
     };
 
     if (metodo === "efectivo") {
@@ -93,7 +114,7 @@ export async function POST(req: NextRequest) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${emp.mp_access_token}`,
         },
         body: JSON.stringify(preferenceBody),
       },
@@ -102,10 +123,7 @@ export async function POST(req: NextRequest) {
     const data = await response.json();
 
     if (!response.ok) {
-      return NextResponse.json(
-        { error: "Error al crear preferencia", detail: data },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Error al crear preferencia" }, { status: 500 });
     }
 
     return NextResponse.json({ url: data.init_point });

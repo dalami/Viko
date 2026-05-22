@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
+import { ratelimitCron, getIP } from "../../../../lib/ratelimit";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -163,6 +164,12 @@ export async function GET(req: Request) {
   const secret = req.headers.get("x-cron-secret");
   if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const ip = getIP(req);
+  const { success } = await ratelimitCron.limit(ip);
+  if (!success) {
+    return NextResponse.json({ error: "Rate limit excedido" }, { status: 429 });
   }
 
   const { data: emps, error } = await supabase

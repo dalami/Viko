@@ -4,8 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user)
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
     const { data: emp } = await supabase
       .from("emprendimientos")
@@ -14,45 +17,76 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (!emp?.ml_connected || !emp.ml_access_token) {
-      return NextResponse.json({ error: "MercadoLibre no conectado" }, { status: 403 });
+      return NextResponse.json(
+        { error: "MercadoLibre no conectado" },
+        { status: 403 },
+      );
     }
 
     const body = await req.json();
-    const { producto, confirmar } = body;
+    const { producto, confirmar, titulo, precio } = body;
+
+    if (!producto?.id || !producto?.nombre) {
+      return NextResponse.json({ error: "Producto inválido" }, { status: 400 });
+    }
+
+    // Verificar que el producto pertenece al emprendimiento del usuario
+    const { data: prodReal } = await supabase
+      .from("productos")
+      .select(
+        "id, nombre, precio, precio_descuento, descripcion, imagen, stock",
+      )
+      .eq("id", producto.id)
+      .single();
+
+    if (!prodReal) {
+      return NextResponse.json(
+        { error: "Producto no encontrado" },
+        { status: 404 },
+      );
+    }
 
     const categoryRes = await fetch(
-      `https://api.mercadolibre.com/sites/MLA/domain_discovery/search?q=${encodeURIComponent(producto.nombre)}`,
+      `https://api.mercadolibre.com/sites/MLA/domain_discovery/search?q=${encodeURIComponent(prodReal.nombre)}`,
       { headers: { Authorization: `Bearer ${emp.ml_access_token}` } },
     );
     const categoryData = await categoryRes.json();
     const categoryId = categoryData?.[0]?.category_id ?? "MLA1648";
     const categoryName = categoryData?.[0]?.domain_name ?? "General";
 
-    // Si no confirmó, devolver preview
+    const precioBase = prodReal.precio_descuento ?? prodReal.precio;
+
     if (!confirmar) {
       return NextResponse.json({
         ok: true,
         preview: true,
         categoryId,
         categoryName,
-        titulo: producto.nombre,
-        precio: producto.precio_descuento ?? producto.precio,
-        descripcion: producto.descripcion ?? producto.nombre,
-        imagen: producto.imagen,
+        titulo: prodReal.nombre,
+        precio: precioBase,
+        descripcion: prodReal.descripcion ?? prodReal.nombre,
+        imagen: prodReal.imagen,
       });
     }
 
+    // En confirmación usar precio editado si está dentro de rango razonable
+    // (máximo 3x el precio original para evitar manipulación extrema)
+    const precioFinal =
+      precio && precio > 0 && precio <= precioBase * 3 ? precio : precioBase;
+
+    const tituloFinal = titulo?.trim()?.slice(0, 60) || prodReal.nombre;
+
     const listing = {
-      title: producto.nombre,
+      title: tituloFinal,
       category_id: categoryId,
-      price: producto.precio_descuento ?? producto.precio,
+      price: precioFinal,
       currency_id: "ARS",
-      available_quantity: producto.stock ?? 10,
+      available_quantity: prodReal.stock ?? 10,
       buying_mode: "buy_it_now",
       condition: "new",
       listing_type_id: "gold_special",
-      description: { plain_text: producto.descripcion ?? producto.nombre },
-      pictures: producto.imagen ? [{ source: producto.imagen }] : [],
+      description: { plain_text: prodReal.descripcion ?? prodReal.nombre },
+      pictures: prodReal.imagen ? [{ source: prodReal.imagen }] : [],
     };
 
     const res = await fetch("https://api.mercadolibre.com/items", {
@@ -65,15 +99,20 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await res.json();
-    console.log("ML PUBLISH RESPONSE:", JSON.stringify(data));
 
     if (!res.ok) {
-      return NextResponse.json({ error: "Error al publicar", detail: data }, { status: 500 });
+      return NextResponse.json(
+        { error: "Error al publicar en ML", detail: data },
+        { status: 500 },
+      );
     }
 
-    return NextResponse.json({ ok: true, item_id: data.id, permalink: data.permalink });
-  } catch (e) {
-    console.log("ML PUBLISH ERROR:", e);
+    return NextResponse.json({
+      ok: true,
+      item_id: data.id,
+      permalink: data.permalink,
+    });
+  } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
