@@ -1,8 +1,8 @@
-import { createClient } from "../../../../lib/server";
+﻿import { createClient } from "../../../../lib/server";
 import { NextRequest, NextResponse } from "next/server";
 
-// Categorías seguras por tipo de producto — sin atributos obligatorios
-const CATEGORIA_FALLBACK = "MLA1648"; // Artesanías y Manualidades
+// CategorÃ­as seguras por tipo de producto â€” sin atributos obligatorios
+const CATEGORIA_FALLBACK = "MLA1648"; // ArtesanÃ­as y Manualidades
 
 async function getCategoryId(
   nombre: string,
@@ -17,10 +17,10 @@ async function getCategoryId(
     const cat = data?.[0];
 
     if (!cat?.category_id) {
-      return { categoryId: CATEGORIA_FALLBACK, categoryName: "Artesanías" };
+      return { categoryId: CATEGORIA_FALLBACK, categoryName: "ArtesanÃ­as" };
     }
 
-    // Verificar que la categoría no requiere atributos técnicos complejos
+    // Verificar que la categorÃ­a no requiere atributos tÃ©cnicos complejos
     const attrRes = await fetch(
       `https://api.mercadolibre.com/categories/${cat.category_id}/attributes`,
       { headers: { Authorization: `Bearer ${token}` } },
@@ -31,9 +31,9 @@ async function getCategoryId(
       ? attrs.filter((a: { tags?: { required?: boolean } }) => a.tags?.required)
       : [];
 
-    // Si tiene atributos requeridos complejos, usar categoría fallback
+    // Si tiene atributos requeridos complejos, usar categorÃ­a fallback
     if (requiredAttrs.length > 2) {
-      return { categoryId: CATEGORIA_FALLBACK, categoryName: "Artesanías" };
+      return { categoryId: CATEGORIA_FALLBACK, categoryName: "ArtesanÃ­as" };
     }
 
     return {
@@ -41,7 +41,7 @@ async function getCategoryId(
       categoryName: cat.domain_name ?? "General",
     };
   } catch {
-    return { categoryId: CATEGORIA_FALLBACK, categoryName: "Artesanías" };
+    return { categoryId: CATEGORIA_FALLBACK, categoryName: "ArtesanÃ­as" };
   }
 }
 
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     const { producto, confirmar, titulo, precio } = body;
 
     if (!producto?.id || !producto?.nombre) {
-      return NextResponse.json({ error: "Producto inválido" }, { status: 400 });
+      return NextResponse.json({ error: "Producto invÃ¡lido" }, { status: 400 });
     }
 
     // Verificar que el producto existe en la DB
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     );
     const precioBase = prodReal.precio_descuento ?? prodReal.precio;
 
-    // Preview — antes de confirmar
+    // Preview â€” antes de confirmar
     if (!confirmar) {
       return NextResponse.json({
         ok: true,
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Precio editado — máximo 3x el original para evitar manipulación
+    // Precio editado â€” mÃ¡ximo 3x el original para evitar manipulaciÃ³n
     const precioFinal =
       precio && precio > 0 && precio <= precioBase * 3 ? precio : precioBase;
 
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
     const data = await res.json();
 
     if (!res.ok) {
-      // Si el token expiró, informar para reconectar
+      // Si el token expirÃ³, informar para reconectar
       if (
         data?.message?.includes("invalid_token") ||
         data?.message?.includes("expired")
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Tu conexión con Mercado Libre expiró. Reconectá tu cuenta desde el panel.",
+              "Tu conexiÃ³n con Mercado Libre expirÃ³. ReconectÃ¡ tu cuenta desde el panel.",
           },
           { status: 401 },
         );
@@ -177,3 +177,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
+
