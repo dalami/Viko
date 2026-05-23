@@ -1,20 +1,8 @@
 ﻿import { createClient } from "../../../../lib/server";
 import { NextRequest, NextResponse } from "next/server";
 
-const CATEGORIA_FALLBACK_ROOT = "MLA1648";
-
-// Atributos que ML valida contra su catálogo → no admiten valor libre
-// Si una categoría los requiere, usamos fallback directamente
-const ATTRS_CATALOG_ONLY = new Set(["BRAND", "MODEL", "GTIN", "SELLER_SKU"]);
-
-// Atributos que sí podemos resolver con valor libre
-const ATTR_DEFAULTS: Record<string, string> = {
-  GENDER: "Unisex",
-  AGE_GROUP: "Adultos",
-  COLOR: "Multicolor",
-  SIZE: "Único",
-  MATERIAL: "Mixto",
-};
+// Categoría base — se navega hasta el primer hijo leaf automáticamente
+const CATEGORIA_FALLBACK_ROOT = "MLA1648"; // Artesanías y Manualidades
 
 async function getLeafCategory(
   categoryId: string,
@@ -29,90 +17,10 @@ async function getLeafCategory(
     );
     const data = await res.json();
     const children: { id: string }[] = data?.children_categories ?? [];
-    if (children.length === 0) return categoryId;
+    if (children.length === 0) return categoryId; // ya es leaf ✓
     return getLeafCategory(children[0].id, token, depth + 1);
   } catch {
     return categoryId;
-  }
-}
-
-interface MLAttribute {
-  id: string;
-  tags?: { required?: boolean };
-  values?: { id: string; name: string }[];
-}
-
-async function getCategoryId(
-  nombre: string,
-  token: string,
-): Promise<{
-  categoryId: string;
-  categoryName: string;
-  requiredAttrs: MLAttribute[];
-}> {
-  const getFallback = async () => {
-    const leafFallback = await getLeafCategory(CATEGORIA_FALLBACK_ROOT, token);
-    return {
-      categoryId: leafFallback,
-      categoryName: "Artesanías",
-      requiredAttrs: [],
-    };
-  };
-
-  try {
-    const res = await fetch(
-      `https://api.mercadolibre.com/sites/MLA/domain_discovery/search?q=${encodeURIComponent(nombre)}`,
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
-    const data = await res.json();
-    const cat = data?.[0];
-
-    if (!cat?.category_id) return getFallback();
-
-    const leafId = await getLeafCategory(cat.category_id, token);
-
-    const attrRes = await fetch(
-      `https://api.mercadolibre.com/categories/${leafId}/attributes`,
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
-    const attrs: MLAttribute[] = await attrRes.json();
-
-    const requiredAttrs = Array.isArray(attrs)
-      ? attrs.filter((a) => a.tags?.required)
-      : [];
-
-    // Si requiere BRAND, MODEL u otro atributo de catálogo → fallback
-    const needsCatalogAttr = requiredAttrs.some((a) =>
-      ATTRS_CATALOG_ONLY.has(a.id),
-    );
-    if (needsCatalogAttr) {
-      console.log(
-        `[ML publish] Categoría ${leafId} requiere atributos de catálogo (${requiredAttrs
-          .filter((a) => ATTRS_CATALOG_ONLY.has(a.id))
-          .map((a) => a.id)
-          .join(", ")}) → usando fallback`,
-      );
-      return getFallback();
-    }
-
-    // Si algún otro atributo requerido tampoco tiene default → fallback
-    const unresolvable = requiredAttrs.filter(
-      (a) => !ATTRS_CATALOG_ONLY.has(a.id) && !(a.id in ATTR_DEFAULTS),
-    );
-    if (unresolvable.length > 0) {
-      console.log(
-        `[ML publish] Categoría ${leafId} tiene atributos sin resolver: ${unresolvable.map((a) => a.id).join(", ")} → usando fallback`,
-      );
-      return getFallback();
-    }
-
-    return {
-      categoryId: leafId,
-      categoryName: cat.domain_name ?? "General",
-      requiredAttrs,
-    };
-  } catch {
-    return getFallback();
   }
 }
 
@@ -161,10 +69,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, categoryName, requiredAttrs } = await getCategoryId(
-      prodReal.nombre,
+    // Usar siempre categoría leaf de artesanías — evita atributos de catálogo
+    // requeridos (BRAND, MODEL) que ML no expone en su API de atributos pero
+    // sí valida al publicar, haciendo imposible la detección automática segura.
+    const categoryId = await getLeafCategory(
+      CATEGORIA_FALLBACK_ROOT,
       emp.ml_access_token,
     );
+    const categoryName = "Artesanías";
+
+    console.log(`[ML publish] Usando categoría leaf: ${categoryId}`);
+
     const precioBase = prodReal.precio_descuento ?? prodReal.precio;
 
     if (!confirmar) {
@@ -185,22 +100,6 @@ export async function POST(req: NextRequest) {
 
     const tituloFinal = titulo?.trim()?.slice(0, 60) || prodReal.nombre;
 
-    // Atributos resolubles con valor libre
-    const attributes = requiredAttrs
-      .filter((a) => a.id in ATTR_DEFAULTS)
-      .map((attr) => {
-        const defaultVal = ATTR_DEFAULTS[attr.id];
-        if (attr.values && attr.values.length > 0) {
-          const match = attr.values.find(
-            (v) => v.name.toLowerCase() === defaultVal.toLowerCase(),
-          );
-          return match
-            ? { id: attr.id, value_id: match.id }
-            : { id: attr.id, value_name: defaultVal };
-        }
-        return { id: attr.id, value_name: defaultVal };
-      });
-
     const listing: Record<string, unknown> = {
       title: tituloFinal,
       category_id: categoryId,
@@ -212,10 +111,6 @@ export async function POST(req: NextRequest) {
       listing_type_id: "free",
       description: { plain_text: prodReal.descripcion ?? prodReal.nombre },
     };
-
-    if (attributes.length > 0) {
-      listing.attributes = attributes;
-    }
 
     if (prodReal.imagen) {
       listing.pictures = [{ source: prodReal.imagen }];
