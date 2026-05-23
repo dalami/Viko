@@ -1,8 +1,30 @@
 ﻿import { createClient } from "../../../../lib/server";
 import { NextRequest, NextResponse } from "next/server";
 
-// Categoría segura por tipo de producto – sin atributos obligatorios
-const CATEGORIA_FALLBACK = "MLA1648"; // Artesanías y Manualidades
+// Categoría fallback — se navega hasta el primer hijo leaf automáticamente
+const CATEGORIA_FALLBACK_ROOT = "MLA1648";
+
+// Navega al primer hijo leaf de una categoría (si ya es leaf, la devuelve igual)
+async function getLeafCategory(
+  categoryId: string,
+  token: string,
+  depth = 0,
+): Promise<string> {
+  if (depth > 5) return categoryId; // evitar loops infinitos
+  try {
+    const res = await fetch(
+      `https://api.mercadolibre.com/categories/${categoryId}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    const data = await res.json();
+    const children: { id: string }[] = data?.children_categories ?? [];
+    if (children.length === 0) return categoryId; // ya es leaf ✓
+    // bajar por el primer hijo
+    return getLeafCategory(children[0].id, token, depth + 1);
+  } catch {
+    return categoryId;
+  }
+}
 
 async function getCategoryId(
   nombre: string,
@@ -17,12 +39,19 @@ async function getCategoryId(
     const cat = data?.[0];
 
     if (!cat?.category_id) {
-      return { categoryId: CATEGORIA_FALLBACK, categoryName: "Artesanías" };
+      const leafFallback = await getLeafCategory(
+        CATEGORIA_FALLBACK_ROOT,
+        token,
+      );
+      return { categoryId: leafFallback, categoryName: "Artesanías" };
     }
 
-    // Verificar que la categoría no requiere atributos técnicos complejos
+    // Asegurarse de que sea una categoría leaf
+    const leafId = await getLeafCategory(cat.category_id, token);
+
+    // Verificar atributos requeridos de la categoría leaf
     const attrRes = await fetch(
-      `https://api.mercadolibre.com/categories/${cat.category_id}/attributes`,
+      `https://api.mercadolibre.com/categories/${leafId}/attributes`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     const attrs = await attrRes.json();
@@ -31,17 +60,22 @@ async function getCategoryId(
       ? attrs.filter((a: { tags?: { required?: boolean } }) => a.tags?.required)
       : [];
 
-    // Si tiene atributos requeridos complejos, usar categoría fallback
+    // Si tiene muchos atributos requeridos, usar fallback leaf
     if (requiredAttrs.length > 2) {
-      return { categoryId: CATEGORIA_FALLBACK, categoryName: "Artesanías" };
+      const leafFallback = await getLeafCategory(
+        CATEGORIA_FALLBACK_ROOT,
+        token,
+      );
+      return { categoryId: leafFallback, categoryName: "Artesanías" };
     }
 
     return {
-      categoryId: cat.category_id,
+      categoryId: leafId,
       categoryName: cat.domain_name ?? "General",
     };
   } catch {
-    return { categoryId: CATEGORIA_FALLBACK, categoryName: "Artesanías" };
+    const leafFallback = await getLeafCategory(CATEGORIA_FALLBACK_ROOT, token);
+    return { categoryId: leafFallback, categoryName: "Artesanías" };
   }
 }
 
@@ -75,7 +109,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Producto inválido" }, { status: 400 });
     }
 
-    // Verificar que el producto existe en la DB
     const { data: prodReal } = await supabase
       .from("productos")
       .select(
@@ -111,15 +144,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Precio editado – máximo 3x el original para evitar manipulación
+    // Precio editado – máximo 3x el original
     const precioFinal =
       precio && precio > 0 && precio <= precioBase * 3 ? precio : precioBase;
 
     const tituloFinal = titulo?.trim()?.slice(0, 60) || prodReal.nombre;
 
-    // FIX: usar "free" en lugar de "gold_special"
-    // gold_special puede ser rechazado si el vendedor no tiene ese tipo habilitado.
-    // Una vez publicado, se puede cambiar el listing_type desde ML si se desea.
     const listing: Record<string, unknown> = {
       title: tituloFinal,
       category_id: categoryId,
@@ -136,6 +166,8 @@ export async function POST(req: NextRequest) {
       listing.pictures = [{ source: prodReal.imagen }];
     }
 
+    console.log("[ML publish] Payload:", JSON.stringify(listing));
+
     const res = await fetch("https://api.mercadolibre.com/items", {
       method: "POST",
       headers: {
@@ -148,17 +180,12 @@ export async function POST(req: NextRequest) {
     const data = await res.json();
 
     if (!res.ok) {
-      // FIX: loguear el error completo de ML para debugging
-      console.error(
-        "[ML publish] Error al publicar:",
-        JSON.stringify(data, null, 2),
-      );
+      console.error("[ML publish] Error:", JSON.stringify(data, null, 2));
 
-      // Token expirado
       if (
         data?.message?.includes("invalid_token") ||
         data?.message?.includes("expired") ||
-        data?.error === "not_found" // token revocado
+        data?.error === "not_found"
       ) {
         return NextResponse.json(
           {
@@ -169,22 +196,21 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // FIX: devolver el detalle completo de ML al cliente
-      // ML envía los errores específicos en data.cause (array de objetos)
       const causas = Array.isArray(data?.cause)
-        ? data.cause.map(
-            (c: { code?: string; description?: string }) =>
-              c.description ?? c.code ?? JSON.stringify(c),
-          )
+        ? data.cause
+            .filter((c: { type?: string }) => c.type === "error") // solo errores, ignorar warnings
+            .map(
+              (c: { code?: string; message?: string }) =>
+                c.message ?? c.code ?? JSON.stringify(c),
+            )
         : [];
 
       return NextResponse.json(
         {
           error: "Error al publicar en ML",
           detail: data?.message ?? "Error desconocido",
-          causas, // ← acá está el detalle real del 400
+          causas,
           ml_status: res.status,
-          payload_enviado: listing, // para debug: ver qué mandamos
         },
         { status: 500 },
       );
@@ -196,7 +222,6 @@ export async function POST(req: NextRequest) {
       permalink: data.permalink,
     });
   } catch (err) {
-    // FIX: loguear el error real en vez de tragárselo
     console.error("[ML publish] Error interno:", err);
     return NextResponse.json(
       { error: "Error interno", detail: String(err) },
