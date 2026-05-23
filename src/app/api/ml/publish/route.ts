@@ -1,22 +1,7 @@
 ﻿import { createClient } from "../../../../lib/server";
 import { NextRequest, NextResponse } from "next/server";
 
-const ATTRS_BLOCKLIST = new Set(["BRAND", "MODEL", "GTIN", "SELLER_SKU"]);
-
-// Términos de búsqueda a probar en orden hasta encontrar una categoría segura
-const SEARCH_TERMS = [
-  "souvenir personalizado",
-  "regalo decoracion",
-  "cuadro decorativo",
-  "articulo de decoracion",
-  "producto artesanal",
-];
-
-async function getLeafOf(
-  categoryId: string,
-  token: string,
-  depth = 0,
-): Promise<string> {
+async function getLeafOf(categoryId: string, token: string, depth = 0): Promise<string> {
   if (depth > 6) return categoryId;
   try {
     const res = await fetch(
@@ -32,58 +17,27 @@ async function getLeafOf(
   }
 }
 
-async function isSafeLeaf(categoryId: string, token: string): Promise<boolean> {
+async function getCategoryId(nombre: string, token: string): Promise<{ categoryId: string; categoryName: string }> {
   try {
     const res = await fetch(
-      `https://api.mercadolibre.com/categories/${categoryId}/attributes`,
+      `https://api.mercadolibre.com/sites/MLA/domain_discovery/search?q=${encodeURIComponent(nombre)}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    const attrs: { id: string }[] = await res.json();
-    if (!Array.isArray(attrs)) return false;
-    return !attrs.some((a) => ATTRS_BLOCKLIST.has(a.id));
+    const data = await res.json();
+    const cat = data?.[0];
+    if (!cat?.category_id) throw new Error("no category");
+    const leafId = await getLeafOf(cat.category_id, token);
+    return { categoryId: leafId, categoryName: cat.domain_name ?? "General" };
   } catch {
-    return false;
+    return { categoryId: "MLA430643", categoryName: "General" };
   }
-}
-
-async function findSafeCategory(
-  token: string,
-): Promise<{ categoryId: string; categoryName: string } | null> {
-  for (const term of SEARCH_TERMS) {
-    try {
-      const res = await fetch(
-        `https://api.mercadolibre.com/sites/MLA/domain_discovery/search?q=${encodeURIComponent(term)}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      const results = await res.json();
-
-      for (const cat of results ?? []) {
-        if (!cat?.category_id) continue;
-        const leafId = await getLeafOf(cat.category_id, token);
-        const safe = await isSafeLeaf(leafId, token);
-        console.log(
-          `[ML publish] "${term}" → ${leafId} → ${safe ? "SEGURA ✓" : "bloqueada ✗"}`,
-        );
-        if (safe) {
-          return { categoryId: leafId, categoryName: cat.domain_name ?? term };
-        }
-      }
-    } catch (e) {
-      console.warn(`[ML publish] Error buscando "${term}":`, e);
-    }
-  }
-  return null;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
     const { data: emp } = await supabase
       .from("emprendimientos")
@@ -92,10 +46,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (!emp?.ml_connected || !emp.ml_access_token) {
-      return NextResponse.json(
-        { error: "MercadoLibre no conectado" },
-        { status: 403 },
-      );
+      return NextResponse.json({ error: "MercadoLibre no conectado" }, { status: 403 });
     }
 
     const body = await req.json();
@@ -107,34 +58,15 @@ export async function POST(req: NextRequest) {
 
     const { data: prodReal } = await supabase
       .from("productos")
-      .select(
-        "id, nombre, precio, precio_descuento, descripcion, imagen, stock",
-      )
+      .select("id, nombre, precio, precio_descuento, descripcion, imagen, stock")
       .eq("id", producto.id)
       .single();
 
     if (!prodReal) {
-      return NextResponse.json(
-        { error: "Producto no encontrado" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
 
-    const found = await findSafeCategory(emp.ml_access_token);
-
-    if (!found) {
-      return NextResponse.json(
-        {
-          error:
-            "No se encontró categoría válida para publicar. Intentá de nuevo más tarde.",
-        },
-        { status: 500 },
-      );
-    }
-
-    const { categoryId, categoryName } = found;
-    console.log(`[ML publish] Usando: ${categoryId} (${categoryName})`);
-
+    const { categoryId, categoryName } = await getCategoryId(prodReal.nombre, emp.ml_access_token);
     const precioBase = prodReal.precio_descuento ?? prodReal.precio;
 
     if (!confirmar) {
@@ -150,9 +82,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const precioFinal =
-      precio && precio > 0 && precio <= precioBase * 3 ? precio : precioBase;
-
+    const precioFinal = precio && precio > 0 && precio <= precioBase * 3 ? precio : precioBase;
     const tituloFinal = titulo?.trim()?.slice(0, 60) || prodReal.nombre;
 
     const listing: Record<string, unknown> = {
@@ -164,6 +94,11 @@ export async function POST(req: NextRequest) {
       buying_mode: "buy_it_now",
       condition: "new",
       listing_type_id: "free",
+      // "Sin marca" es el valor estándar en ML para productos artesanales/genéricos
+      attributes: [
+        { id: "BRAND", value_name: "Sin marca" },
+        { id: "MODEL", value_name: "Único" },
+      ],
       description: { plain_text: prodReal.descripcion ?? prodReal.nombre },
     };
 
@@ -187,16 +122,9 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       console.error("[ML publish] Error:", JSON.stringify(data, null, 2));
 
-      if (
-        data?.message?.includes("invalid_token") ||
-        data?.message?.includes("expired") ||
-        data?.error === "not_found"
-      ) {
+      if (data?.message?.includes("invalid_token") || data?.message?.includes("expired") || data?.error === "not_found") {
         return NextResponse.json(
-          {
-            error:
-              "Tu conexión con Mercado Libre expiró. Reconectá tu cuenta desde el panel.",
-          },
+          { error: "Tu conexión con Mercado Libre expiró. Reconectá tu cuenta desde el panel." },
           { status: 401 },
         );
       }
@@ -204,32 +132,18 @@ export async function POST(req: NextRequest) {
       const causas = Array.isArray(data?.cause)
         ? data.cause
             .filter((c: { type?: string }) => c.type === "error")
-            .map(
-              (c: { message?: string; code?: string }) => c.message ?? c.code,
-            )
+            .map((c: { message?: string; code?: string }) => c.message ?? c.code)
         : [];
 
       return NextResponse.json(
-        {
-          error: "Error al publicar en ML",
-          detail: data?.message ?? "Error desconocido",
-          causas,
-          ml_status: res.status,
-        },
+        { error: "Error al publicar en ML", detail: data?.message ?? "Error desconocido", causas, ml_status: res.status },
         { status: 500 },
       );
     }
 
-    return NextResponse.json({
-      ok: true,
-      item_id: data.id,
-      permalink: data.permalink,
-    });
+    return NextResponse.json({ ok: true, item_id: data.id, permalink: data.permalink });
   } catch (err) {
     console.error("[ML publish] Error interno:", err);
-    return NextResponse.json(
-      { error: "Error interno", detail: String(err) },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Error interno", detail: String(err) }, { status: 500 });
   }
 }
