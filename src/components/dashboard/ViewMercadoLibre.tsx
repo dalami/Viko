@@ -5,6 +5,11 @@ import styles from "../dashboard/View.module.css";
 import type { Emprendimiento, Producto } from "../../lib/types";
 import Image from "next/image";
 
+interface CategoryResult {
+  id: string;
+  name: string;
+}
+
 export default function ViewMercadoLibre({
   emp,
   productos,
@@ -23,10 +28,18 @@ export default function ViewMercadoLibre({
   const [previewEdits, setPreviewEdits] = useState<{
     titulo: string;
     precio: string;
-  }>({ titulo: "", precio: "" });
+    categoryId: string;
+    categoryName: string;
+  }>({ titulo: "", precio: "", categoryId: "", categoryName: "" });
   const [results, setResults] = useState<
     Record<string, { ok: boolean; permalink?: string; error?: string }>
   >({});
+
+  // Búsqueda de categoría
+  const [showCatSearch, setShowCatSearch] = useState(false);
+  const [catQuery, setCatQuery] = useState("");
+  const [catResults, setCatResults] = useState<CategoryResult[]>([]);
+  const [catSearching, setCatSearching] = useState(false);
 
   async function handlePreview(producto: Producto) {
     setPublishing(producto.id);
@@ -42,7 +55,12 @@ export default function ViewMercadoLibre({
         setPreviewEdits({
           titulo: data.titulo,
           precio: String(data.precio),
+          categoryId: data.categoryId,
+          categoryName: data.categoryName,
         });
+        setShowCatSearch(false);
+        setCatQuery("");
+        setCatResults([]);
       }
     } catch {
       setResults((prev) => ({
@@ -51,6 +69,22 @@ export default function ViewMercadoLibre({
       }));
     } finally {
       setPublishing(null);
+    }
+  }
+
+  async function searchCategories() {
+    if (!catQuery.trim()) return;
+    setCatSearching(true);
+    try {
+      const res = await fetch(
+        `/api/ml/categories?q=${encodeURIComponent(catQuery)}`,
+      );
+      const data = await res.json();
+      setCatResults(data.categories ?? []);
+    } catch {
+      setCatResults([]);
+    } finally {
+      setCatSearching(false);
     }
   }
 
@@ -66,6 +100,7 @@ export default function ViewMercadoLibre({
           confirmar: true,
           titulo: previewEdits.titulo,
           precio: Number(previewEdits.precio),
+          categoryId: previewEdits.categoryId,
         }),
       });
       const data = await res.json();
@@ -202,7 +237,7 @@ export default function ViewMercadoLibre({
         <h3 className={styles.sectionTitle}>Tus productos</h3>
         <p className={styles.sectionSub}>
           Elegí qué productos querés publicar en Mercado Libre. Podés ajustar el
-          título y precio antes de confirmar.
+          título, precio y categoría antes de confirmar.
         </p>
 
         {productos.filter((p) => p.activo !== false).length === 0 ? (
@@ -356,7 +391,7 @@ export default function ViewMercadoLibre({
                 );
               })}
 
-            {/* Modal de confirmación con edición */}
+            {/* Modal de confirmación */}
             {preview && (
               <div
                 style={{
@@ -377,6 +412,8 @@ export default function ViewMercadoLibre({
                     padding: "32px 28px",
                     maxWidth: 420,
                     width: "100%",
+                    maxHeight: "90vh",
+                    overflowY: "auto",
                   }}
                 >
                   <h3
@@ -391,14 +428,9 @@ export default function ViewMercadoLibre({
                     Confirmar publicación en ML
                   </h3>
                   <p
-                    style={{
-                      fontSize: 12,
-                      color: "#8A8680",
-                      marginBottom: 20,
-                    }}
+                    style={{ fontSize: 12, color: "#8A8680", marginBottom: 20 }}
                   >
-                    Podés editar el título y precio antes de publicar. Estos
-                    cambios solo aplican a Mercado Libre.
+                    Ajustá título, precio y categoría antes de publicar.
                   </p>
 
                   <div
@@ -478,6 +510,7 @@ export default function ViewMercadoLibre({
                           display: "flex",
                           alignItems: "center",
                           gap: 6,
+                          marginBottom: 12,
                         }}
                       >
                         <span
@@ -511,15 +544,174 @@ export default function ViewMercadoLibre({
                         />
                       </div>
 
-                      <p
+                      {/* Categoría con opción de cambio */}
+                      <label
                         style={{
                           fontSize: 11,
                           color: "#8A8680",
-                          margin: "8px 0 0",
+                          display: "block",
+                          marginBottom: 4,
                         }}
                       >
-                        Categoría ML: {preview.categoryName}
-                      </p>
+                        Categoría ML
+                      </label>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          marginBottom: 6,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "#1A1814",
+                            background: "#F0EDE6",
+                            padding: "5px 10px",
+                            borderRadius: 8,
+                            flex: 1,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {previewEdits.categoryName}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setShowCatSearch(!showCatSearch);
+                            setCatResults([]);
+                            setCatQuery("");
+                          }}
+                          style={{
+                            fontSize: 11,
+                            color: "#1A56C4",
+                            background: "none",
+                            border: "1px solid #C8D8F0",
+                            borderRadius: 8,
+                            padding: "5px 10px",
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {showCatSearch ? "Cancelar" : "Cambiar"}
+                        </button>
+                      </div>
+
+                      {/* Buscador de categoría inline */}
+                      {showCatSearch && (
+                        <div
+                          style={{
+                            background: "#fff",
+                            border: "1px solid #E8E4DC",
+                            borderRadius: 10,
+                            padding: 12,
+                            marginBottom: 8,
+                          }}
+                        >
+                          <div
+                            style={{ display: "flex", gap: 6, marginBottom: 8 }}
+                          >
+                            <input
+                              placeholder="Ej: ropa mujer, zapatillas, comida..."
+                              value={catQuery}
+                              onChange={(e) => setCatQuery(e.target.value)}
+                              onKeyDown={(e) =>
+                                e.key === "Enter" && searchCategories()
+                              }
+                              style={{
+                                flex: 1,
+                                fontSize: 13,
+                                border: "1px solid #E8E4DC",
+                                borderRadius: 8,
+                                padding: "6px 10px",
+                                fontFamily: "inherit",
+                              }}
+                            />
+                            <button
+                              onClick={searchCategories}
+                              disabled={catSearching}
+                              style={{
+                                background: "#1A1814",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 8,
+                                padding: "6px 12px",
+                                fontSize: 12,
+                                fontFamily: "Syne, sans-serif",
+                                fontWeight: 700,
+                                cursor: catSearching
+                                  ? "not-allowed"
+                                  : "pointer",
+                                opacity: catSearching ? 0.6 : 1,
+                              }}
+                            >
+                              {catSearching ? "..." : "Buscar"}
+                            </button>
+                          </div>
+
+                          {catResults.length > 0 && (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 4,
+                              }}
+                            >
+                              {catResults.map((cat) => (
+                                <button
+                                  key={cat.id}
+                                  onClick={() => {
+                                    setPreviewEdits((p) => ({
+                                      ...p,
+                                      categoryId: cat.id,
+                                      categoryName: cat.name,
+                                    }));
+                                    setShowCatSearch(false);
+                                    setCatResults([]);
+                                  }}
+                                  style={{
+                                    textAlign: "left",
+                                    background: "#F5F2EC",
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "8px 10px",
+                                    fontSize: 12,
+                                    color: "#1A1814",
+                                    cursor: "pointer",
+                                    fontFamily: "inherit",
+                                  }}
+                                >
+                                  <span style={{ fontWeight: 600 }}>
+                                    {cat.name}
+                                  </span>
+                                  <span
+                                    style={{ color: "#8A8680", marginLeft: 6 }}
+                                  >
+                                    ({cat.id})
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {catResults.length === 0 &&
+                            !catSearching &&
+                            catQuery && (
+                              <p
+                                style={{
+                                  fontSize: 12,
+                                  color: "#8A8680",
+                                  margin: 0,
+                                }}
+                              >
+                                Sin resultados. Probá otro término.
+                              </p>
+                            )}
+                        </div>
+                      )}
                     </div>
                   </div>
 

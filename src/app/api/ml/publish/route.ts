@@ -165,7 +165,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { producto, confirmar, titulo, precio } = body;
+    const {
+      producto,
+      confirmar,
+      titulo,
+      precio,
+      categoryId: categoryIdOverride,
+    } = body;
 
     if (!producto?.id || !producto?.nombre) {
       return NextResponse.json({ error: "Producto inválido" }, { status: 400 });
@@ -186,11 +192,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, categoryName, attributes } = await getCategoryAndAttrs(
+    const {
+      categoryId: detectedId,
+      categoryName,
+      attributes,
+    } = await getCategoryAndAttrs(
       prodReal.nombre,
       emp.ml_access_token,
       prodReal.nombre,
     );
+    const categoryId = categoryIdOverride ?? detectedId;
 
     console.log(
       `[ML publish] Categoría: ${categoryId} | Atributos: ${JSON.stringify(attributes)}`,
