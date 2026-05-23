@@ -99,6 +99,7 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await res.json();
+    console.log("ML ERROR:", JSON.stringify(data));
 
     if (!res.ok) {
       return NextResponse.json(
