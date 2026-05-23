@@ -1,26 +1,45 @@
 ﻿import { createClient } from "../../../../lib/server";
 import { NextRequest, NextResponse } from "next/server";
 
-// Categoría base — se navega hasta el primer hijo leaf automáticamente
-const CATEGORIA_FALLBACK_ROOT = "MLA1648"; // Artesanías y Manualidades
+const CATEGORIA_ROOT = "MLA1648"; // Artesanías y Manualidades
+const ATTRS_BLOCKLIST = new Set(["BRAND", "MODEL", "GTIN", "SELLER_SKU"]);
 
-async function getLeafCategory(
+// Busca el primer leaf dentro de un árbol de categorías donde
+// ninguno de los atributos bloqueados esté presente
+async function findSafeLeaf(
   categoryId: string,
   token: string,
   depth = 0,
-): Promise<string> {
-  if (depth > 5) return categoryId;
+): Promise<string | null> {
+  if (depth > 6) return null;
   try {
     const res = await fetch(
       `https://api.mercadolibre.com/categories/${categoryId}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    const data = await res.json();
-    const children: { id: string }[] = data?.children_categories ?? [];
-    if (children.length === 0) return categoryId; // ya es leaf ✓
-    return getLeafCategory(children[0].id, token, depth + 1);
+    const catData = await res.json();
+    const children: { id: string }[] = catData?.children_categories ?? [];
+
+    if (children.length === 0) {
+      // Es un leaf — verificar que no tenga atributos bloqueados
+      const attrRes = await fetch(
+        `https://api.mercadolibre.com/categories/${categoryId}/attributes`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const attrs: { id: string }[] = await attrRes.json();
+      const hasBlocked =
+        Array.isArray(attrs) && attrs.some((a) => ATTRS_BLOCKLIST.has(a.id));
+      return hasBlocked ? null : categoryId;
+    }
+
+    // Probar cada hijo hasta encontrar un leaf seguro
+    for (const child of children) {
+      const safe = await findSafeLeaf(child.id, token, depth + 1);
+      if (safe) return safe;
+    }
+    return null;
   } catch {
-    return categoryId;
+    return null;
   }
 }
 
@@ -69,16 +88,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Usar siempre categoría leaf de artesanías — evita atributos de catálogo
-    // requeridos (BRAND, MODEL) que ML no expone en su API de atributos pero
-    // sí valida al publicar, haciendo imposible la detección automática segura.
-    const categoryId = await getLeafCategory(
-      CATEGORIA_FALLBACK_ROOT,
-      emp.ml_access_token,
-    );
-    const categoryName = "Artesanías";
+    // Buscar un leaf seguro dentro de MLA1648
+    const categoryId = await findSafeLeaf(CATEGORIA_ROOT, emp.ml_access_token);
 
-    console.log(`[ML publish] Usando categoría leaf: ${categoryId}`);
+    if (!categoryId) {
+      console.error(
+        "[ML publish] No se encontró categoría leaf segura en MLA1648",
+      );
+      return NextResponse.json(
+        { error: "No se pudo determinar una categoría válida para publicar." },
+        { status: 500 },
+      );
+    }
+
+    console.log(`[ML publish] Categoría leaf segura encontrada: ${categoryId}`);
 
     const precioBase = prodReal.precio_descuento ?? prodReal.precio;
 
@@ -87,7 +110,7 @@ export async function POST(req: NextRequest) {
         ok: true,
         preview: true,
         categoryId,
-        categoryName,
+        categoryName: "Artesanías",
         titulo: prodReal.nombre,
         precio: precioBase,
         descripcion: prodReal.descripcion ?? prodReal.nombre,
