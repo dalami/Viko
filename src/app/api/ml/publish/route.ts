@@ -3,14 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 const CATEGORIA_FALLBACK_ROOT = "MLA1648";
 
-// Valores por defecto para atributos requeridos que no podemos inferir del producto
+// Atributos que ML valida contra su catálogo → no admiten valor libre
+// Si una categoría los requiere, usamos fallback directamente
+const ATTRS_CATALOG_ONLY = new Set(["BRAND", "MODEL", "GTIN", "SELLER_SKU"]);
+
+// Atributos que sí podemos resolver con valor libre
 const ATTR_DEFAULTS: Record<string, string> = {
-  BRAND: "Artesanal",
-  MODEL: "Único",
   GENDER: "Unisex",
   AGE_GROUP: "Adultos",
   COLOR: "Multicolor",
   SIZE: "Único",
+  MATERIAL: "Mixto",
 };
 
 async function getLeafCategory(
@@ -36,7 +39,6 @@ async function getLeafCategory(
 interface MLAttribute {
   id: string;
   tags?: { required?: boolean };
-  value_type?: string;
   values?: { id: string; name: string }[];
 }
 
@@ -48,6 +50,15 @@ async function getCategoryId(
   categoryName: string;
   requiredAttrs: MLAttribute[];
 }> {
+  const getFallback = async () => {
+    const leafFallback = await getLeafCategory(CATEGORIA_FALLBACK_ROOT, token);
+    return {
+      categoryId: leafFallback,
+      categoryName: "Artesanías",
+      requiredAttrs: [],
+    };
+  };
+
   try {
     const res = await fetch(
       `https://api.mercadolibre.com/sites/MLA/domain_discovery/search?q=${encodeURIComponent(nombre)}`,
@@ -55,11 +66,6 @@ async function getCategoryId(
     );
     const data = await res.json();
     const cat = data?.[0];
-
-    const getFallback = async () => {
-      const leafFallback = await getLeafCategory(CATEGORIA_FALLBACK_ROOT, token);
-      return { categoryId: leafFallback, categoryName: "Artesanías", requiredAttrs: [] };
-    };
 
     if (!cat?.category_id) return getFallback();
 
@@ -75,13 +81,27 @@ async function getCategoryId(
       ? attrs.filter((a) => a.tags?.required)
       : [];
 
-    // Si algún atributo requerido no tiene default conocido, usar fallback
+    // Si requiere BRAND, MODEL u otro atributo de catálogo → fallback
+    const needsCatalogAttr = requiredAttrs.some((a) =>
+      ATTRS_CATALOG_ONLY.has(a.id),
+    );
+    if (needsCatalogAttr) {
+      console.log(
+        `[ML publish] Categoría ${leafId} requiere atributos de catálogo (${requiredAttrs
+          .filter((a) => ATTRS_CATALOG_ONLY.has(a.id))
+          .map((a) => a.id)
+          .join(", ")}) → usando fallback`,
+      );
+      return getFallback();
+    }
+
+    // Si algún otro atributo requerido tampoco tiene default → fallback
     const unresolvable = requiredAttrs.filter(
-      (a) => !(a.id in ATTR_DEFAULTS),
+      (a) => !ATTRS_CATALOG_ONLY.has(a.id) && !(a.id in ATTR_DEFAULTS),
     );
     if (unresolvable.length > 0) {
       console.log(
-        `[ML publish] Categoría ${leafId} tiene atributos sin default: ${unresolvable.map((a) => a.id).join(", ")} → usando fallback`,
+        `[ML publish] Categoría ${leafId} tiene atributos sin resolver: ${unresolvable.map((a) => a.id).join(", ")} → usando fallback`,
       );
       return getFallback();
     }
@@ -92,8 +112,7 @@ async function getCategoryId(
       requiredAttrs,
     };
   } catch {
-    const leafFallback = await getLeafCategory(CATEGORIA_FALLBACK_ROOT, token);
-    return { categoryId: leafFallback, categoryName: "Artesanías", requiredAttrs: [] };
+    return getFallback();
   }
 }
 
@@ -129,12 +148,17 @@ export async function POST(req: NextRequest) {
 
     const { data: prodReal } = await supabase
       .from("productos")
-      .select("id, nombre, precio, precio_descuento, descripcion, imagen, stock")
+      .select(
+        "id, nombre, precio, precio_descuento, descripcion, imagen, stock",
+      )
       .eq("id", producto.id)
       .single();
 
     if (!prodReal) {
-      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Producto no encontrado" },
+        { status: 404 },
+      );
     }
 
     const { categoryId, categoryName, requiredAttrs } = await getCategoryId(
@@ -161,27 +185,27 @@ export async function POST(req: NextRequest) {
 
     const tituloFinal = titulo?.trim()?.slice(0, 60) || prodReal.nombre;
 
-    // Construir atributos requeridos con valores por defecto
-    const attributes = requiredAttrs.map((attr) => {
-      const defaultVal = ATTR_DEFAULTS[attr.id] ?? "Único";
-      // Si el atributo tiene valores predefinidos, buscar el más cercano
-      if (attr.values && attr.values.length > 0) {
-        const match = attr.values.find(
-          (v) => v.name.toLowerCase() === defaultVal.toLowerCase(),
-        );
-        return match
-          ? { id: attr.id, value_id: match.id }
-          : { id: attr.id, value_name: defaultVal };
-      }
-      return { id: attr.id, value_name: defaultVal };
-    });
+    // Atributos resolubles con valor libre
+    const attributes = requiredAttrs
+      .filter((a) => a.id in ATTR_DEFAULTS)
+      .map((attr) => {
+        const defaultVal = ATTR_DEFAULTS[attr.id];
+        if (attr.values && attr.values.length > 0) {
+          const match = attr.values.find(
+            (v) => v.name.toLowerCase() === defaultVal.toLowerCase(),
+          );
+          return match
+            ? { id: attr.id, value_id: match.id }
+            : { id: attr.id, value_name: defaultVal };
+        }
+        return { id: attr.id, value_name: defaultVal };
+      });
 
     const listing: Record<string, unknown> = {
       title: tituloFinal,
       category_id: categoryId,
       price: precioFinal,
       currency_id: "ARS",
-      // FIX: listing "free" tiene máximo 1 unidad por item
       available_quantity: 1,
       buying_mode: "buy_it_now",
       condition: "new",
@@ -219,7 +243,10 @@ export async function POST(req: NextRequest) {
         data?.error === "not_found"
       ) {
         return NextResponse.json(
-          { error: "Tu conexión con Mercado Libre expiró. Reconectá tu cuenta desde el panel." },
+          {
+            error:
+              "Tu conexión con Mercado Libre expiró. Reconectá tu cuenta desde el panel.",
+          },
           { status: 401 },
         );
       }
@@ -227,7 +254,9 @@ export async function POST(req: NextRequest) {
       const causas = Array.isArray(data?.cause)
         ? data.cause
             .filter((c: { type?: string }) => c.type === "error")
-            .map((c: { code?: string; message?: string }) => c.message ?? c.code)
+            .map(
+              (c: { message?: string; code?: string }) => c.message ?? c.code,
+            )
         : [];
 
       return NextResponse.json(
