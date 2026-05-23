@@ -7,6 +7,7 @@ export async function POST(req: NextRequest) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    console.log("USER:", user?.id);
     if (!user)
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
@@ -15,6 +16,7 @@ export async function POST(req: NextRequest) {
       .select("ml_access_token, ml_connected, ml_user_id")
       .eq("user_id", user.id)
       .single();
+    console.log("EMP:", emp?.ml_connected, !!emp?.ml_access_token);
 
     if (!emp?.ml_connected || !emp.ml_access_token) {
       return NextResponse.json(
@@ -24,20 +26,21 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    console.log("BODY:", JSON.stringify(body));
     const { producto, confirmar, titulo, precio } = body;
 
     if (!producto?.id || !producto?.nombre) {
       return NextResponse.json({ error: "Producto inválido" }, { status: 400 });
     }
 
-    // Verificar que el producto pertenece al emprendimiento del usuario
-    const { data: prodReal } = await supabase
+    const { data: prodReal, error: prodError } = await supabase
       .from("productos")
       .select(
         "id, nombre, precio, precio_descuento, descripcion, imagen, stock",
       )
       .eq("id", producto.id)
       .single();
+    console.log("PROD:", prodReal?.id, "ERROR:", prodError?.message);
 
     if (!prodReal) {
       return NextResponse.json(
