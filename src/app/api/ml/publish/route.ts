@@ -1,16 +1,24 @@
 ﻿import { createClient } from "../../../../lib/server";
 import { NextRequest, NextResponse } from "next/server";
 
-// Categoría fallback — se navega hasta el primer hijo leaf automáticamente
 const CATEGORIA_FALLBACK_ROOT = "MLA1648";
 
-// Navega al primer hijo leaf de una categoría (si ya es leaf, la devuelve igual)
+// Valores por defecto para atributos requeridos que no podemos inferir del producto
+const ATTR_DEFAULTS: Record<string, string> = {
+  BRAND: "Artesanal",
+  MODEL: "Único",
+  GENDER: "Unisex",
+  AGE_GROUP: "Adultos",
+  COLOR: "Multicolor",
+  SIZE: "Único",
+};
+
 async function getLeafCategory(
   categoryId: string,
   token: string,
   depth = 0,
 ): Promise<string> {
-  if (depth > 5) return categoryId; // evitar loops infinitos
+  if (depth > 5) return categoryId;
   try {
     const res = await fetch(
       `https://api.mercadolibre.com/categories/${categoryId}`,
@@ -18,18 +26,28 @@ async function getLeafCategory(
     );
     const data = await res.json();
     const children: { id: string }[] = data?.children_categories ?? [];
-    if (children.length === 0) return categoryId; // ya es leaf ✓
-    // bajar por el primer hijo
+    if (children.length === 0) return categoryId;
     return getLeafCategory(children[0].id, token, depth + 1);
   } catch {
     return categoryId;
   }
 }
 
+interface MLAttribute {
+  id: string;
+  tags?: { required?: boolean };
+  value_type?: string;
+  values?: { id: string; name: string }[];
+}
+
 async function getCategoryId(
   nombre: string,
   token: string,
-): Promise<{ categoryId: string; categoryName: string }> {
+): Promise<{
+  categoryId: string;
+  categoryName: string;
+  requiredAttrs: MLAttribute[];
+}> {
   try {
     const res = await fetch(
       `https://api.mercadolibre.com/sites/MLA/domain_discovery/search?q=${encodeURIComponent(nombre)}`,
@@ -38,44 +56,44 @@ async function getCategoryId(
     const data = await res.json();
     const cat = data?.[0];
 
-    if (!cat?.category_id) {
-      const leafFallback = await getLeafCategory(
-        CATEGORIA_FALLBACK_ROOT,
-        token,
-      );
-      return { categoryId: leafFallback, categoryName: "Artesanías" };
-    }
+    const getFallback = async () => {
+      const leafFallback = await getLeafCategory(CATEGORIA_FALLBACK_ROOT, token);
+      return { categoryId: leafFallback, categoryName: "Artesanías", requiredAttrs: [] };
+    };
 
-    // Asegurarse de que sea una categoría leaf
+    if (!cat?.category_id) return getFallback();
+
     const leafId = await getLeafCategory(cat.category_id, token);
 
-    // Verificar atributos requeridos de la categoría leaf
     const attrRes = await fetch(
       `https://api.mercadolibre.com/categories/${leafId}/attributes`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    const attrs = await attrRes.json();
+    const attrs: MLAttribute[] = await attrRes.json();
 
     const requiredAttrs = Array.isArray(attrs)
-      ? attrs.filter((a: { tags?: { required?: boolean } }) => a.tags?.required)
+      ? attrs.filter((a) => a.tags?.required)
       : [];
 
-    // Si tiene muchos atributos requeridos, usar fallback leaf
-    if (requiredAttrs.length > 2) {
-      const leafFallback = await getLeafCategory(
-        CATEGORIA_FALLBACK_ROOT,
-        token,
+    // Si algún atributo requerido no tiene default conocido, usar fallback
+    const unresolvable = requiredAttrs.filter(
+      (a) => !(a.id in ATTR_DEFAULTS),
+    );
+    if (unresolvable.length > 0) {
+      console.log(
+        `[ML publish] Categoría ${leafId} tiene atributos sin default: ${unresolvable.map((a) => a.id).join(", ")} → usando fallback`,
       );
-      return { categoryId: leafFallback, categoryName: "Artesanías" };
+      return getFallback();
     }
 
     return {
       categoryId: leafId,
       categoryName: cat.domain_name ?? "General",
+      requiredAttrs,
     };
   } catch {
     const leafFallback = await getLeafCategory(CATEGORIA_FALLBACK_ROOT, token);
-    return { categoryId: leafFallback, categoryName: "Artesanías" };
+    return { categoryId: leafFallback, categoryName: "Artesanías", requiredAttrs: [] };
   }
 }
 
@@ -111,26 +129,20 @@ export async function POST(req: NextRequest) {
 
     const { data: prodReal } = await supabase
       .from("productos")
-      .select(
-        "id, nombre, precio, precio_descuento, descripcion, imagen, stock",
-      )
+      .select("id, nombre, precio, precio_descuento, descripcion, imagen, stock")
       .eq("id", producto.id)
       .single();
 
     if (!prodReal) {
-      return NextResponse.json(
-        { error: "Producto no encontrado" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
 
-    const { categoryId, categoryName } = await getCategoryId(
+    const { categoryId, categoryName, requiredAttrs } = await getCategoryId(
       prodReal.nombre,
       emp.ml_access_token,
     );
     const precioBase = prodReal.precio_descuento ?? prodReal.precio;
 
-    // Preview – antes de confirmar
     if (!confirmar) {
       return NextResponse.json({
         ok: true,
@@ -144,23 +156,42 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Precio editado – máximo 3x el original
     const precioFinal =
       precio && precio > 0 && precio <= precioBase * 3 ? precio : precioBase;
 
     const tituloFinal = titulo?.trim()?.slice(0, 60) || prodReal.nombre;
+
+    // Construir atributos requeridos con valores por defecto
+    const attributes = requiredAttrs.map((attr) => {
+      const defaultVal = ATTR_DEFAULTS[attr.id] ?? "Único";
+      // Si el atributo tiene valores predefinidos, buscar el más cercano
+      if (attr.values && attr.values.length > 0) {
+        const match = attr.values.find(
+          (v) => v.name.toLowerCase() === defaultVal.toLowerCase(),
+        );
+        return match
+          ? { id: attr.id, value_id: match.id }
+          : { id: attr.id, value_name: defaultVal };
+      }
+      return { id: attr.id, value_name: defaultVal };
+    });
 
     const listing: Record<string, unknown> = {
       title: tituloFinal,
       category_id: categoryId,
       price: precioFinal,
       currency_id: "ARS",
-      available_quantity: prodReal.stock ?? 10,
+      // FIX: listing "free" tiene máximo 1 unidad por item
+      available_quantity: 1,
       buying_mode: "buy_it_now",
       condition: "new",
       listing_type_id: "free",
       description: { plain_text: prodReal.descripcion ?? prodReal.nombre },
     };
+
+    if (attributes.length > 0) {
+      listing.attributes = attributes;
+    }
 
     if (prodReal.imagen) {
       listing.pictures = [{ source: prodReal.imagen }];
@@ -188,21 +219,15 @@ export async function POST(req: NextRequest) {
         data?.error === "not_found"
       ) {
         return NextResponse.json(
-          {
-            error:
-              "Tu conexión con Mercado Libre expiró. Reconectá tu cuenta desde el panel.",
-          },
+          { error: "Tu conexión con Mercado Libre expiró. Reconectá tu cuenta desde el panel." },
           { status: 401 },
         );
       }
 
       const causas = Array.isArray(data?.cause)
         ? data.cause
-            .filter((c: { type?: string }) => c.type === "error") // solo errores, ignorar warnings
-            .map(
-              (c: { code?: string; message?: string }) =>
-                c.message ?? c.code ?? JSON.stringify(c),
-            )
+            .filter((c: { type?: string }) => c.type === "error")
+            .map((c: { code?: string; message?: string }) => c.message ?? c.code)
         : [];
 
       return NextResponse.json(
