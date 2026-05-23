@@ -1,8 +1,8 @@
 ﻿import { createClient } from "../../../../lib/server";
 import { NextRequest, NextResponse } from "next/server";
 
-// CategorÃ­as seguras por tipo de producto â€” sin atributos obligatorios
-const CATEGORIA_FALLBACK = "MLA1648"; // ArtesanÃ­as y Manualidades
+// Categoría segura por tipo de producto – sin atributos obligatorios
+const CATEGORIA_FALLBACK = "MLA1648"; // Artesanías y Manualidades
 
 async function getCategoryId(
   nombre: string,
@@ -17,10 +17,10 @@ async function getCategoryId(
     const cat = data?.[0];
 
     if (!cat?.category_id) {
-      return { categoryId: CATEGORIA_FALLBACK, categoryName: "ArtesanÃ­as" };
+      return { categoryId: CATEGORIA_FALLBACK, categoryName: "Artesanías" };
     }
 
-    // Verificar que la categorÃ­a no requiere atributos tÃ©cnicos complejos
+    // Verificar que la categoría no requiere atributos técnicos complejos
     const attrRes = await fetch(
       `https://api.mercadolibre.com/categories/${cat.category_id}/attributes`,
       { headers: { Authorization: `Bearer ${token}` } },
@@ -31,9 +31,9 @@ async function getCategoryId(
       ? attrs.filter((a: { tags?: { required?: boolean } }) => a.tags?.required)
       : [];
 
-    // Si tiene atributos requeridos complejos, usar categorÃ­a fallback
+    // Si tiene atributos requeridos complejos, usar categoría fallback
     if (requiredAttrs.length > 2) {
-      return { categoryId: CATEGORIA_FALLBACK, categoryName: "ArtesanÃ­as" };
+      return { categoryId: CATEGORIA_FALLBACK, categoryName: "Artesanías" };
     }
 
     return {
@@ -41,7 +41,7 @@ async function getCategoryId(
       categoryName: cat.domain_name ?? "General",
     };
   } catch {
-    return { categoryId: CATEGORIA_FALLBACK, categoryName: "ArtesanÃ­as" };
+    return { categoryId: CATEGORIA_FALLBACK, categoryName: "Artesanías" };
   }
 }
 
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     const { producto, confirmar, titulo, precio } = body;
 
     if (!producto?.id || !producto?.nombre) {
-      return NextResponse.json({ error: "Producto invÃ¡lido" }, { status: 400 });
+      return NextResponse.json({ error: "Producto inválido" }, { status: 400 });
     }
 
     // Verificar que el producto existe en la DB
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     );
     const precioBase = prodReal.precio_descuento ?? prodReal.precio;
 
-    // Preview â€” antes de confirmar
+    // Preview – antes de confirmar
     if (!confirmar) {
       return NextResponse.json({
         ok: true,
@@ -111,12 +111,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Precio editado â€” mÃ¡ximo 3x el original para evitar manipulaciÃ³n
+    // Precio editado – máximo 3x el original para evitar manipulación
     const precioFinal =
       precio && precio > 0 && precio <= precioBase * 3 ? precio : precioBase;
 
     const tituloFinal = titulo?.trim()?.slice(0, 60) || prodReal.nombre;
 
+    // FIX: usar "free" en lugar de "gold_special"
+    // gold_special puede ser rechazado si el vendedor no tiene ese tipo habilitado.
+    // Una vez publicado, se puede cambiar el listing_type desde ML si se desea.
     const listing: Record<string, unknown> = {
       title: tituloFinal,
       category_id: categoryId,
@@ -125,8 +128,7 @@ export async function POST(req: NextRequest) {
       available_quantity: prodReal.stock ?? 10,
       buying_mode: "buy_it_now",
       condition: "new",
-      listing_type_id: "gold_special",
-      local_pick_up: true,
+      listing_type_id: "free",
       description: { plain_text: prodReal.descripcion ?? prodReal.nombre },
     };
 
@@ -146,23 +148,43 @@ export async function POST(req: NextRequest) {
     const data = await res.json();
 
     if (!res.ok) {
-      // Si el token expirÃ³, informar para reconectar
+      // FIX: loguear el error completo de ML para debugging
+      console.error(
+        "[ML publish] Error al publicar:",
+        JSON.stringify(data, null, 2),
+      );
+
+      // Token expirado
       if (
         data?.message?.includes("invalid_token") ||
-        data?.message?.includes("expired")
+        data?.message?.includes("expired") ||
+        data?.error === "not_found" // token revocado
       ) {
         return NextResponse.json(
           {
             error:
-              "Tu conexiÃ³n con Mercado Libre expirÃ³. ReconectÃ¡ tu cuenta desde el panel.",
+              "Tu conexión con Mercado Libre expiró. Reconectá tu cuenta desde el panel.",
           },
           { status: 401 },
         );
       }
+
+      // FIX: devolver el detalle completo de ML al cliente
+      // ML envía los errores específicos en data.cause (array de objetos)
+      const causas = Array.isArray(data?.cause)
+        ? data.cause.map(
+            (c: { code?: string; description?: string }) =>
+              c.description ?? c.code ?? JSON.stringify(c),
+          )
+        : [];
+
       return NextResponse.json(
         {
           error: "Error al publicar en ML",
           detail: data?.message ?? "Error desconocido",
+          causas, // ← acá está el detalle real del 400
+          ml_status: res.status,
+          payload_enviado: listing, // para debug: ver qué mandamos
         },
         { status: 500 },
       );
@@ -173,8 +195,12 @@ export async function POST(req: NextRequest) {
       item_id: data.id,
       permalink: data.permalink,
     });
-  } catch {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  } catch (err) {
+    // FIX: loguear el error real en vez de tragárselo
+    console.error("[ML publish] Error interno:", err);
+    return NextResponse.json(
+      { error: "Error interno", detail: String(err) },
+      { status: 500 },
+    );
   }
 }
-
