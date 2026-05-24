@@ -2305,14 +2305,16 @@ export default function ViewProductos({
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    style={{ padding: "11px 28px", fontSize: "13px" }}
-                    disabled={saving}
-                  >
-                    {saving ? "Guardando..." : "Guardar producto"}
-                  </button>
+                  <div style={{ display: "flex" }}>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      style={{ padding: "11px 28px", fontSize: "13px" }}
+                      disabled={saving}
+                    >
+                      {saving ? "Guardando..." : "Guardar producto"}
+                    </button>
+                  </div>
                 </form>
               )}
 
