@@ -1,13 +1,12 @@
 ﻿import { createClient } from "../../../../lib/server";
 import { NextRequest, NextResponse } from "next/server";
 
-// Defaults para cualquier atributo requerido que ML pueda pedir
 const ATTR_DEFAULTS: Record<string, string> = {
   BRAND: "Sin marca",
   MODEL: "Único",
   DEVELOPER: "Sin marca",
   VERSION: "Único",
-  SOFTWARE_NAME: "__PRODUCT_NAME__", // reemplazado con nombre real
+  SOFTWARE_NAME: "__PRODUCT_NAME__",
   GENDER: "Unisex",
   AGE_GROUP: "Adultos",
   COLOR: "Multicolor",
@@ -26,12 +25,11 @@ interface MLAttr {
   values?: { id: string; name: string }[];
 }
 
-// Limpia el nombre del producto antes de pasarlo a domain_discovery
 function cleanProductName(name: string): string {
   return name
-    .replace(/\s*x\s*\d+/gi, "") // "x 4", "x4"
-    .replace(/\s*\d+\s*u\b/gi, "") // "4u", "4 u"
-    .replace(/pack\s*/gi, "") // "pack"
+    .replace(/\s*x\s*\d+/gi, "")
+    .replace(/\s*\d+\s*u\b/gi, "")
+    .replace(/pack\s*/gi, "")
     .trim();
 }
 
@@ -74,11 +72,9 @@ async function buildRequiredAttributes(
     );
 
     return required.map((attr) => {
-      // Si tiene valores predefinidos, usar el primero disponible
       if (attr.values && attr.values.length > 0) {
         return { id: attr.id, value_id: attr.values[0].id };
       }
-      // Usar default conocido, o el nombre del producto, o "Único"
       const raw = ATTR_DEFAULTS[attr.id] ?? "Único";
       const value = raw === "__PRODUCT_NAME__" ? productName : raw;
       return { id: attr.id, value_name: value };
@@ -116,8 +112,6 @@ async function getCategoryAndAttrs(
       productName,
     );
 
-    // Siempre incluir BRAND y MODEL aunque no estén marcados como required
-    // (ML los exige al publicar pero no siempre los marca en la API)
     const hasAttr = (id: string) =>
       attributes.some((a) => (a as { id: string }).id === id);
     if (!hasAttr("BRAND"))
@@ -139,6 +133,44 @@ async function getCategoryAndAttrs(
         { id: "MODEL", value_name: "Único" },
       ],
     };
+  }
+}
+
+// Refresca el access token de ML usando el refresh token
+async function refreshMLToken(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  refreshToken: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch("https://api.mercadolibre.com/oauth/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        grant_type: "refresh_token",
+        client_id: process.env.ML_CLIENT_ID,
+        client_secret: process.env.ML_CLIENT_SECRET,
+        refresh_token: refreshToken,
+      }),
+    });
+
+    if (!res.ok) return null;
+
+    const tokenData = await res.json();
+    if (!tokenData.access_token) return null;
+
+    await supabase
+      .from("emprendimientos")
+      .update({
+        ml_access_token: tokenData.access_token,
+        ml_refresh_token: tokenData.refresh_token,
+      })
+      .eq("user_id", userId);
+
+    console.log("[ML publish] Token refrescado correctamente");
+    return tokenData.access_token;
+  } catch {
+    return null;
   }
 }
 
@@ -180,7 +212,7 @@ export async function POST(req: NextRequest) {
     const { data: prodReal } = await supabase
       .from("productos")
       .select(
-        "id, nombre, precio, precio_descuento, descripcion, imagen, stock",
+        "id, nombre, precio, precio_descuento, descripcion, imagen, imagenes, stock",
       )
       .eq("id", producto.id)
       .single();
@@ -226,6 +258,16 @@ export async function POST(req: NextRequest) {
       precio && precio > 0 && precio <= precioBase * 3 ? precio : precioBase;
     const tituloFinal = titulo?.trim()?.slice(0, 60) || prodReal.nombre;
 
+    // Construir fotos — usar imagenes[] si existe, sino imagen simple
+    const fotos: { source: string }[] = [];
+    if (Array.isArray(prodReal.imagenes) && prodReal.imagenes.length > 0) {
+      prodReal.imagenes.forEach((url: string) => {
+        if (url) fotos.push({ source: url });
+      });
+    } else if (prodReal.imagen) {
+      fotos.push({ source: prodReal.imagen });
+    }
+
     const listing: Record<string, unknown> = {
       title: tituloFinal,
       category_id: categoryId,
@@ -239,20 +281,50 @@ export async function POST(req: NextRequest) {
       description: { plain_text: prodReal.descripcion ?? prodReal.nombre },
     };
 
-    if (prodReal.imagen) {
-      listing.pictures = [{ source: prodReal.imagen }];
-    }
+    if (fotos.length > 0) listing.pictures = fotos;
 
     console.log("[ML publish] Payload:", JSON.stringify(listing));
 
-    const res = await fetch("https://api.mercadolibre.com/items", {
+    // Intentar publicar con el token actual
+    let accessToken = emp.ml_access_token;
+    let res = await fetch("https://api.mercadolibre.com/items", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${emp.ml_access_token}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(listing),
     });
+
+    // Si el token expiró, refrescar y reintentar una vez
+    if (res.status === 401 && emp.ml_refresh_token) {
+      console.log("[ML publish] Token expirado, intentando refresh...");
+      const newToken = await refreshMLToken(
+        supabase,
+        user.id,
+        emp.ml_refresh_token,
+      );
+
+      if (newToken) {
+        accessToken = newToken;
+        res = await fetch("https://api.mercadolibre.com/items", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(listing),
+        });
+      } else {
+        return NextResponse.json(
+          {
+            error:
+              "Tu conexión con Mercado Libre expiró. Reconectá tu cuenta desde el panel.",
+          },
+          { status: 401 },
+        );
+      }
+    }
 
     const data = await res.json();
 

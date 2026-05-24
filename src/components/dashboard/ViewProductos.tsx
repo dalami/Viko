@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { createClient } from "../../lib/supabase";
 import styles from "../dashboard/View.module.css";
@@ -71,37 +71,45 @@ function EditDrawer({
     stock: prod?.stock !== undefined ? String(prod.stock) : "",
     descripcion: prod?.descripcion ?? "",
     categoria: prod?.categoria ?? "",
-    imagen: prod?.imagen ?? "",
+    imagenes: (prod?.imagenes?.length
+      ? prod.imagenes
+      : prod?.imagen
+        ? [prod.imagen]
+        : []) as string[],
     activo: prod?.activo !== false,
     tags: (prod?.tags ?? []).join(", "),
     variantes: prod?.variantes ?? ([] as Variante[]),
   });
-  const [uploadingImg, setUploadingImg] = useState(false);
+  const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
   const [nuevoTipo, setNuevoTipo] = useState("");
   const [nuevasOpc, setNuevasOpc] = useState("");
   const [loadingAI, setLoadingAI] = useState<"desc" | "titulo" | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiTitulos, setAiTitulos] = useState<string[]>([]);
   const [showPreview, setShowPreview] = useState(false);
-  const editFileRef = useRef<HTMLInputElement>(null);
 
   if (!prod) return null;
 
-  async function handleImgUpload(file: File) {
-    setUploadingImg(true);
+  async function handleImgUpload(file: File, slot: number) {
+    setUploadingSlot(slot);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${userId}/${empId}/${Date.now()}.${ext}`;
+      // EditDrawer — handleImgUpload
+      const path = `${userId}/${empId}/${crypto.randomUUID()}_${slot}.${ext}`;
       const { error } = await supabase.storage
         .from("productos")
         .upload(path, file, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from("productos").getPublicUrl(path);
-      setForm((f) => ({ ...f, imagen: data.publicUrl }));
+      setForm((f) => {
+        const imgs = [...f.imagenes];
+        imgs[slot] = data.publicUrl;
+        return { ...f, imagenes: imgs };
+      });
     } catch (e) {
       console.error(e);
     } finally {
-      setUploadingImg(false);
+      setUploadingSlot(null);
     }
   }
 
@@ -209,7 +217,8 @@ function EditDrawer({
       stock: form.stock !== "" ? parseInt(form.stock) : undefined,
       descripcion: form.descripcion,
       categoria: form.categoria,
-      imagen: form.imagen,
+      imagen: form.imagenes[0] ?? "",
+      imagenes: form.imagenes,
       activo: form.activo,
       tags: form.tags
         ? form.tags
@@ -328,17 +337,6 @@ function EditDrawer({
             gap: 18,
           }}
         >
-          <input
-            ref={editFileRef}
-            type="file"
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleImgUpload(file);
-            }}
-          />
-
           {/* Preview */}
           {showPreview && (
             <div
@@ -376,9 +374,9 @@ function EditDrawer({
                     border: "1px solid #E8E4DC",
                   }}
                 >
-                  {form.imagen ? (
+                  {form.imagenes[0] ? (
                     <Image
-                      src={form.imagen}
+                      src={form.imagenes[0]}
                       alt={form.nombre}
                       fill
                       style={{ objectFit: "cover" }}
@@ -491,136 +489,167 @@ function EditDrawer({
                       </span>
                     )}
                   </div>
-                  {form.tags && (
-                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                      {form.tags
-                        .split(",")
-                        .map((t) => t.trim())
-                        .filter(Boolean)
-                        .map((t) => (
-                          <span
-                            key={t}
-                            style={{
-                              fontSize: 10,
-                              padding: "2px 8px",
-                              borderRadius: 100,
-                              background: "#F0F4EC",
-                              color: "#3D6B35",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {t}
-                          </span>
-                        ))}
+                  {/* Miniaturas de fotos adicionales */}
+                  {form.imagenes.length > 1 && (
+                    <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+                      {form.imagenes.slice(1).map((img, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 6,
+                            overflow: "hidden",
+                            position: "relative",
+                            border: "1px solid #E8E4DC",
+                          }}
+                        >
+                          <Image
+                            src={img}
+                            alt={`foto ${i + 2}`}
+                            fill
+                            style={{ objectFit: "cover" }}
+                            sizes="32px"
+                          />
+                        </div>
+                      ))}
                     </div>
                   )}
-                  <div
-                    style={{
-                      marginTop: 10,
-                      padding: "8px 16px",
-                      borderRadius: 8,
-                      border: "1.5px solid #6B7A5A",
-                      color: "#6B7A5A",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      textAlign: "center",
-                    }}
-                  >
-                    🛍️ Agregar al carrito
-                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Imagen */}
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <div
+          {/* ── Fotos ── */}
+          <div>
+            <p
               style={{
-                position: "relative",
-                width: 90,
-                height: 90,
-                borderRadius: 12,
-                overflow: "hidden",
-                background: "#F5F2EC",
-                flexShrink: 0,
-                cursor: "pointer",
-                border: "1.5px dashed #C8D0BC",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#1A1814",
+                marginBottom: 8,
               }}
-              onClick={() => editFileRef.current?.click()}
             >
-              {form.imagen ? (
-                <Image
-                  src={form.imagen}
-                  alt="preview"
-                  fill
-                  style={{ objectFit: "cover" }}
-                  sizes="90px"
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 4,
-                    fontSize: 28,
-                  }}
-                >
-                  📷
-                  <span style={{ fontSize: 10, color: "#8A8680" }}>
-                    Subir foto
-                  </span>
-                </div>
-              )}
-              {uploadingImg && (
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "rgba(255,255,255,0.8)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  ...
-                </div>
-              )}
+              Fotos del producto{" "}
+              <span style={{ fontSize: 11, color: "#8A8680", fontWeight: 400 }}>
+                (hasta 3)
+              </span>
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              {[0, 1, 2].map((slot) => {
+                const imgUrl = form.imagenes[slot];
+                const inputId = `edit-img-${slot}`;
+                const isLoading = uploadingSlot === slot;
+                return (
+                  <div key={slot} style={{ position: "relative" }}>
+                    <input
+                      id={inputId}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImgUpload(file, slot);
+                        e.target.value = "";
+                      }}
+                    />
+                    <div
+                      onClick={() => document.getElementById(inputId)?.click()}
+                      style={{
+                        width: 84,
+                        height: 84,
+                        borderRadius: 12,
+                        overflow: "hidden",
+                        background: "#F5F2EC",
+                        border: imgUrl
+                          ? "1.5px solid #C8D0BC"
+                          : "1.5px dashed #C8D0BC",
+                        cursor: "pointer",
+                        position: "relative",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexDirection: "column",
+                        gap: 4,
+                      }}
+                    >
+                      {isLoading ? (
+                        <span style={{ fontSize: 11, color: "#8A8680" }}>
+                          ...
+                        </span>
+                      ) : imgUrl ? (
+                        <Image
+                          src={imgUrl}
+                          alt={`foto ${slot + 1}`}
+                          fill
+                          style={{ objectFit: "cover" }}
+                          sizes="84px"
+                        />
+                      ) : (
+                        <>
+                          <span style={{ fontSize: slot === 0 ? 26 : 20 }}>
+                            {slot === 0 ? "📷" : "+"}
+                          </span>
+                          <span style={{ fontSize: 9, color: "#8A8680" }}>
+                            {slot === 0 ? "Principal" : `Foto ${slot + 1}`}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {imgUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setForm((f) => {
+                            const imgs = [...f.imagenes];
+                            imgs.splice(slot, 1);
+                            return { ...f, imagenes: imgs };
+                          });
+                        }}
+                        style={{
+                          position: "absolute",
+                          top: -6,
+                          right: -6,
+                          width: 18,
+                          height: 18,
+                          borderRadius: "50%",
+                          background: "#C4664A",
+                          border: "none",
+                          color: "#fff",
+                          fontSize: 10,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          zIndex: 1,
+                        }}
+                      >
+                        ✕
+                      </button>
+                    )}
+                    {slot === 0 && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          bottom: -16,
+                          left: 0,
+                          right: 0,
+                          textAlign: "center",
+                          fontSize: 9,
+                          color: "#8A8680",
+                        }}
+                      >
+                        Principal
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <div>
-              <p
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#1A1814",
-                  marginBottom: 6,
-                }}
-              >
-                Foto del producto
-              </p>
-              <button
-                type="button"
-                onClick={() => editFileRef.current?.click()}
-                style={{
-                  fontSize: 12,
-                  color: "#6B7A5A",
-                  background: "none",
-                  border: "1px solid #6B7A5A",
-                  borderRadius: 100,
-                  padding: "5px 14px",
-                  cursor: "pointer",
-                }}
-              >
-                📷 Cambiar foto
-              </button>
-              <p style={{ fontSize: 11, color: "#8A8680", marginTop: 4 }}>
-                JPG, PNG o WEBP. Cuadrada ideal.
-              </p>
-            </div>
+            <p style={{ fontSize: 11, color: "#8A8680", marginTop: 22 }}>
+              JPG, PNG o WEBP. Imagen cuadrada ideal.
+            </p>
           </div>
 
           {/* Nombre + IA */}
@@ -777,7 +806,6 @@ function EditDrawer({
             </div>
           </div>
 
-          {/* Badge descuento */}
           {descuento && (
             <div
               style={{
@@ -1138,7 +1166,7 @@ export default function ViewProductos({
 
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [uploadingImg, setUploadingImg] = useState(false);
+  const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
   const [vistaGrid, setVistaGrid] = useState(true);
   const [tab, setTab] = useState<"productos" | "plantilla">("productos");
   const [editingProd, setEditingProd] = useState<Producto | null>(null);
@@ -1146,7 +1174,6 @@ export default function ViewProductos({
   const [showAumento, setShowAumento] = useState(false);
   const [porcentajeAumento, setPorcentajeAumento] = useState("");
   const [aplicandoAumento, setAplicandoAumento] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const [newProd, setNewProd] = useState({
     nombre: "",
@@ -1156,6 +1183,7 @@ export default function ViewProductos({
     stock: "",
     categoria: "",
     imagen: "",
+    imagenes: [] as string[],
     tags: "",
     variantes: [] as Variante[],
   });
@@ -1174,8 +1202,8 @@ export default function ViewProductos({
       .eq("id", empId);
   }
 
-  async function handleImageUpload(file: File) {
-    setUploadingImg(true);
+  async function handleImageUpload(file: File, slot = 0) {
+    setUploadingSlot(slot);
     try {
       const ext = file.name.split(".").pop();
       const path = `${userId}/${empId}/${crypto.randomUUID()}.${ext}`;
@@ -1184,11 +1212,15 @@ export default function ViewProductos({
         .upload(path, file, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from("productos").getPublicUrl(path);
-      setNewProd((prev) => ({ ...prev, imagen: data.publicUrl }));
+      setNewProd((prev) => {
+        const imgs = [...prev.imagenes];
+        imgs[slot] = data.publicUrl;
+        return { ...prev, imagen: imgs[0] ?? "", imagenes: imgs };
+      });
     } catch (err) {
       console.error(err);
     } finally {
-      setUploadingImg(false);
+      setUploadingSlot(null);
     }
   }
 
@@ -1231,7 +1263,8 @@ export default function ViewProductos({
           : null,
         stock: newProd.stock ? parseInt(newProd.stock) : null,
         categoria: newProd.categoria,
-        imagen: newProd.imagen,
+        imagen: newProd.imagenes[0] ?? "",
+        imagenes: newProd.imagenes,
         variantes: newProd.variantes,
         tags: newProd.tags
           ? newProd.tags
@@ -1255,6 +1288,7 @@ export default function ViewProductos({
         stock: "",
         categoria: "",
         imagen: "",
+        imagenes: [],
         tags: "",
         variantes: [],
       });
@@ -1350,7 +1384,7 @@ export default function ViewProductos({
   return (
     <>
       <EditDrawer
-        key={editingProd?.id ?? "empty"} 
+        key={editingProd?.id ?? "empty"}
         prod={editingProd}
         onSave={handleSaveEdit}
         onClose={() => setEditingProd(null)}
@@ -1943,105 +1977,147 @@ export default function ViewProductos({
               {/* Formulario agregar */}
               {adding && !limiteAlcanzado && (
                 <form onSubmit={handleAddProduct} className={styles.addForm}>
+                  {/* Fotos — hasta 3 */}
                   <div className={styles.field}>
-                    <label className="field-label">Foto del producto</label>
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      style={{ display: "none" }}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleImageUpload(f);
-                      }}
-                    />
-                    <div
-                      style={{ display: "flex", gap: 12, alignItems: "center" }}
-                    >
-                      {newProd.imagen ? (
-                        <div
-                          style={{
-                            position: "relative",
-                            width: 80,
-                            height: 80,
-                            borderRadius: 12,
-                            overflow: "hidden",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <Image
-                            src={newProd.imagen}
-                            alt="Preview"
-                            fill
-                            style={{ objectFit: "cover" }}
-                            sizes="80px"
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setNewProd((prev) => ({ ...prev, imagen: "" }))
-                            }
-                            style={{
-                              position: "absolute",
-                              top: 4,
-                              right: 4,
-                              width: 18,
-                              height: 18,
-                              borderRadius: "50%",
-                              background: "rgba(26,24,20,0.7)",
-                              border: "none",
-                              color: "#FAFAF7",
-                              fontSize: 10,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => fileRef.current?.click()}
-                          style={{
-                            width: 80,
-                            height: 80,
-                            borderRadius: 12,
-                            border: "1.5px dashed var(--border-strong)",
-                            background: "var(--cream)",
-                            cursor: "pointer",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 4,
-                            fontSize: 11,
-                            color: "var(--muted)",
-                          }}
-                        >
-                          {uploadingImg ? (
-                            "..."
-                          ) : (
-                            <>
-                              <span style={{ fontSize: 24 }}>📷</span>
-                              <span>Subir foto</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-                      <p
+                    <label className="field-label">
+                      Fotos del producto{" "}
+                      <span
                         style={{
-                          fontSize: 12,
+                          fontSize: 11,
                           color: "var(--muted)",
-                          lineHeight: 1.5,
+                          fontWeight: 400,
                         }}
                       >
-                        Recomendado: imagen cuadrada, fondo blanco o neutro.
-                      </p>
+                        (hasta 3)
+                      </span>
+                    </label>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {[0, 1, 2].map((slot) => {
+                        const imgUrl = newProd.imagenes[slot];
+                        const inputId = `add-img-${slot}`;
+                        const isLoading = uploadingSlot === slot;
+                        return (
+                          <div key={slot} style={{ position: "relative" }}>
+                            <input
+                              id={inputId}
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              style={{ display: "none" }}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleImageUpload(f, slot);
+                                e.target.value = "";
+                              }}
+                            />
+                            <div
+                              onClick={() =>
+                                document.getElementById(inputId)?.click()
+                              }
+                              style={{
+                                width: 84,
+                                height: 84,
+                                borderRadius: 12,
+                                border: imgUrl
+                                  ? "1.5px solid var(--border-strong)"
+                                  : "1.5px dashed var(--border-strong)",
+                                background: "var(--cream)",
+                                cursor: "pointer",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 4,
+                                position: "relative",
+                                overflow: "hidden",
+                              }}
+                            >
+                              {isLoading ? (
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    color: "var(--muted)",
+                                  }}
+                                >
+                                  ...
+                                </span>
+                              ) : imgUrl ? (
+                                <Image
+                                  src={imgUrl}
+                                  alt={`foto ${slot + 1}`}
+                                  fill
+                                  style={{ objectFit: "cover" }}
+                                  sizes="84px"
+                                />
+                              ) : (
+                                <>
+                                  <span
+                                    style={{ fontSize: slot === 0 ? 24 : 18 }}
+                                  >
+                                    {slot === 0 ? "📷" : "+"}
+                                  </span>
+                                  <span
+                                    style={{
+                                      fontSize: 9,
+                                      color: "var(--muted)",
+                                    }}
+                                  >
+                                    {slot === 0
+                                      ? "Principal"
+                                      : `Foto ${slot + 1}`}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            {imgUrl && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setNewProd((prev) => {
+                                    const imgs = [...prev.imagenes];
+                                    imgs.splice(slot, 1);
+                                    return {
+                                      ...prev,
+                                      imagen: imgs[0] ?? "",
+                                      imagenes: imgs,
+                                    };
+                                  })
+                                }
+                                style={{
+                                  position: "absolute",
+                                  top: -6,
+                                  right: -6,
+                                  width: 18,
+                                  height: 18,
+                                  borderRadius: "50%",
+                                  background: "#C4664A",
+                                  border: "none",
+                                  color: "#fff",
+                                  fontSize: 10,
+                                  cursor: "pointer",
+                                  zIndex: 1,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
+                    <p
+                      style={{
+                        fontSize: 11,
+                        color: "var(--muted)",
+                        marginTop: 6,
+                      }}
+                    >
+                      La primera es la imagen principal. Cuadrada ideal.
+                    </p>
                   </div>
+
                   <div className={styles.formGrid}>
                     <div className={styles.field}>
                       <label className="field-label">Nombre *</label>
@@ -2118,6 +2194,7 @@ export default function ViewProductos({
                       />
                     </div>
                   </div>
+
                   <div className={styles.field}>
                     <label className="field-label">Descripción</label>
                     <input
@@ -2143,6 +2220,7 @@ export default function ViewProductos({
                       placeholder="oferta, nuevo, verano"
                     />
                   </div>
+
                   <div className={styles.field}>
                     <label className="field-label">Variantes</label>
                     {newProd.variantes.length > 0 && (
@@ -2226,6 +2304,7 @@ export default function ViewProductos({
                       </button>
                     </div>
                   </div>
+
                   <button
                     type="submit"
                     className="btn btn-primary"
@@ -2363,6 +2442,24 @@ export default function ViewProductos({
                                 </span>
                               )}
                           </div>
+                          {/* Indicador de fotos múltiples */}
+                          {p.imagenes && p.imagenes.length > 1 && (
+                            <span
+                              style={{
+                                position: "absolute",
+                                bottom: 6,
+                                right: 6,
+                                fontSize: 9,
+                                fontWeight: 700,
+                                background: "rgba(26,24,20,0.6)",
+                                color: "#fff",
+                                padding: "2px 6px",
+                                borderRadius: 100,
+                              }}
+                            >
+                              📷 {p.imagenes.length}
+                            </span>
+                          )}
                         </div>
                         <div
                           style={{
@@ -2619,6 +2716,20 @@ export default function ViewProductos({
                                   }}
                                 >
                                   Pausado
+                                </span>
+                              )}
+                              {p.imagenes && p.imagenes.length > 1 && (
+                                <span
+                                  style={{
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    background: "#F0EDE6",
+                                    color: "#8A8680",
+                                    padding: "1px 6px",
+                                    borderRadius: 100,
+                                  }}
+                                >
+                                  📷 {p.imagenes.length}
                                 </span>
                               )}
                             </div>

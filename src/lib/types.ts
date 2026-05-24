@@ -17,6 +17,7 @@ export interface Producto {
   variantes?: Variante[];
   activo?: boolean;
   emprendimiento_id?: number;
+  imagenes?: string[];
 }
 
 export interface Emprendimiento {

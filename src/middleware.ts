@@ -29,7 +29,16 @@ export async function middleware(request: NextRequest) {
 
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
+
+  // Token inválido o expirado — tratar como no autenticado sin loguear error
+  if (error?.code === "refresh_token_not_found") {
+    if (request.nextUrl.pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    return supabaseResponse;
+  }
 
   // Proteger el dashboard
   if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
