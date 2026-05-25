@@ -1,0 +1,485 @@
+/* ViewDominio.module.css — Módulo nuevo */
+
+.view {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ── Header ── */
+.header {
+    padding: 4px 0 8px;
+}
+
+.title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--black);
+    letter-spacing: -0.4px;
+    margin-bottom: 6px;
+}
+
+.sub {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.mono {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    background: var(--beige);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--charcoal);
+}
+
+/* ── Alert (dominio verificado) ── */
+.alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    border: 1px solid;
+}
+
+.alertSuccess {
+    background: #EFF7F0;
+    border-color: #6BAA72;
+}
+
+.alertIcon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.alertSuccess strong {
+    font-size: 14px;
+    color: #2C6B35;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.alertSuccess p {
+    font-size: 13px;
+    color: #3A7D45;
+}
+
+.domainLink {
+    color: #2C6B35;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.resetBtn {
+    margin-left: auto;
+    background: none;
+    border: 1px solid rgba(26, 24, 20, 0.2);
+    border-radius: var(--radius-full);
+    padding: 6px 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.resetBtn:hover {
+    background: var(--beige);
+    color: var(--black);
+}
+
+/* ── Sections ── */
+.section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+}
+
+.sectionFaq {
+    background: var(--cream);
+}
+
+.stepBadge {
+    display: inline-block;
+    background: var(--olive);
+    color: var(--white);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.sectionTitle {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px;
+    color: var(--black);
+    margin-bottom: 6px;
+}
+
+.sectionSub {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 18px;
+}
+
+.sectionSub code {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    background: var(--beige);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+/* ── Input de dominio ── */
+.inputRow {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.domainInput {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    color: var(--black);
+    background: var(--white);
+    transition: border-color 0.15s;
+    outline: none;
+}
+
+.domainInput:focus {
+    border-color: var(--olive);
+}
+
+.domainInput:disabled {
+    background: var(--beige);
+    color: var(--muted);
+    cursor: not-allowed;
+}
+
+.saveBtn {
+    padding: 12px 24px;
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.saveBtn:hover:not(:disabled) {
+    background: var(--charcoal);
+    transform: translateY(-1px);
+}
+
+.saveBtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ── Mensajes ── */
+.errorMsg {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--terracota);
+    font-weight: 500;
+}
+
+.warningMsg {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #B07B00;
+    font-weight: 500;
+}
+
+.infoMsg {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+/* ── DNS Table ── */
+.dnsTable {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.dnsRow {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 90px;
+    gap: 12px;
+    padding: 12px 16px;
+    align-items: center;
+    font-size: 13px;
+}
+
+.dnsHeader {
+    background: var(--beige);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dnsRow+.dnsRow {
+    border-top: 1px solid var(--border);
+}
+
+.dnsBadge {
+    background: var(--olive-light);
+    color: var(--olive);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.copyBtn {
+    background: var(--beige);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    padding: 5px 12px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--charcoal);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.copyBtn:hover {
+    background: var(--olive-light);
+    border-color: var(--olive);
+    color: var(--olive);
+}
+
+/* ── DNS Note ── */
+.dnsNote {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: #FFF8E7;
+    border: 1px solid #F0D080;
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #7A6020;
+    line-height: 1.5;
+}
+
+.dnsNoteIcon {
+    flex-shrink: 0;
+    font-size: 15px;
+    margin-top: 1px;
+}
+
+.dnsNote code {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.06);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+/* ── Verify button ── */
+.verifyBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--olive);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-full);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.verifyBtn:hover:not(:disabled) {
+    background: var(--olive-dark);
+    transform: translateY(-1px);
+}
+
+.verifyBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── FAQ ── */
+.faqList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.faqItem {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--white);
+}
+
+.faqQ {
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--black);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+}
+
+.faqQ::-webkit-details-marker {
+    display: none;
+}
+
+.faqQ::after {
+    content: "+";
+    font-size: 18px;
+    color: var(--muted);
+    flex-shrink: 0;
+}
+
+details[open] .faqQ::after {
+    content: "−";
+}
+
+.faqA {
+    padding: 0 16px 14px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.faqA code {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    background: var(--beige);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+/* ── Paywall ── */
+.paywall {
+    background: linear-gradient(135deg, #1A1814, #2D2B26);
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    border-radius: var(--radius-lg);
+    padding: 48px 32px;
+    text-align: center;
+}
+
+.paywallIcon {
+    font-size: 36px;
+    margin-bottom: 12px;
+}
+
+.paywallTitle {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--white);
+    margin-bottom: 10px;
+}
+
+.paywallSub {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.7;
+    margin-bottom: 24px;
+}
+
+.paywallSub strong {
+    color: var(--gold);
+}
+
+.paywallBtn {
+    background: var(--gold);
+    border: none;
+    border-radius: var(--radius-full);
+    padding: 13px 32px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: #1A1814;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.paywallBtn:hover {
+    background: #D4B560;
+    transform: translateY(-1px);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+    .dnsRow {
+        grid-template-columns: 70px 1fr;
+        grid-template-rows: auto auto;
+        gap: 8px;
+    }
+
+    .dnsHeader {
+        display: none;
+    }
+
+    .copyBtn {
+        grid-column: span 2;
+        text-align: center;
+    }
+
+    .inputRow {
+        flex-direction: column;
+    }
+
+    .saveBtn {
+        width: 100%;
+        text-align: center;
+    }
+}

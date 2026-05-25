@@ -12,11 +12,13 @@ export function ViewLanding({
   slug,
   isPro,
   onUpgrade,
+  onGoToDominio,
 }: {
   emp: Emprendimiento;
   slug: string;
   isPro: boolean;
   onUpgrade?: () => void;
+  onGoToDominio?: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
@@ -163,7 +165,23 @@ export function ViewLanding({
               Conectá tu propio dominio (ej: tuemprendimiento.com)
             </p>
           </div>
-          <span className={styles.proBadge}>Próximamente</span>
+          <button
+            onClick={() => onGoToDominio?.()}
+            style={{
+              background: "var(--olive)",
+              color: "var(--white)",
+              border: "none",
+              borderRadius: "var(--radius-full)",
+              padding: "7px 16px",
+              fontFamily: "Syne, sans-serif",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Configurar →
+          </button>
         </div>
       </section>
 

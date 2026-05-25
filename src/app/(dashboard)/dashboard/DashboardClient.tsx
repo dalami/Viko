@@ -16,6 +16,7 @@ import type { Emprendimiento, Producto } from "../../../lib/types";
 import ViewPedidos from "../../../components/dashboard/Viewpedidos";
 import ViewMercadoLibre from "../../../components/dashboard/ViewMercadoLibre";
 import ViewTutorial from "../../../components/dashboard/ViewTutorial";
+import ViewDominio from "../../../components/dashboard/ViewDominio";
 
 interface User {
   id: string;
@@ -28,6 +29,7 @@ const NAV = [
   { id: "pedidos", label: "Pedidos", icon: "📦" },
   { id: "metricas", label: "Métricas", icon: "📊" },
   { id: "landing", label: "Mi tienda", icon: "🌐" },
+  { id: "dominio", label: "Mi dominio", icon: "🔗" },
   { id: "planes", label: "Planes", icon: "⚡" },
   { id: "mercadolibre", label: "Mercado Libre", icon: "🛒" },
   { id: "tutorial", label: "Ayuda", icon: "❓" },
@@ -148,7 +150,8 @@ export default function DashboardClient({
                 (n.id === "metricas" ||
                   n.id === "landing" ||
                   n.id === "pedidos" ||
-                  n.id === "mercadolibre") && (
+                  n.id === "mercadolibre" ||
+                  n.id === "dominio") && (
                   <span className={styles.navItemPro}>Pro</span>
                 )}
             </button>
@@ -262,6 +265,7 @@ export default function DashboardClient({
               slug={slug}
               isPro={isPro}
               onUpgrade={handleUpgrade}
+              onGoToDominio={() => setView("dominio")}
             />
           )}
           {view === "planes" && (
@@ -274,6 +278,9 @@ export default function DashboardClient({
               <ViewPlanes currentPlan={emp.plan} onUpgrade={handleUpgrade} />
             ))}
           {view === "tutorial" && <ViewTutorial />}
+          {view === "dominio" && (
+            <ViewDominio emp={emp} isPro={isPro} onUpgrade={handleUpgrade} />
+          )}
         </div>
       </div>
 

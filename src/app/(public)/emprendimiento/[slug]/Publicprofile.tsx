@@ -1344,7 +1344,7 @@ export default function PublicProfile({ emp, productos, plantilla }: Props) {
   const [activeImg, setActiveImg] = useState(0);
   const images = emp.images?.filter(Boolean) ?? [];
   const { addItem } = useCart();
-  const isPro = emp.plan === "pro";
+  const isPro = emp.plan === "premium";
   const productosActivos = productos.filter((p) => p.activo !== false);
 
   useEffect(() => {
