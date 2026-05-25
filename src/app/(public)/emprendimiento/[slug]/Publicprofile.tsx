@@ -423,7 +423,7 @@ function GridPortfolio({
                 </div>
               )}
             </div>
-            <BadgesProducto p={p}  />
+            <BadgesProducto p={p} />
           </div>
           <div style={{ padding: "14px 16px" }}>
             <p
@@ -466,7 +466,7 @@ function GridPortfolio({
 function GridPremium({
   productos,
   isPro,
- 
+
   onAgregar,
   onConsultar,
 }: GridProps) {
@@ -637,7 +637,7 @@ function GridMercado({
                 </div>
               )}
             </div>
-            <BadgesProducto p={p}  />
+            <BadgesProducto p={p} />
           </div>
           <div
             style={{
@@ -741,7 +741,7 @@ function GridClasica({
                 🛍️
               </div>
             )}
-            <BadgesProducto p={p}  />
+            <BadgesProducto p={p} />
           </div>
           <div style={{ padding: "10px 12px", flex: 1 }}>
             <p
@@ -858,7 +858,7 @@ function GridTienda({
                 </div>
               )}
             </div>
-            <BadgesProducto p={p}  />
+            <BadgesProducto p={p} />
           </div>
           <div style={{ padding: "14px 16px", flex: 1 }}>
             <p
@@ -1344,7 +1344,7 @@ export default function PublicProfile({ emp, productos, plantilla }: Props) {
   const [activeImg, setActiveImg] = useState(0);
   const images = emp.images?.filter(Boolean) ?? [];
   const { addItem } = useCart();
-  const isPro = emp.plan === "premium";
+  const isPro = emp.plan === "pro";
   const productosActivos = productos.filter((p) => p.activo !== false);
 
   useEffect(() => {
@@ -1478,7 +1478,7 @@ export default function PublicProfile({ emp, productos, plantilla }: Props) {
                     }}
                   />
                   {emp.plan === "premium" && (
-                    <span className={styles.planBadge}>Premium</span>
+                    <span className={styles.planBadge}>Pro</span>
                   )}
                 </div>
                 {images.length > 1 && (
