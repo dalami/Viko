@@ -539,13 +539,20 @@
     gap: 24px;
   }
 }
+
 .catalogoCard {
   display: grid;
   grid-template-columns: 240px 1fr;
   background: var(--card);
   border-radius: 20px;
   overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.catalogoCardImg {
+  position: relative;
   min-height: 210px;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -554,7 +561,7 @@
   }
 
   .catalogoCardImg {
-    min-height: 200px;
-    position: relative;
+    min-height: 220px;
+    aspect-ratio: 4/3;
   }
 }
