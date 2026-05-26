@@ -26,6 +26,7 @@ const RUBROS = [
 
 const SLOT_LABELS = ["Portada", "Producto", "Marca", "Packaging", "Promo"];
 
+// ─── ImageSlot ────────────────────────────────────────────────────────────────
 function ImageSlot({
   index,
   label,
@@ -109,6 +110,7 @@ function ImageSlot({
   );
 }
 
+// ─── RubroSelector ────────────────────────────────────────────────────────────
 function RubroSelector({
   selected,
   onChange,
@@ -121,12 +123,8 @@ function RubroSelector({
   const allRubros = [...RUBROS, ...selected.filter((r) => !RUBROS.includes(r))];
 
   function toggle(r: string) {
-    if (selected.includes(r)) {
-      onChange(selected.filter((x) => x !== r));
-    } else {
-      if (selected.length >= 3) return;
-      onChange([...selected, r]);
-    }
+    if (selected.includes(r)) onChange(selected.filter((x) => x !== r));
+    else if (selected.length < 3) onChange([...selected, r]);
   }
 
   function addCustom() {
@@ -239,8 +237,6 @@ function RubroSelector({
                 </label>
               );
             })}
-
-            {/* Opción Otro */}
             <label
               style={{
                 display: "flex",
@@ -250,7 +246,6 @@ function RubroSelector({
                 cursor: selected.length >= 3 ? "not-allowed" : "pointer",
                 opacity: selected.length >= 3 ? 0.4 : 1,
                 borderTop: "1px solid #E8E4DC",
-                background: "transparent",
               }}
             >
               <span style={{ fontSize: 13, color: "#6B7A5A", fontWeight: 600 }}>
@@ -297,7 +292,6 @@ function RubroSelector({
                 Agregar
               </button>
             </label>
-
             <div style={{ padding: "8px 16px", background: "#FAFAF7" }}>
               <p style={{ fontSize: 11, color: "#8A8680" }}>
                 {selected.length}/3 seleccionadas
@@ -305,7 +299,6 @@ function RubroSelector({
               </p>
             </div>
           </div>
-
           <div
             style={{ position: "fixed", inset: 0, zIndex: 99 }}
             onClick={() => setOpen(false)}
@@ -316,6 +309,7 @@ function RubroSelector({
   );
 }
 
+// ─── ViewPerfil ───────────────────────────────────────────────────────────────
 export default function ViewPerfil({
   emp,
   setEmp,
@@ -330,6 +324,7 @@ export default function ViewPerfil({
   const supabase = createClient();
   const [uploading, setUploading] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [heroUploading, setHeroUploading] = useState(false); // ← ACÁ, no en ImageSlot
   const isPro = emp.plan === "premium";
 
   function update(field: keyof Emprendimiento, value: string | boolean) {
@@ -347,6 +342,37 @@ export default function ViewPerfil({
       setEmp((prev) => ({ ...prev, transferencia_cbu: "" }));
     }
     await supabase.from("emprendimientos").update(upd).eq("id", emp.id);
+  }
+
+  async function handleHeroUpload(file: File) {
+    setHeroUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${userId}/${emp.id}/hero.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("Viko")
+        .upload(path, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data } = supabase.storage.from("Viko").getPublicUrl(path);
+      const publicUrl = `${data.publicUrl}?t=${Date.now()}`;
+      await supabase
+        .from("emprendimientos")
+        .update({ hero_imagen: publicUrl })
+        .eq("id", emp.id);
+      setEmp((prev) => ({ ...prev, hero_imagen: publicUrl }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setHeroUploading(false);
+    }
+  }
+
+  async function handleRemoveHero() {
+    await supabase
+      .from("emprendimientos")
+      .update({ hero_imagen: null })
+      .eq("id", emp.id);
+    setEmp((prev) => ({ ...prev, hero_imagen: undefined }));
   }
 
   async function handleImageUpload(index: number, file: File) {
@@ -413,7 +439,6 @@ export default function ViewPerfil({
               required
             />
           </div>
-
           <div className={styles.field}>
             <label className="field-label">Ubicación</label>
             <input
@@ -424,7 +449,6 @@ export default function ViewPerfil({
               required
             />
           </div>
-
           <div className={styles.field}>
             <label className="field-label">Tagline</label>
             <input
@@ -434,7 +458,6 @@ export default function ViewPerfil({
               placeholder="Una frase que defina tu marca"
             />
           </div>
-
           <div className={styles.field}>
             <label className="field-label">Categorías (hasta 3)</label>
             <RubroSelector
@@ -448,7 +471,6 @@ export default function ViewPerfil({
             )}
           </div>
         </div>
-
         <div className={styles.field} style={{ marginTop: 16 }}>
           <label className="field-label">Descripción</label>
           <textarea
@@ -457,6 +479,165 @@ export default function ViewPerfil({
             onChange={(e) => update("descripcion", e.target.value)}
             placeholder="Contá de qué se trata tu emprendimiento..."
           />
+        </div>
+      </section>
+
+      {/* ── BANNER DE TIENDA ── */}
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>Banner de tienda</h3>
+        <p className={styles.sectionSub}>
+          Personalizá el banner principal que ven tus clientes al entrar a tu
+          tienda.
+        </p>
+
+        <div className={styles.field} style={{ marginBottom: 20 }}>
+          <label className="field-label">
+            Título del banner{" "}
+            <span style={{ fontSize: 11, color: "#8A8680", fontWeight: 400 }}>
+              (opcional — si no ponés nada usa el nombre de tu marca)
+            </span>
+          </label>
+          <input
+            className="input-field"
+            value={emp.hero_titulo || ""}
+            onChange={(e) =>
+              update("hero_titulo" as keyof Emprendimiento, e.target.value)
+            }
+            onBlur={async (e) => {
+              await supabase
+                .from("emprendimientos")
+                .update({ hero_titulo: e.target.value || null })
+                .eq("id", emp.id);
+            }}
+            placeholder={emp.nombre || "El título que aparece en el banner"}
+          />
+        </div>
+
+        <div className={styles.field}>
+          <label className="field-label">
+            Imagen de fondo del banner{" "}
+            <span style={{ fontSize: 11, color: "#8A8680", fontWeight: 400 }}>
+              (recomendado: 1600 × 900 px)
+            </span>
+          </label>
+          <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+            <div style={{ position: "relative", flexShrink: 0 }}>
+              <input
+                id="hero-upload"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleHeroUpload(file);
+                  e.target.value = "";
+                }}
+              />
+              <div
+                onClick={() =>
+                  !heroUploading &&
+                  document.getElementById("hero-upload")?.click()
+                }
+                style={{
+                  width: 200,
+                  height: 112,
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  background: "#F5F2EC",
+                  border: emp.hero_imagen
+                    ? "1.5px solid #C8D0BC"
+                    : "1.5px dashed #C8D0BC",
+                  cursor: "pointer",
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexDirection: "column",
+                  gap: 6,
+                }}
+              >
+                {heroUploading ? (
+                  <span style={{ fontSize: 12, color: "#8A8680" }}>
+                    Subiendo...
+                  </span>
+                ) : emp.hero_imagen ? (
+                  <Image
+                    src={emp.hero_imagen}
+                    alt="Hero"
+                    fill
+                    style={{ objectFit: "cover" }}
+                    sizes="200px"
+                  />
+                ) : (
+                  <>
+                    <span style={{ fontSize: 28 }}>🖼️</span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: "#8A8680",
+                        textAlign: "center",
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      Subir imagen
+                      <br />
+                      de banner
+                    </span>
+                  </>
+                )}
+              </div>
+              {emp.hero_imagen && !heroUploading && (
+                <button
+                  onClick={handleRemoveHero}
+                  style={{
+                    position: "absolute",
+                    top: 6,
+                    right: 6,
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    background: "rgba(26,24,20,0.7)",
+                    border: "none",
+                    color: "#FAFAF7",
+                    fontSize: 10,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <div style={{ paddingTop: 4 }}>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "#1A1814",
+                  fontWeight: 600,
+                  marginBottom: 6,
+                }}
+              >
+                Imagen de fondo
+              </p>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "#8A8680",
+                  lineHeight: 1.6,
+                  marginBottom: 10,
+                }}
+              >
+                Aparece como fondo del banner en tu tienda.
+                <br />
+                Si no subís una, se usa la primera foto de tu galería.
+              </p>
+              <p style={{ fontSize: 11, color: "#8A8680" }}>
+                JPG, PNG o WEBP · Máx. 5MB
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

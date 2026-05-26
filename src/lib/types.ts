@@ -51,6 +51,8 @@ export interface Emprendimiento {
   ml_access_token?: string;
   ml_refresh_token?: string;
   ml_user_id?: string;
+  hero_imagen?: string;
+  hero_titulo?: string;
 }
 
 export interface EmpPublic {
@@ -69,6 +71,8 @@ export interface EmpPublic {
   plan?: string;
   mp_connected?: boolean;
   plantilla?: unknown;
+  hero_imagen?: string;
+  hero_titulo?: string;
 }
 
 export interface CartEmp {

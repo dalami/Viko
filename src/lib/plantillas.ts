@@ -11,7 +11,12 @@ export interface PlantillaConfig {
     | "revista"
     | "portfolio"
     | "premium"
-    | "mercado";
+    | "mercado"
+    | "bento"
+    | "lookbook"
+    | "hero"
+    | "mosaico"
+    | "lineal";
   color: string;
 }
 
@@ -91,6 +96,36 @@ export const LAYOUTS: {
     label: "Mercado",
     desc: "Grilla densa de productos, máxima visibilidad",
     emoji: "🏪",
+  },
+  {
+    id: "bento",
+    label: "Bento",
+    desc: "Grilla asimétrica estilo Apple",
+    emoji: "⬜",
+  },
+  {
+    id: "lookbook",
+    label: "Lookbook",
+    desc: "Editorial de moda con imagen dominante",
+    emoji: "👗",
+  },
+  {
+    id: "hero",
+    label: "Hero",
+    desc: "Primer producto en pantalla completa",
+    emoji: "🌟",
+  },
+  {
+    id: "mosaico",
+    label: "Mosaico",
+    desc: "Tiles de distintos tamaños tipo vitrina",
+    emoji: "🔲",
+  },
+  {
+    id: "lineal",
+    label: "Lineal",
+    desc: "Timeline vertical con línea central",
+    emoji: "⬆️",
   },
 ];
 
@@ -346,6 +381,96 @@ export const COLORES: Record<
     border: "#A0E0CC",
     muted: "#407860",
     dark: "#0A7050",
+  },
+  magenta: {
+    label: "Magenta",
+    accent: "#C4006A",
+    bg: "#FFF0F7",
+    text: "#1A1814",
+    card: "#fff",
+    border: "#F0A0CC",
+    muted: "#9A4070",
+    dark: "#A00050",
+  },
+  petroleo: {
+    label: "Petróleo",
+    accent: "#1A6B6B",
+    bg: "#EBF5F5",
+    text: "#0A2020",
+    card: "#fff",
+    border: "#9ED0D0",
+    muted: "#3A6868",
+    dark: "#0A3A3A",
+  },
+  champagne: {
+    label: "Champagne",
+    accent: "#B8965A",
+    bg: "#FBF8F2",
+    text: "#1A1814",
+    card: "#fff",
+    border: "#E8D8B8",
+    muted: "#8A7850",
+    dark: "#7A5A28",
+  },
+  oxido: {
+    label: "Óxido",
+    accent: "#A8400A",
+    bg: "#FBF2EE",
+    text: "#1A1814",
+    card: "#fff",
+    border: "#E8B8A0",
+    muted: "#8A5040",
+    dark: "#6A2008",
+  },
+  pizarra: {
+    label: "Pizarra",
+    accent: "#4A5568",
+    bg: "#F0F2F5",
+    text: "#1A2030",
+    card: "#fff",
+    border: "#B8C0CC",
+    muted: "#607080",
+    dark: "#1A2535",
+  },
+  cobre: {
+    label: "Cobre",
+    accent: "#B87333",
+    bg: "#FBF5EE",
+    text: "#1A1814",
+    card: "#fff",
+    border: "#E8C898",
+    muted: "#8A6840",
+    dark: "#7A4A18",
+  },
+  jade: {
+    label: "Jade",
+    accent: "#2E8B57",
+    bg: "#EEF8F2",
+    text: "#0A2018",
+    card: "#fff",
+    border: "#A8DCC0",
+    muted: "#407858",
+    dark: "#0A4828",
+  },
+  durazno: {
+    label: "Durazno",
+    accent: "#E8836A",
+    bg: "#FEF6F3",
+    text: "#1A1814",
+    card: "#fff",
+    border: "#F0C8B8",
+    muted: "#9A6858",
+    dark: "#A84828",
+  },
+  noche: {
+    label: "Noche",
+    accent: "#7B8CDE",
+    bg: "#12141C",
+    text: "#E8EAF0",
+    card: "#1E2030",
+    border: "#2A2E40",
+    muted: "#6870A0",
+    dark: "#080A10",
   },
 };
 
