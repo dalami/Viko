@@ -1055,17 +1055,16 @@ export function GridCatalogo({
       {productos.map((p) => (
         <div
           key={p.id}
+          className={styles.catalogoCard}
           style={{
-            display: "grid",
-            gridTemplateColumns: "240px 1fr",
-            background: tema.card,
-            borderRadius: 20,
             border: `1px solid ${tema.border}`,
-            overflow: "hidden",
-            minHeight: 210,
+            background: tema.card,
           }}
         >
-          <div style={{ position: "relative", background: tema.bg }}>
+          <div
+            className={styles.catalogoCardImg}
+            style={{ position: "relative", background: tema.bg }}
+          >
             {p.imagen ? (
               <Image
                 src={p.imagen}

@@ -539,3 +539,22 @@
     gap: 24px;
   }
 }
+.catalogoCard {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  background: var(--card);
+  border-radius: 20px;
+  overflow: hidden;
+  min-height: 210px;
+}
+
+@media (max-width: 768px) {
+  .catalogoCard {
+    grid-template-columns: 1fr;
+  }
+
+  .catalogoCardImg {
+    min-height: 200px;
+    position: relative;
+  }
+}
