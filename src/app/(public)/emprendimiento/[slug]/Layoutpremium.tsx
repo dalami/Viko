@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { GridPremium } from "./Gridlayouts";
 import type { LayoutProps } from "./Layouttypes";
+import styles from "./public.module.css"
 
 // ─── Layout Premium — Dark luxury, nav transparente, hero full-screen ─────────
 export default function LayoutPremium({
@@ -45,12 +46,8 @@ export default function LayoutPremium({
         {/* Logo */}
         <Link
           href="/directorio"
-          style={{
-            textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
+          className={styles.minimalNavCenter}
+          style={{ textDecoration: "none" }}
         >
           <span
             style={{

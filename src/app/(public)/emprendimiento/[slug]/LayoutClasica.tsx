@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { GridClasica } from "./Gridlayouts";
 import type { LayoutProps } from "./Layouttypes";
+import styles from "./public.module.css"
 
 // ─── Layout Clásica — Tienda polished, nav horizontal limpio ─────────────────
 export default function LayoutClasica({
@@ -167,16 +168,8 @@ export default function LayoutClasica({
 
         {/* Contenido hero */}
         <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            padding: "48px 5vw",
-            width: "100%",
-            display: "grid",
-            gridTemplateColumns: "1fr auto",
-            alignItems: "flex-end",
-            gap: 32,
-          }}
+          className={styles.heroContent}
+          style={{ position: "relative", zIndex: 1, padding: "48px 5vw" }}
         >
           <div>
             {emp.rubro && (
@@ -222,7 +215,10 @@ export default function LayoutClasica({
 
           {/* Thumbs de galería si hay más de 1 imagen */}
           {images.length > 1 && (
-            <div style={{ display: "flex", gap: 6 }}>
+            <div
+              className={styles.heroThumbs}
+              style={{ display: "flex", gap: 6 }}
+            >
               {images.map((src, i) => (
                 <button
                   key={i}

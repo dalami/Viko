@@ -565,3 +565,58 @@
     aspect-ratio: 4/3;
   }
 }
+
+/* ── LAYOUT CLÁSICA ── */
+.heroContent {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: flex-end;
+  gap: 32px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .heroContent {
+    grid-template-columns: 1fr;
+  }
+  .heroThumbs {
+    display: none;
+  }
+}
+
+/* ── LAYOUT MINIMALISTA ── */
+.minimalTaglineGrid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 40px;
+  align-items: start;
+}
+
+.minimalNavCenter {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 768px) {
+  .minimalTaglineGrid {
+    grid-template-columns: 1fr;
+  }
+  .minimalNavCenter {
+    position: static;
+    transform: none;
+  }
+}
+
+/* ── LAYOUT PREMIUM ── */
+.premiumNavCenter {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 768px) {
+  .premiumNavCenter {
+    display: none;
+  }
+}

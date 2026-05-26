@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { GridMinimalista } from "./Gridlayouts";
 import type { LayoutProps } from "./Layouttypes";
+import styles from "./public.module.css";
 
 // ─── Layout Minimalista — Art gallery, tipografía XL, sin imágenes ────────────
 export default function LayoutMinimalista({
@@ -44,12 +45,8 @@ export default function LayoutMinimalista({
         {/* Logo centrado absoluto */}
         <Link
           href="/directorio"
-          style={{
-            textDecoration: "none",
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
+          className={styles.minimalNavCenter}
+          style={{ textDecoration: "none" }}
         >
           <span
             style={{
@@ -63,8 +60,6 @@ export default function LayoutMinimalista({
             Viko<span style={{ color: tema.accent }}>.</span>
           </span>
         </Link>
-
-    
       </nav>
 
       {/* ── HERO ── puro texto, sin imágenes, muy editorial */}
@@ -112,14 +107,7 @@ export default function LayoutMinimalista({
         />
 
         {/* Tagline + info en fila */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr auto",
-            gap: 40,
-            alignItems: "start",
-          }}
-        >
+        <div className={styles.minimalTaglineGrid}>
           <div>
             {emp.tagline && (
               <p
