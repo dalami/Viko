@@ -180,14 +180,7 @@ export default function PublicProfile({ emp, productos, plantilla }: Props) {
 
       {/* HERO genérico */}
       <div className={styles.profileWrap}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 40,
-            alignItems: "start",
-          }}
-        >
+        <div className={styles.heroGrid}>
           <div className={styles.gallery}>
             {images.length > 0 ? (
               <>
