@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/src/lib/supabase";
+import { createClient } from "../../../lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "../../../../styles/auth.module.css";

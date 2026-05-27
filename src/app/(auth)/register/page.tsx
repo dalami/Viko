@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, ChangeEvent, FormEvent } from "react";
-import { createClient } from "@/src/lib/supabase";
+import { createClient } from "../../../lib/supabase";
 import Link from "next/link";
 import styles from "../../../styles/auth.module.css";
 import regStyles from "../../../register.module.css";
