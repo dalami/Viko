@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createClient } from "../../../lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import styles from "../../../../styles/auth.module.css";
+import styles from "../../../styles/auth.module.css";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
