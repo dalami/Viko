@@ -24,11 +24,11 @@ export function parsePlantilla(raw: unknown): PlantillaConfig {
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
     const p = raw as Record<string, unknown>;
     return {
-      layout: (p.layout as PlantillaConfig["layout"]) ?? "clasica",
+      layout: (p.layout as PlantillaConfig["layout"]) ?? "tienda",
       color: (p.color as string) ?? "oliva",
     };
   }
-  return { layout: "clasica", color: "oliva" };
+  return { layout: "tienda", color: "oliva" };
 }
 
 export const LAYOUTS: {
