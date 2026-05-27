@@ -34,14 +34,14 @@ export default function LoginPage() {
     }
   }
 
-async function handleGoogleLogin() {
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: "https://viko.com.ar/auth/callback",
-    },
-  });
-}
+  async function handleGoogleLogin() {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: "https://viko.com.ar/auth/callback",
+      },
+    });
+  }
 
   return (
     <div className={styles.authWrap}>
@@ -74,6 +74,18 @@ async function handleGoogleLogin() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <div style={{ textAlign: "right", marginTop: 6 }}>
+              <Link
+                href="/forgot-password"
+                style={{
+                  fontSize: 12,
+                  color: "#5a7a4a",
+                  textDecoration: "underline",
+                }}
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
           </div>
 
           {error && <p className={styles.errorMsg}>{error}</p>}

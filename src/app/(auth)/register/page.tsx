@@ -109,30 +109,138 @@ export default function RegisterPage() {
           <div className={styles.authLogo}>
             Viko <span className={styles.logoDot}>.</span>
           </div>
-          <div className={regStyles.successIcon}>✦</div>
-          <h2 className={regStyles.successTitle}>¡Ya sos parte de Viko!</h2>
-          <p className={regStyles.successSub}>
-            Te enviamos un email de confirmación a <strong>{form.email}</strong>
-            . Revisá tu bandeja de entrada (y la carpeta de spam) y hacé clic en
-            el enlace para activar tu cuenta.
-          </p>
-          <p
+
+          {/* Ícono grande y llamativo */}
+          <div
             style={{
-              fontSize: 13,
-              color: "#888",
-              marginTop: 8,
-              marginBottom: 24,
+              width: 72,
+              height: 72,
+              borderRadius: "50%",
+              background: "#e8f0e4",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 36,
+              margin: "24px auto 16px",
+            }}
+          >
+            📬
+          </div>
+
+          <h2 className={regStyles.successTitle}>¡Revisá tu email!</h2>
+
+          {/* Caja destacada con el email */}
+          <div
+            style={{
+              background: "#f5f0e8",
+              border: "2px solid #5a7a4a",
+              borderRadius: 12,
+              padding: "16px 20px",
+              margin: "16px 0 8px",
               textAlign: "center",
             }}
           >
-            Una vez confirmado, podés iniciar sesión y completar tu perfil.
-          </p>
+            <p style={{ fontSize: 13, color: "#555", marginBottom: 6 }}>
+              Te enviamos un enlace de confirmación a:
+            </p>
+            <p
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                color: "#2d4a1e",
+                wordBreak: "break-all",
+              }}
+            >
+              {form.email}
+            </p>
+          </div>
+
+          {/* Paso a paso */}
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid rgba(0,0,0,0.1)",
+              borderRadius: 10,
+              padding: "14px 18px",
+              margin: "12px 0 20px",
+              textAlign: "left",
+            }}
+          >
+            <p
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#888",
+                marginBottom: 10,
+                textTransform: "uppercase",
+                letterSpacing: 1,
+              }}
+            >
+              ¿Qué hacer ahora?
+            </p>
+            {[
+              "Abrí tu bandeja de entrada",
+              "Buscá un email de Viko (revisá spam también)",
+              "Hacé clic en el botón de confirmación",
+              "Listo — iniciá sesión y completá tu perfil",
+            ].map((step, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 8,
+                }}
+              >
+                <div
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: "50%",
+                    background: "#5a7a4a",
+                    color: "#fff",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {i + 1}
+                </div>
+                <p style={{ fontSize: 13, color: "#444", margin: 0 }}>{step}</p>
+              </div>
+            ))}
+          </div>
+
           <Link
             href="/login"
             className={`btn btn-olive ${regStyles.successBtn}`}
           >
             Ir al login →
           </Link>
+
+          <p
+            style={{
+              fontSize: 12,
+              color: "#aaa",
+              marginTop: 16,
+              textAlign: "center",
+            }}
+          >
+            ¿No llegó el email?{" "}
+            <span
+              style={{
+                color: "#5a7a4a",
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              Revisá la carpeta de spam
+            </span>
+          </p>
         </div>
       </div>
     );
