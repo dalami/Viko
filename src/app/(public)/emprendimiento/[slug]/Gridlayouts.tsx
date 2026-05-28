@@ -263,20 +263,15 @@ export function GridClasica({
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {hero && (
         <div
+          className={styles.clasicaHero}
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            minHeight: 420,
             border: `1px solid ${tema.border}`,
             overflow: "hidden",
           }}
         >
           <div
-            style={{
-              position: "relative",
-              background: tema.bg,
-              minHeight: 420,
-            }}
+            className={styles.clasicaHeroImg}
+            style={{ position: "relative", background: tema.bg }}
           >
             {hero.imagen ? (
               <Image

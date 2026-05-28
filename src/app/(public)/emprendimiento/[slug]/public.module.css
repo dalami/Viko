@@ -377,8 +377,8 @@
 .catalogoCardImg {
   position: relative;
   width: 100%;
-  aspect-ratio: 4/3;
-  min-height: 200px;
+  aspect-ratio: 16/9;
+  max-height: 220px;
 }
 
 @media (min-width: 640px) {
@@ -390,6 +390,7 @@
   .catalogoCardImg {
     aspect-ratio: unset;
     min-height: 210px;
+    max-height: none;
   }
 }
 
@@ -420,6 +421,33 @@
 
   .heroThumbs {
     display: flex;
+  }
+}
+
+/* ── GRILLA CLÁSICA HERO ── */
+.clasicaHero {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.clasicaHeroImg {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  min-height: 200px;
+  max-height: 260px;
+}
+
+@media (min-width: 640px) {
+  .clasicaHero {
+    grid-template-columns: 1fr 1fr;
+    min-height: 420px;
+  }
+
+  .clasicaHeroImg {
+    aspect-ratio: unset;
+    min-height: 420px;
+    max-height: none;
   }
 }
 
