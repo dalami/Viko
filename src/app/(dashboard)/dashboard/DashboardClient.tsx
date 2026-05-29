@@ -12,11 +12,13 @@ import ViewPlanes from "../../../components/dashboard/Viewplanes";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { slugify, planLabel } from "../../../lib/utils";
-import type { Emprendimiento, Producto } from "../../../lib/types";
+import type { Emprendimiento, Producto } from "../../../lib/types"
 import ViewPedidos from "../../../components/dashboard/Viewpedidos";
 import ViewMercadoLibre from "../../../components/dashboard/ViewMercadoLibre";
 import ViewTutorial from "../../../components/dashboard/ViewTutorial";
 import ViewDominio from "../../../components/dashboard/ViewDominio";
+// ── NUEVO ──────────────────────────────────────────────────────────────────────
+import ViewVentas from "../../../components/dashboard/Viewventas"
 
 interface User {
   id: string;
@@ -24,15 +26,16 @@ interface User {
 }
 
 const NAV = [
-  { id: "perfil", label: "Mi perfil", icon: "👤" },
-  { id: "productos", label: "Productos", icon: "🛍️" },
-  { id: "pedidos", label: "Pedidos", icon: "📦" },
-  { id: "metricas", label: "Métricas", icon: "📊" },
-  { id: "landing", label: "Mi tienda", icon: "🌐" },
-  { id: "dominio", label: "Mi dominio", icon: "🔗" },
-  { id: "planes", label: "Planes", icon: "⚡" },
-  { id: "mercadolibre", label: "Mercado Libre", icon: "🛒" },
-  { id: "tutorial", label: "Ayuda", icon: "❓" },
+  { id: "perfil",        label: "Mi perfil",     icon: "👤" },
+  { id: "productos",     label: "Productos",      icon: "🛍️" },
+  { id: "ventas",        label: "Mis Ventas",     icon: "🧾" }, // ← NUEVO
+  { id: "pedidos",       label: "Pedidos",        icon: "📦" },
+  { id: "metricas",      label: "Métricas",       icon: "📊" },
+  { id: "landing",       label: "Mi tienda",      icon: "🌐" },
+  { id: "dominio",       label: "Mi dominio",     icon: "🔗" },
+  { id: "planes",        label: "Planes",         icon: "⚡" },
+  { id: "mercadolibre",  label: "Mercado Libre",  icon: "🛒" },
+  { id: "tutorial",      label: "Ayuda",          icon: "❓" },
 ] as const;
 
 type ViewId = (typeof NAV)[number]["id"];
@@ -214,7 +217,6 @@ export default function DashboardClient({
                 {saving ? "Guardando..." : "Guardar cambios"}
               </button>
             )}
-
             <div className={styles.avatar}>{initials}</div>
           </div>
         </div>
@@ -242,6 +244,16 @@ export default function DashboardClient({
               onPlantillaChange={(p) =>
                 setEmp((prev) => ({ ...prev, plantilla: p }))
               }
+            />
+          )}
+
+          {/* ── NUEVO: Mis Ventas ──────────────────────────────────────────── */}
+          {view === "ventas" && (
+            <ViewVentas
+              empId={emp.id}
+              isPro={isPro}
+              productos={prods}
+              onUpgrade={handleUpgrade}
             />
           )}
 
