@@ -236,6 +236,7 @@ export default function DirectorioClient({
   const router = useRouter();
   const [banner, setBanner] = useState(true);
   const [faqOpen, setFaqOpen] = useState(false);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setBanner(false), 15000);
@@ -426,100 +427,133 @@ export default function DirectorioClient({
 
       {/* FUNCIONALIDADES */}
       <section
+        onMouseEnter={() => setFeaturesOpen(true)}
+        onMouseLeave={() => setFeaturesOpen(false)}
         style={{
           background: "#F5F0E8",
-          padding: "80px 5vw",
+          padding: featuresOpen ? "80px 5vw" : "32px 5vw",
           borderTop: "1px solid var(--border)",
+          transition: "padding 0.4s ease",
+          cursor: "default",
         }}
       >
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <p
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 2,
+                  textTransform: "uppercase",
+                  color: "var(--olive)",
+                  marginBottom: 6,
+                  margin: 0,
+                }}
+              >
+                Para emprendedores
+              </p>
+              <h2
+                style={{
+                  fontFamily: "'DM Serif Display', serif",
+                  fontSize: "clamp(22px, 3vw, 32px)",
+                  color: "var(--black)",
+                  letterSpacing: -0.5,
+                  margin: "6px 0 0",
+                }}
+              >
+                Todo lo que necesitás para vender
+              </h2>
+            </div>
+            <span
               style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: 2,
-                textTransform: "uppercase",
-                color: "var(--olive)",
-                marginBottom: 12,
+                fontSize: 18,
+                color: "var(--muted)",
+                transition: "transform 0.3s",
+                transform: featuresOpen ? "rotate(45deg)" : "none",
+                display: "inline-block",
               }}
             >
-              Para emprendedores
-            </p>
-            <h2
-              style={{
-                fontFamily: "'DM Serif Display', serif",
-                fontSize: "clamp(28px, 4vw, 40px)",
-                color: "var(--black)",
-                letterSpacing: -0.5,
-                margin: 0,
-              }}
-            >
-              Todo lo que necesitás para vender,
-              <br />
-              en un solo lugar
-            </h2>
+              +
+            </span>
           </div>
 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: 16,
+              gridTemplateRows: featuresOpen ? "1fr" : "0fr",
+              marginTop: featuresOpen ? 48 : 0,
+              transition: "grid-template-rows 0.4s ease, margin-top 0.4s ease",
             }}
           >
-            {[
-              {
-                icon: "🪟",
-                title: "Vitrina profesional",
-                desc: "Tu página con link propio para compartir por WhatsApp, Instagram o donde quieras.",
-                plan: null,
-              },
-              {
-                icon: "🛍️",
-                title: "Catálogo y carrito",
-                desc: "Tus productos con fotos, precios y compra directa. Sin redirigir a ningún lado.",
-                plan: "Pro",
-              },
-              {
-                icon: "🚫💸",
-                title: "Sin comisión por venta",
-                desc: "Lo que vendés, lo cobrás vos entero. Cero intermediarios, cero sorpresas.",
-                plan: null,
-              },
-              {
-                icon: "📊",
-                title: "Métricas",
-                desc: "Sabé cuánto vendés, qué productos funcionan y cómo crece tu negocio mes a mes.",
-                plan: "Pro",
-              },
-              {
-                icon: "🧾",
-                title: "Planilla de ventas y costos",
-                desc: "Calculá tu ganancia real por producto. Registrá ventas y conocé tu punto de equilibrio.",
-                plan: "Pro",
-              },
-              {
-                icon: "🛒",
-                title: "Integración con Mercado Libre",
-                desc: "Sincronizá tu stock y vendé en los dos canales al mismo tiempo, sin doble trabajo.",
-                plan: "Pro",
-              },
-              {
-                icon: "⭐",
-                title: "Posicionamiento Pro",
-                desc: "Aparecés primero cuando los compradores buscan en Viko. Más visibilidad, más ventas.",
-                plan: "Pro",
-              },
-              {
-                icon: "📱",
-                title: "Compatible con todos los dispositivos",
-                desc: "Tu vitrina se ve perfecta en celular, tablet y computadora, sin configuración extra.",
-                plan: null,
-              },
-            ].map((f) => (
-              <FeatureCard key={f.title} {...f} />
-            ))}
+            <div style={{ overflow: "hidden" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                  gap: 16,
+                }}
+              >
+                {[
+                  {
+                    icon: "🪟",
+                    title: "Vitrina profesional",
+                    desc: "Tu página con link propio para compartir por WhatsApp, Instagram o donde quieras.",
+                    plan: null,
+                  },
+                  {
+                    icon: "🛍️",
+                    title: "Catálogo y carrito",
+                    desc: "Tus productos con fotos, precios y compra directa. Sin redirigir a ningún lado.",
+                    plan: "Pro",
+                  },
+                  {
+                    icon: "🚫",
+                    title: "Sin comisión por venta",
+                    desc: "Lo que vendés, lo cobrás vos entero. Cero intermediarios, cero sorpresas.",
+                    plan: null,
+                  },
+                  {
+                    icon: "📊",
+                    title: "Métricas",
+                    desc: "Sabé cuánto vendés, qué productos funcionan y cómo crece tu negocio mes a mes.",
+                    plan: "Pro",
+                  },
+                  {
+                    icon: "🧾",
+                    title: "Planilla de ventas y costos",
+                    desc: "Calculá tu ganancia real por producto. Registrá ventas y conocé tu punto de equilibrio.",
+                    plan: "Pro",
+                  },
+                  {
+                    icon: "🛒",
+                    title: "Integración con Mercado Libre",
+                    desc: "Sincronizá tu stock y vendé en los dos canales al mismo tiempo, sin doble trabajo.",
+                    plan: "Pro",
+                  },
+                  {
+                    icon: "⭐",
+                    title: "Posicionamiento Pro",
+                    desc: "Aparecés primero cuando los compradores buscan en Viko. Más visibilidad, más ventas.",
+                    plan: "Pro",
+                  },
+                  {
+                    icon: "📱",
+                    title: "Compatible con todos los dispositivos",
+                    desc: "Tu vitrina se ve perfecta en celular, tablet y computadora, sin configuración extra.",
+                    plan: null,
+                  },
+                ].map((f) => (
+                  <FeatureCard key={f.title} {...f} />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
