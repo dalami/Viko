@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, startTransition } from "react";
+import Image from "next/image";
 import { createClient } from "../../lib/supabase";
 import type { Producto } from "../../lib/types";
 
@@ -358,21 +359,24 @@ export default function ViewVentas({
             style={{ ...s.tab, ...(tab === "costos" ? s.tabActive : {}) }}
             onClick={() => setTab("costos")}
           >
-            📊 Costos
+            📊 Costos {!isPro && <span style={s.tabProBadge}>Pro</span>}
           </button>
         </div>
       )}
 
       {tab === "costos" ? (
-        <TabCostos
-          productos={productos.filter((p) => p.activo !== false)}
-          costos={costos}
-          historial={historial}
-          isPro={isPro}
-          onGuardar={guardarCostos}
-          onUpgrade={onUpgrade}
-          formatPeso={formatPeso}
-        />
+        isPro ? (
+          <TabCostos
+            productos={productos.filter((p) => p.activo !== false)}
+            costos={costos}
+            historial={historial}
+            onGuardar={guardarCostos}
+            onUpgrade={onUpgrade}
+            formatPeso={formatPeso}
+          />
+        ) : (
+          <CostosGate onUpgrade={onUpgrade} />
+        )
       ) : (
         <>
           {pantalla === "home" && (
@@ -431,13 +435,48 @@ export default function ViewVentas({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// GATE COSTOS — para usuarios free
+// ═══════════════════════════════════════════════════════════════════════════════
+function CostosGate({ onUpgrade }: { onUpgrade: () => void }) {
+  return (
+    <div style={s.gateWrap}>
+      <div style={s.gateIcon}>📊</div>
+      <h3 style={s.gateTitle}>Conocé cuánto ganás de verdad</h3>
+      <p style={s.gateDesc}>
+        La pestaña de Costos es una herramienta exclusiva del plan Pro. Te
+        permite calcular el costo real de cada producto — sumando materiales,
+        packaging, tu tiempo y los gastos fijos del mes — y ver exactamente
+        cuánto ganás en cada jornada, cuál es tu margen real y cuánto tenés que
+        vender para que el negocio cierre en verde.
+      </p>
+      <div style={s.gateFeatures}>
+        {[
+          "✓ Desglose de costos fijos y variables",
+          "✓ Margen real por producto",
+          "✓ Punto de equilibrio en pesos y unidades",
+          "✓ Ganancia estimada en cada jornada",
+          "✓ Comparativa por canal de venta",
+        ].map((f) => (
+          <p key={f} style={s.gateFeat}>
+            {f}
+          </p>
+        ))}
+      </div>
+      <button style={s.gateBtn} onClick={() => onUpgrade()}>
+        ⚡ Quiero el plan Pro
+      </button>
+      <p style={s.gateHint}>Seguís usando Mis Ventas gratis, siempre.</p>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // TAB COSTOS — completo con fijos, variables, costeo real y margen
 // ═══════════════════════════════════════════════════════════════════════════════
 interface TabCostosProps {
   productos: Producto[];
   costos: CostosConfig | null;
   historial: Jornada[];
-  isPro: boolean;
   onGuardar: (c: CostosConfig) => void;
   onUpgrade: () => void;
   formatPeso: (n: number) => string;
@@ -479,7 +518,6 @@ function TabCostos({
   productos,
   costos,
   historial,
-  isPro,
   onGuardar,
   onUpgrade,
   formatPeso,
@@ -765,7 +803,13 @@ function TabCostos({
               >
                 <div style={s.prodBlockLeft}>
                   {p.imagen && (
-                    <img src={p.imagen} alt={p.nombre} style={s.prodBlockImg} />
+                    <Image
+                      src={p.imagen}
+                      alt={p.nombre}
+                      width={40}
+                      height={40}
+                      style={s.prodBlockImg}
+                    />
                   )}
                   <div>
                     <p style={s.prodBlockNombre}>{p.nombre}</p>
@@ -1432,7 +1476,7 @@ function PantallaHome({
               <p style={s.proGateText}>
                 Historial completo y analytics por canal disponibles en Pro
               </p>
-              <button style={s.btnPro} onClick={onUpgrade}>
+              <button style={s.btnPro} onClick={() => onUpgrade()}>
                 Ver planes ⚡
               </button>
             </div>
@@ -1527,7 +1571,13 @@ function PantallaRegistrar({
               onClick={() => onVender(p)}
             >
               {p.imagen && (
-                <img src={p.imagen} alt={p.nombre} style={s.productoImg} />
+                <Image
+                  src={p.imagen}
+                  alt={p.nombre}
+                  width={120}
+                  height={64}
+                  style={s.productoImg}
+                />
               )}
               <p style={s.productoNombre}>{p.nombre}</p>
               <p style={s.productoPrecio}>{formatPeso(precio)}</p>
@@ -1755,7 +1805,7 @@ function PantallaHistorial({
           <p style={s.proGateText}>
             📊 Comparativa por canal disponible en Pro
           </p>
-          <button style={s.btnPro} onClick={onUpgrade}>
+          <button style={s.btnPro} onClick={() => onUpgrade()}>
             Ver planes ⚡
           </button>
         </div>
@@ -1927,6 +1977,16 @@ const s: Record<string, React.CSSProperties> = {
     color: "#5a6e45",
     borderBottom: "2px solid #5a6e45",
     fontWeight: 700,
+  },
+  tabProBadge: {
+    fontSize: 10,
+    background: "#f5a623",
+    color: "#fff",
+    borderRadius: 6,
+    padding: "1px 5px",
+    marginLeft: 4,
+    fontWeight: 600,
+    verticalAlign: "middle",
   },
   pageHeader: { marginBottom: 20 },
   pageTitle: {
@@ -2431,6 +2491,45 @@ const s: Record<string, React.CSSProperties> = {
     margin: "0 0 8px",
   },
   emptySub: { fontSize: 14, color: "#888", margin: 0, lineHeight: 1.5 },
+  gateWrap: { textAlign: "center" as const, padding: "40px 20px" },
+  gateIcon: { fontSize: 48, marginBottom: 16 },
+  gateTitle: {
+    fontSize: 20,
+    fontWeight: 700,
+    color: "#1a1a1a",
+    margin: "0 0 12px",
+  },
+  gateDesc: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 1.7,
+    margin: "0 0 24px",
+    maxWidth: 400,
+    marginLeft: "auto",
+    marginRight: "auto",
+  },
+  gateFeatures: {
+    background: "#f8f8f5",
+    borderRadius: 12,
+    padding: "16px 20px",
+    marginBottom: 24,
+    textAlign: "left" as const,
+    display: "inline-block",
+    minWidth: 260,
+  },
+  gateFeat: { fontSize: 13, color: "#444", margin: "0 0 8px", lineHeight: 1.4 },
+  gateBtn: {
+    background: "#f5a623",
+    color: "#fff",
+    border: "none",
+    borderRadius: 12,
+    padding: "14px 32px",
+    fontSize: 15,
+    fontWeight: 700,
+    cursor: "pointer",
+    marginBottom: 12,
+  },
+  gateHint: { fontSize: 12, color: "#aaa", margin: 0 },
   prodEqRow: { padding: "12px 0", borderBottom: "1px solid #f0f0ec" },
   prodEqInfo: { marginBottom: 6 },
   prodEqNombre: { fontSize: 13, fontWeight: 600, color: "#1a1a1a", margin: 0 },
