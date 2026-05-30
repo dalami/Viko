@@ -951,7 +951,7 @@ export default function DirectorioClient({
             textDecoration: "none",
           }}
         >
-          Soporte: diegoalami@gmail.com
+          Soporte: soporte@viko.com.ar
         </a>
       </footer>
     </div>
