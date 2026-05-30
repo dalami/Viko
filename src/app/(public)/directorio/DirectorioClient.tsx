@@ -226,9 +226,11 @@ function FeatureCard({
 export default function DirectorioClient({
   emprendimientos,
   isLoggedIn,
+  miEmpId,
 }: {
   emprendimientos: Emp[];
   isLoggedIn: boolean;
+  miEmpId: number | null;
 }) {
   const [cat, setCat] = useState("all");
   const [search, setSearch] = useState("");
@@ -291,21 +293,29 @@ export default function DirectorioClient({
     if (data.url) window.location.href = data.url;
   }
 
-  function getBadges(e: Emp) {
+  function getBadges(e: Emp, esMio: boolean) {
     const badges = [];
+    const tieneFotos = (e.images?.filter(Boolean).length ?? 0) > 0;
+    const tieneDatos = !!(e.nombre && e.rubro && e.tagline && e.descripcion);
+
     if (e.plan === "premium")
       badges.push({ label: "⭐ Pro", color: "#C9A84C" });
-    if (
-      e.nombre &&
-      e.rubro &&
-      e.tagline &&
-      e.descripcion &&
-      e.images &&
-      e.images.filter(Boolean).length > 0
-    )
-      badges.push({ label: "✅ Verificado", color: "#6B7A5A" });
-    if (!e.images || e.images.filter(Boolean).length === 0)
-      badges.push({ label: "🏪 Activo", color: "#7A756A" });
+
+    if (tieneDatos && tieneFotos) {
+      badges.push({ label: "✅ Verificado", color: "#6B7A5A", tooltip: null });
+    } else {
+      // construir tooltip solo si es el dueño
+      let tooltip: string | null = null;
+      if (esMio) {
+        const falta = [];
+        if (!e.descripcion) falta.push("descripción");
+        if (!e.tagline) falta.push("tagline");
+        if (!tieneFotos) falta.push("fotos");
+        tooltip = `Completá tu perfil → Falta: ${falta.join(", ")}`;
+      }
+      badges.push({ label: "🏪 Activo", color: "#7A756A", tooltip });
+    }
+
     return badges;
   }
 
@@ -632,8 +642,9 @@ export default function DirectorioClient({
         ) : (
           <div className={styles.grid}>
             {filtered.map((e) => {
+              const esMio = e.id === miEmpId;
               const img = e.images?.[0];
-              const badges = getBadges(e);
+              const badges = getBadges(e, esMio);
               return (
                 <div
                   key={e.id}
@@ -679,6 +690,15 @@ export default function DirectorioClient({
                       >
                         {badges.map((b) => (
                           <span
+                            title={b.tooltip ?? undefined}
+                            onClick={
+                              b.tooltip
+                                ? (ev) => {
+                                    ev.stopPropagation();
+                                    router.push("/dashboard?view=perfil");
+                                  }
+                                : undefined
+                            }
                             key={b.label}
                             style={{
                               fontSize: 10,

@@ -10,7 +10,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-const FROM = "Viko <onboarding@resend.dev>";
+const FROM = "Viko <noreply@viko.com.ar>";
 const DASHBOARD = "https://viko.com.ar/dashboard";
 
 function esValido(val: unknown): boolean {
@@ -38,34 +38,41 @@ function mailPerfilIncompleto(nombre: string) {
   return {
     subject: "Tu perfil en Viko está casi listo 🏪",
     html: `
-      <div style="font-family: 'Syne', sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #1A1814;">
-        <p style="font-family: 'DM Serif Display', serif; font-size: 28px; margin: 0 0 16px; letter-spacing: -0.5px;">
-          Hola${nombre ? `, ${nombre}` : ""}! 👋
-        </p>
-        <p style="font-size: 15px; color: #5A5550; line-height: 1.7; margin: 0 0 24px;">
-          Creaste tu cuenta en Viko pero tu perfil todavía está incompleto. 
-          Con un perfil completo tu emprendimiento aparece mejor posicionado en el directorio 
-          y genera más confianza en los clientes.
-        </p>
-        <div style="background: #F5F2EC; border-radius: 12px; padding: 20px 24px; margin-bottom: 28px;">
-          <p style="font-size: 13px; font-weight: 700; color: #1A1814; margin: 0 0 12px;">
-            Te falta completar:
-          </p>
-          <ul style="margin: 0; padding: 0 0 0 16px; color: #5A5550; font-size: 14px; line-height: 2;">
-            <li>Nombre y rubro de tu emprendimiento</li>
-            <li>Una descripción breve</li>
-            <li>Al menos una foto</li>
-          </ul>
+<div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; background: #FAFAF7; border-radius: 12px; overflow: hidden; border: 1px solid #E0DDD5;">
+
+  <div style="background: #1A1814; padding: 28px 32px; text-align: center;">
+    <p style="font-family: Georgia, serif; font-size: 26px; color: #FAFAF7; margin: 0; letter-spacing: -0.5px;">Viko<span style="color: #6B7A5A;">.</span></p>
+    <p style="font-size: 11px; color: rgba(250,250,247,0.45); margin: 6px 0 0; letter-spacing: 2px; text-transform: uppercase;">Directorio de emprendimientos</p>
+  </div>
+
+  <div style="padding: 36px 32px 28px;">
+    <p style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #6B7A5A; margin: 0 0 12px;">Perfil incompleto</p>
+    <h2 style="font-family: Georgia, serif; font-size: 24px; color: #1A1814; margin: 0 0 16px; line-height: 1.3; font-weight: 400;">Hola${nombre ? `, ${nombre}` : ""}! Tu perfil está casi listo</h2>
+    <p style="font-size: 14px; color: #7A756A; line-height: 1.7; margin: 0 0 24px;">Con un perfil completo tu emprendimiento aparece mejor posicionado en el directorio y genera más confianza en los clientes.</p>
+
+    <div style="padding: 20px; background: #F5F0E8; border-radius: 10px; border-left: 3px solid #6B7A5A; margin-bottom: 28px;">
+      <p style="font-size: 12px; font-weight: 700; color: #6B7A5A; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 1px;">Te falta completar</p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="width: 6px; height: 6px; background: #6B7A5A; border-radius: 50%; flex-shrink: 0;"></span>
+          <p style="font-size: 13px; color: #444; margin: 0;">Una descripción de tu emprendimiento</p>
         </div>
-        <a href="${DASHBOARD}" style="display: inline-block; background: #1A1814; color: #fff; padding: 12px 28px; border-radius: 100px; font-size: 14px; font-weight: 700; text-decoration: none;">
-          Completar mi perfil →
-        </a>
-        <p style="font-size: 12px; color: #B8B4AC; margin-top: 40px; border-top: 1px solid #E8E4DC; padding-top: 16px;">
-          Viko — Directorio de emprendimientos argentinos<br>
-          <a href="mailto:diegoalami@gmail.com" style="color: #B8B4AC;">Contacto</a>
-        </p>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="width: 6px; height: 6px; background: #6B7A5A; border-radius: 50%; flex-shrink: 0;"></span>
+          <p style="font-size: 13px; color: #444; margin: 0;">Al menos una foto de tu producto o marca</p>
+        </div>
       </div>
-    `,
+    </div>
+
+    <a href="${DASHBOARD}" style="display: block; text-align: center; padding: 16px 28px; background: #1A1814; color: #FAFAF7; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; letter-spacing: 0.3px;">Completar mi perfil →</a>
+  </div>
+
+  <div style="padding: 20px 32px; border-top: 1px solid #E8E4DC; text-align: center;">
+    <p style="font-size: 12px; color: #B0AA9F; margin: 0 0 6px;">¿Necesitás ayuda? Escribinos a soporte@viko.com.ar</p>
+    <a href="https://viko.com.ar" style="font-size: 12px; color: #6B7A5A; text-decoration: none;">viko.com.ar</a>
+  </div>
+
+</div>`,
   };
 }
 
@@ -73,26 +80,32 @@ function mailSinFoto(nombre: string) {
   return {
     subject: "Una foto vale mil visitas 📷",
     html: `
-      <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #1A1814;">
-        <p style="font-family: 'DM Serif Display', serif; font-size: 28px; margin: 0 0 16px; letter-spacing: -0.5px;">
-          ${nombre ? nombre : "Hola"}, sumá tu primera foto 📸
-        </p>
-        <p style="font-size: 15px; color: #5A5550; line-height: 1.7; margin: 0 0 24px;">
-          Los emprendimientos con foto reciben <strong>3 veces más visitas</strong> que los que no tienen. 
-          Solo necesitás una buena imagen de tu producto o marca para destacarte.
-        </p>
-        <p style="font-size: 14px; color: #5A5550; line-height: 1.6; margin: 0 0 28px;">
-          Entrá al dashboard, andá a <strong>Mi perfil → Imágenes</strong> y subí tu primera foto. 
-          Tarda menos de un minuto.
-        </p>
-        <a href="${DASHBOARD}" style="display: inline-block; background: #1A1814; color: #fff; padding: 12px 28px; border-radius: 100px; font-size: 14px; font-weight: 700; text-decoration: none;">
-          Subir mi foto →
-        </a>
-        <p style="font-size: 12px; color: #B8B4AC; margin-top: 40px; border-top: 1px solid #E8E4DC; padding-top: 16px;">
-          Viko — Directorio de emprendimientos argentinos
-        </p>
-      </div>
-    `,
+<div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; background: #FAFAF7; border-radius: 12px; overflow: hidden; border: 1px solid #E0DDD5;">
+
+  <div style="background: #1A1814; padding: 28px 32px; text-align: center;">
+    <p style="font-family: Georgia, serif; font-size: 26px; color: #FAFAF7; margin: 0; letter-spacing: -0.5px;">Viko<span style="color: #6B7A5A;">.</span></p>
+    <p style="font-size: 11px; color: rgba(250,250,247,0.45); margin: 6px 0 0; letter-spacing: 2px; text-transform: uppercase;">Directorio de emprendimientos</p>
+  </div>
+
+  <div style="padding: 36px 32px 28px;">
+    <p style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #6B7A5A; margin: 0 0 12px;">Mejorá tu perfil</p>
+    <h2 style="font-family: Georgia, serif; font-size: 24px; color: #1A1814; margin: 0 0 16px; line-height: 1.3; font-weight: 400;">${nombre ? nombre : "Hola"}, sumá tu primera foto</h2>
+    <p style="font-size: 14px; color: #7A756A; line-height: 1.7; margin: 0 0 24px;">Los emprendimientos con foto reciben <strong>3 veces más visitas</strong> que los que no tienen. Solo necesitás una buena imagen de tu producto o marca.</p>
+
+    <div style="padding: 20px; background: #F5F0E8; border-radius: 10px; border-left: 3px solid #6B7A5A; margin-bottom: 28px;">
+      <p style="font-size: 13px; color: #5a7a4a; font-weight: 700; margin: 0 0 4px;">Tip</p>
+      <p style="font-size: 13px; color: #7A756A; margin: 0; line-height: 1.6;">Andá a <strong>Mi perfil → Imágenes</strong> y subí tu primera foto. Tarda menos de un minuto.</p>
+    </div>
+
+    <a href="${DASHBOARD}" style="display: block; text-align: center; padding: 16px 28px; background: #1A1814; color: #FAFAF7; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; letter-spacing: 0.3px;">Subir mi foto →</a>
+  </div>
+
+  <div style="padding: 20px 32px; border-top: 1px solid #E8E4DC; text-align: center;">
+    <p style="font-size: 12px; color: #B0AA9F; margin: 0 0 6px;">¿Necesitás ayuda? Escribinos a soporte@viko.com.ar</p>
+    <a href="https://viko.com.ar" style="font-size: 12px; color: #6B7A5A; text-decoration: none;">viko.com.ar</a>
+  </div>
+
+</div>`,
   };
 }
 
@@ -100,33 +113,45 @@ function mailInactivo15(nombre: string) {
   return {
     subject: "¿Todo bien con tu emprendimiento? 🌱",
     html: `
-      <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #1A1814;">
-        <p style="font-family: 'DM Serif Display', serif; font-size: 28px; margin: 0 0 16px; letter-spacing: -0.5px;">
-          Te extrañamos${nombre ? `, ${nombre}` : ""} 👋
-        </p>
-        <p style="font-size: 15px; color: #5A5550; line-height: 1.7; margin: 0 0 24px;">
-          Hace un tiempo que no pasás por Viko. Tu perfil sigue activo y visible 
-          en el directorio, pero hay algunas cosas que podés hacer para mejorar tu presencia.
-        </p>
-        <div style="background: #F5F2EC; border-radius: 12px; padding: 20px 24px; margin-bottom: 28px;">
-          <p style="font-size: 13px; font-weight: 700; color: #1A1814; margin: 0 0 12px;">
-            Algunas ideas para cuando tengas un momento:
-          </p>
-          <ul style="margin: 0; padding: 0 0 0 16px; color: #5A5550; font-size: 14px; line-height: 2;">
-            <li>Actualizá tus fotos con novedades</li>
-            <li>Agregá productos nuevos a tu catálogo</li>
-            <li>Revisá tus métricas — quizás tuviste visitas</li>
-          </ul>
+<div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; background: #FAFAF7; border-radius: 12px; overflow: hidden; border: 1px solid #E0DDD5;">
+
+  <div style="background: #1A1814; padding: 28px 32px; text-align: center;">
+    <p style="font-family: Georgia, serif; font-size: 26px; color: #FAFAF7; margin: 0; letter-spacing: -0.5px;">Viko<span style="color: #6B7A5A;">.</span></p>
+    <p style="font-size: 11px; color: rgba(250,250,247,0.45); margin: 6px 0 0; letter-spacing: 2px; text-transform: uppercase;">Directorio de emprendimientos</p>
+  </div>
+
+  <div style="padding: 36px 32px 28px;">
+    <p style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #C9A84C; margin: 0 0 12px;">Te extrañamos</p>
+    <h2 style="font-family: Georgia, serif; font-size: 24px; color: #1A1814; margin: 0 0 16px; line-height: 1.3; font-weight: 400;">¿Todo bien${nombre ? `, ${nombre}` : ""}?</h2>
+    <p style="font-size: 14px; color: #7A756A; line-height: 1.7; margin: 0 0 24px;">Hace un tiempo que no pasás por Viko. Tu perfil sigue activo y visible en el directorio, pero hay algunas cosas que podés hacer para mejorar tu presencia.</p>
+
+    <div style="padding: 20px; background: #F5F0E8; border-radius: 10px; border-left: 3px solid #C9A84C; margin-bottom: 28px;">
+      <p style="font-size: 12px; font-weight: 700; color: #C9A84C; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 1px;">Ideas para cuando tengas un momento</p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="width: 6px; height: 6px; background: #C9A84C; border-radius: 50%; flex-shrink: 0;"></span>
+          <p style="font-size: 13px; color: #444; margin: 0;">Actualizá tus fotos con novedades</p>
         </div>
-        <a href="${DASHBOARD}" style="display: inline-block; background: #1A1814; color: #fff; padding: 12px 28px; border-radius: 100px; font-size: 14px; font-weight: 700; text-decoration: none;">
-          Ir a mi dashboard →
-        </a>
-        <p style="font-size: 12px; color: #B8B4AC; margin-top: 40px; border-top: 1px solid #E8E4DC; padding-top: 16px;">
-          Viko — Directorio de emprendimientos argentinos<br>
-          Si no querés recibir estos recordatorios respondé este email.
-        </p>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="width: 6px; height: 6px; background: #C9A84C; border-radius: 50%; flex-shrink: 0;"></span>
+          <p style="font-size: 13px; color: #444; margin: 0;">Agregá productos nuevos a tu catálogo</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="width: 6px; height: 6px; background: #C9A84C; border-radius: 50%; flex-shrink: 0;"></span>
+          <p style="font-size: 13px; color: #444; margin: 0;">Revisá tus métricas — quizás tuviste visitas</p>
+        </div>
       </div>
-    `,
+    </div>
+
+    <a href="${DASHBOARD}" style="display: block; text-align: center; padding: 16px 28px; background: #1A1814; color: #FAFAF7; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; letter-spacing: 0.3px;">Ir a mi dashboard →</a>
+  </div>
+
+  <div style="padding: 20px 32px; border-top: 1px solid #E8E4DC; text-align: center;">
+    <p style="font-size: 12px; color: #B0AA9F; margin: 0 0 6px;">Si no querés recibir estos recordatorios escribinos a soporte@viko.com.ar</p>
+    <a href="https://viko.com.ar" style="font-size: 12px; color: #6B7A5A; text-decoration: none;">viko.com.ar</a>
+  </div>
+
+</div>`,
   };
 }
 
@@ -134,27 +159,28 @@ function mailInactivo30(nombre: string) {
   return {
     subject: "Tu emprendimiento sigue en Viko 🛍️",
     html: `
-      <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #1A1814;">
-        <p style="font-family: 'DM Serif Display', serif; font-size: 28px; margin: 0 0 16px; letter-spacing: -0.5px;">
-          ${nombre ? nombre : "Hola"}, tu perfil sigue activo ✨
-        </p>
-        <p style="font-size: 15px; color: #5A5550; line-height: 1.7; margin: 0 0 24px;">
-          Hace un mes que no entrás al dashboard. Solo queríamos avisarte que 
-          tu emprendimiento sigue visible y cualquier cliente puede encontrarte.
-        </p>
-        <p style="font-size: 15px; color: #5A5550; line-height: 1.7; margin: 0 0 28px;">
-          Si tenés novedades, nuevos productos o querés actualizar tus fotos, 
-          el dashboard está cuando lo necesites.
-        </p>
-        <a href="${DASHBOARD}" style="display: inline-block; background: #4A7C59; color: #fff; padding: 12px 28px; border-radius: 100px; font-size: 14px; font-weight: 700; text-decoration: none;">
-          Ver mi perfil →
-        </a>
-        <p style="font-size: 12px; color: #B8B4AC; margin-top: 40px; border-top: 1px solid #E8E4DC; padding-top: 16px;">
-          Viko — Directorio de emprendimientos argentinos<br>
-          Si no querés recibir estos recordatorios respondé este email.
-        </p>
-      </div>
-    `,
+<div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; background: #FAFAF7; border-radius: 12px; overflow: hidden; border: 1px solid #E0DDD5;">
+
+  <div style="background: #1A1814; padding: 28px 32px; text-align: center;">
+    <p style="font-family: Georgia, serif; font-size: 26px; color: #FAFAF7; margin: 0; letter-spacing: -0.5px;">Viko<span style="color: #6B7A5A;">.</span></p>
+    <p style="font-size: 11px; color: rgba(250,250,247,0.45); margin: 6px 0 0; letter-spacing: 2px; text-transform: uppercase;">Directorio de emprendimientos</p>
+  </div>
+
+  <div style="padding: 36px 32px 28px;">
+    <p style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #6B7A5A; margin: 0 0 12px;">Tu perfil sigue activo</p>
+    <h2 style="font-family: Georgia, serif; font-size: 24px; color: #1A1814; margin: 0 0 16px; line-height: 1.3; font-weight: 400;">${nombre ? nombre : "Hola"}, tu perfil sigue activo ✨</h2>
+    <p style="font-size: 14px; color: #7A756A; line-height: 1.7; margin: 0 0 24px;">Hace un mes que no entrás al dashboard. Tu emprendimiento sigue visible y cualquier cliente puede encontrarte en el directorio.</p>
+    <p style="font-size: 14px; color: #7A756A; line-height: 1.7; margin: 0 0 28px;">Si tenés novedades, nuevos productos o querés actualizar tus fotos, el dashboard está cuando lo necesites.</p>
+
+    <a href="${DASHBOARD}" style="display: block; text-align: center; padding: 16px 28px; background: #1A1814; color: #FAFAF7; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; letter-spacing: 0.3px;">Ver mi perfil →</a>
+  </div>
+
+  <div style="padding: 20px 32px; border-top: 1px solid #E8E4DC; text-align: center;">
+    <p style="font-size: 12px; color: #B0AA9F; margin: 0 0 6px;">Si no querés recibir estos recordatorios escribinos a soporte@viko.com.ar</p>
+    <a href="https://viko.com.ar" style="font-size: 12px; color: #6B7A5A; text-decoration: none;">viko.com.ar</a>
+  </div>
+
+</div>`,
   };
 }
 

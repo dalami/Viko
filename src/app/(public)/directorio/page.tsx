@@ -12,6 +12,17 @@ export default async function DirectorioPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+
+  let miEmpId: number | null = null;
+  if (user) {
+    const { data: miEmp } = await supabase
+      .from("emprendimientos")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+    miEmpId = miEmp?.id ?? null;
+  }
+
   const { data: raw } = await supabase
     .from("emprendimientos")
     .select(
@@ -29,6 +40,10 @@ export default async function DirectorioPage() {
     })) ?? [];
 
   return (
-    <DirectorioClient emprendimientos={emprendimientos} isLoggedIn={!!user} />
+    <DirectorioClient
+      emprendimientos={emprendimientos}
+      isLoggedIn={!!user}
+      miEmpId={miEmpId} // ← NUEVO
+    />
   );
 }

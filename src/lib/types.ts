@@ -73,6 +73,7 @@ export interface EmpPublic {
   plantilla?: unknown;
   hero_imagen?: string;
   hero_titulo?: string;
+  email?: string;
 }
 
 export interface CartEmp {
