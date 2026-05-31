@@ -324,11 +324,21 @@ export default function ViewPerfil({
   const supabase = createClient();
   const [uploading, setUploading] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [heroUploading, setHeroUploading] = useState(false); // ← ACÁ, no en ImageSlot
+  const [heroUploading, setHeroUploading] = useState(false);
+  const [saved, setSaved] = useState(false);
   const isPro = emp.plan === "premium";
 
   function update(field: keyof Emprendimiento, value: string | boolean) {
     setEmp((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function save(field: keyof Emprendimiento, value: string | boolean) {
+    await supabase
+      .from("emprendimientos")
+      .update({ [field]: value })
+      .eq("id", emp.id);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   }
 
   async function updateMedioPago(
@@ -342,6 +352,8 @@ export default function ViewPerfil({
       setEmp((prev) => ({ ...prev, transferencia_cbu: "" }));
     }
     await supabase.from("emprendimientos").update(upd).eq("id", emp.id);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   }
 
   async function handleHeroUpload(file: File) {
@@ -360,6 +372,8 @@ export default function ViewPerfil({
         .update({ hero_imagen: publicUrl })
         .eq("id", emp.id);
       setEmp((prev) => ({ ...prev, hero_imagen: publicUrl }));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       console.error(err);
     } finally {
@@ -395,6 +409,8 @@ export default function ViewPerfil({
         .eq("id", emp.id);
       if (dbErr) throw dbErr;
       setEmp((prev) => ({ ...prev, images: newImages }));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch (err: unknown) {
       setUploadError(
         err instanceof Error ? err.message : "Error al subir imagen",
@@ -425,6 +441,30 @@ export default function ViewPerfil({
 
   return (
     <div className={styles.view}>
+      {/* Toast autoguardado */}
+      {saved && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            background: "#1A1814",
+            color: "#FAFAF7",
+            padding: "10px 20px",
+            borderRadius: 100,
+            fontSize: 13,
+            fontWeight: 600,
+            zIndex: 999,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          ✓ Guardado
+        </div>
+      )}
+
       {/* ── INFORMACIÓN BÁSICA ── */}
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>Información del emprendimiento</h3>
@@ -435,6 +475,7 @@ export default function ViewPerfil({
               className="input-field"
               value={emp.nombre || ""}
               onChange={(e) => update("nombre", e.target.value)}
+              onBlur={(e) => save("nombre", e.target.value)}
               placeholder="Nombre de tu marca"
               required
             />
@@ -445,6 +486,7 @@ export default function ViewPerfil({
               className="input-field"
               value={emp.ubicacion || ""}
               onChange={(e) => update("ubicacion", e.target.value)}
+              onBlur={(e) => save("ubicacion", e.target.value)}
               placeholder="Ciudad, Provincia"
               required
             />
@@ -455,6 +497,7 @@ export default function ViewPerfil({
               className="input-field"
               value={emp.tagline || ""}
               onChange={(e) => update("tagline", e.target.value)}
+              onBlur={(e) => save("tagline", e.target.value)}
               placeholder="Una frase que defina tu marca"
             />
           </div>
@@ -462,7 +505,17 @@ export default function ViewPerfil({
             <label className="field-label">Categorías (hasta 3)</label>
             <RubroSelector
               selected={emp.rubros ?? (emp.rubro ? [emp.rubro] : [])}
-              onChange={(rubros) => setEmp((prev) => ({ ...prev, rubros }))}
+              onChange={(rubros) => {
+                setEmp((prev) => ({ ...prev, rubros }));
+                supabase
+                  .from("emprendimientos")
+                  .update({ rubros })
+                  .eq("id", emp.id)
+                  .then(() => {
+                    setSaved(true);
+                    setTimeout(() => setSaved(false), 2000);
+                  });
+              }}
             />
             {(emp.rubros ?? []).length === 0 && (
               <p style={{ fontSize: 11, color: "#C4664A", marginTop: 6 }}>
@@ -477,6 +530,7 @@ export default function ViewPerfil({
             className="input-field"
             value={emp.descripcion || ""}
             onChange={(e) => update("descripcion", e.target.value)}
+            onBlur={(e) => save("descripcion", e.target.value)}
             placeholder="Contá de qué se trata tu emprendimiento..."
           />
         </div>
@@ -508,6 +562,8 @@ export default function ViewPerfil({
                 .from("emprendimientos")
                 .update({ hero_titulo: e.target.value || null })
                 .eq("id", emp.id);
+              setSaved(true);
+              setTimeout(() => setSaved(false), 2000);
             }}
             placeholder={emp.nombre || "El título que aparece en el banner"}
           />
@@ -737,6 +793,7 @@ export default function ViewPerfil({
               className="input-field"
               value={emp.whatsapp || ""}
               onChange={(e) => update("whatsapp", e.target.value)}
+              onBlur={(e) => save("whatsapp", e.target.value)}
               placeholder="5491100000000"
               required
             />
@@ -747,6 +804,7 @@ export default function ViewPerfil({
               className="input-field"
               value={emp.instagram || ""}
               onChange={(e) => update("instagram", e.target.value)}
+              onBlur={(e) => save("instagram", e.target.value)}
               placeholder="tuemprendimiento"
               required
             />
@@ -758,6 +816,7 @@ export default function ViewPerfil({
               type="email"
               value={emp.email || ""}
               onChange={(e) => update("email", e.target.value)}
+              onBlur={(e) => save("email", e.target.value)}
               placeholder="hola@tuemprendimiento.com"
               required
             />
@@ -768,6 +827,7 @@ export default function ViewPerfil({
               className="input-field"
               value={emp.web || ""}
               onChange={(e) => update("web", e.target.value)}
+              onBlur={(e) => save("web", e.target.value)}
               placeholder="https://tuemprendimiento.com"
             />
           </div>
@@ -905,7 +965,11 @@ export default function ViewPerfil({
           <button
             type="button"
             className={`${styles.toggle} ${emp.envios ? styles.toggleOn : ""}`}
-            onClick={() => update("envios", !emp.envios)}
+            onClick={() => {
+              const newVal = !emp.envios;
+              update("envios", newVal);
+              save("envios", newVal);
+            }}
           />
         </div>
         <div className={styles.toggleRow}>
@@ -918,7 +982,11 @@ export default function ViewPerfil({
           <button
             type="button"
             className={`${styles.toggle} ${emp.visible ? styles.toggleOn : ""}`}
-            onClick={() => update("visible", !emp.visible)}
+            onClick={() => {
+              const newVal = !emp.visible;
+              update("visible", newVal);
+              save("visible", newVal);
+            }}
           />
         </div>
       </section>
