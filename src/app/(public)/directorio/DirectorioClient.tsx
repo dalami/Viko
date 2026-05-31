@@ -266,23 +266,43 @@ export default function DirectorioClient({
     ),
   ] as string[];
 
-  const filtered = emprendimientos.filter((e) => {
-    const empRubros = [e.rubro, ...(e.rubros ?? [])].filter(Boolean);
-    const matchCat = cat === "all" || empRubros.includes(cat);
-    const matchZona =
-      zona === "all" || e.ubicacion === zona || e.envios === true;
-    const q = search.toLowerCase();
-    const matchSearch =
-      !q ||
-      e.nombre.toLowerCase().includes(q) ||
-      e.rubro.toLowerCase().includes(q) ||
-      (e.ubicacion?.toLowerCase().includes(q) ?? false) ||
-      (e.envios === true && q.length > 0) ||
-      e.tagline.toLowerCase().includes(q) ||
-      (e.productos_nombres?.some((p) => p.toLowerCase().includes(q)) ?? false);
-    return matchCat && matchZona && matchSearch;
-  });
-
+  const filtered = emprendimientos
+    .filter((e) => {
+      const empRubros = [e.rubro, ...(e.rubros ?? [])].filter(Boolean);
+      const matchCat = cat === "all" || empRubros.includes(cat);
+      const matchZona =
+        zona === "all" || e.ubicacion === zona || e.envios === true;
+      const q = search.toLowerCase();
+      const matchSearch =
+        !q ||
+        e.nombre.toLowerCase().includes(q) ||
+        e.rubro.toLowerCase().includes(q) ||
+        (e.ubicacion?.toLowerCase().includes(q) ?? false) ||
+        (e.envios === true && q.length > 0) ||
+        e.tagline.toLowerCase().includes(q) ||
+        (e.productos_nombres?.some((p) => p.toLowerCase().includes(q)) ??
+          false);
+      return matchCat && matchZona && matchSearch;
+    })
+    .sort((a, b) => {
+      const score = (e: Emp) => {
+        const completo = !!(
+          e.nombre &&
+          e.rubro &&
+          e.tagline &&
+          e.descripcion &&
+          e.images?.some((i) => i?.trim())
+        );
+        if (e.plan === "premium" && completo) return 3;
+        if (e.plan === "premium") return 2;
+        if (completo) return 1;
+        return 0;
+      };
+      const diff = score(b) - score(a);
+      if (diff !== 0) return diff;
+      // mismo score → más nuevo primero
+      return b.id - a.id;
+    });
   async function handleUpgrade(periodo: "mensual" | "anual" = "mensual") {
     const res = await fetch("/api/checkout", {
       method: "POST",
