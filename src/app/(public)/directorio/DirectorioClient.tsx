@@ -319,22 +319,23 @@ export default function DirectorioClient({
     const tieneDatos = !!(e.nombre && e.rubro && e.tagline && e.descripcion);
 
     if (e.plan === "premium")
-      badges.push({ label: "⭐ Pro", color: "#C9A84C" });
+      badges.push({ label: "⭐ Pro", color: "#C9A84C", tooltip: null });
 
     if (tieneDatos && tieneFotos) {
       badges.push({ label: "✅ Verificado", color: "#6B7A5A", tooltip: null });
-    } else {
-      // construir tooltip solo si es el dueño
-      let tooltip: string | null = null;
-      if (esMio) {
-        const falta = [];
-        if (!e.descripcion) falta.push("descripción");
-        if (!e.tagline) falta.push("tagline");
-        if (!tieneFotos) falta.push("fotos");
-        tooltip = `Completá tu perfil → Falta: ${falta.join(", ")}`;
-      }
-      badges.push({ label: "🏪 Activo", color: "#7A756A", tooltip });
+    } else if (esMio) {
+      
+      const falta = [];
+      if (!e.descripcion) falta.push("descripción");
+      if (!e.tagline) falta.push("tagline");
+      if (!tieneFotos) falta.push("fotos");
+      badges.push({
+        label: "⚠️ Completar perfil",
+        color: "#C9A84C",
+        tooltip: `Falta: ${falta.join(", ")}`,
+      });
     }
+   
 
     return badges;
   }

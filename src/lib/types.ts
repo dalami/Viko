@@ -8,6 +8,7 @@ export interface Producto {
   nombre: string;
   precio: number;
   precio_descuento?: number;
+  precio_consultar?: boolean;
   stock?: number;
   tags?: string[];
   orden?: number;

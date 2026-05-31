@@ -60,32 +60,32 @@ export default function PublicProfile({ emp, productos, plantilla }: Props) {
       .then(() => {});
   }, [emp.id]);
 
- async function trackClick(
-  type: "whatsapp" | "instagram" | "web",
-  url: string,
-) {
-  const supabase = createClient();
-  await supabase.from("visitas").insert({
-    emprendimiento_id: Number(emp.id),
-    source: type,
-    type: "click",
-  });
-
-  // Notificar al dueño solo en WhatsApp
-  if (type === "whatsapp" && emp.email) {
-    fetch("/api/notificacion-contacto", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        empNombre: emp.nombre,
-        empEmail: emp.email,
-        tipo: type,
-      }),
+  async function trackClick(
+    type: "whatsapp" | "instagram" | "web",
+    url: string,
+  ) {
+    const supabase = createClient();
+    await supabase.from("visitas").insert({
+      emprendimiento_id: Number(emp.id),
+      source: type,
+      type: "click",
     });
-  }
 
-  window.open(url, "_blank");
-}
+    // Notificar al dueño solo en WhatsApp
+    if (type === "whatsapp" && emp.email) {
+      fetch("/api/notificacion-contacto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          empNombre: emp.nombre,
+          empEmail: emp.email,
+          tipo: type,
+        }),
+      });
+    }
+
+    window.open(url, "_blank");
+  }
 
   function handleAgregar(
     producto: Producto,

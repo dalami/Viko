@@ -68,6 +68,7 @@ function EditDrawer({
     precio_descuento: prod?.precio_descuento
       ? String(prod.precio_descuento)
       : "",
+    precio_consultar: prod?.precio_consultar ?? false,
     stock: prod?.stock !== undefined ? String(prod.stock) : "",
     descripcion: prod?.descripcion ?? "",
     categoria: prod?.categoria ?? "",
@@ -80,6 +81,7 @@ function EditDrawer({
     tags: (prod?.tags ?? []).join(", "),
     variantes: prod?.variantes ?? ([] as Variante[]),
   });
+
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
   const [nuevoTipo, setNuevoTipo] = useState("");
   const [nuevasOpc, setNuevasOpc] = useState("");
@@ -94,7 +96,6 @@ function EditDrawer({
     setUploadingSlot(slot);
     try {
       const ext = file.name.split(".").pop();
-      // EditDrawer — handleImgUpload
       const path = `${userId}/${empId}/${crypto.randomUUID()}_${slot}.${ext}`;
       const { error } = await supabase.storage
         .from("productos")
@@ -210,10 +211,12 @@ function EditDrawer({
   function handleSubmit() {
     onSave(prod!.id, {
       nombre: form.nombre,
-      precio: parseFloat(form.precio) || 0,
-      precio_descuento: form.precio_descuento
-        ? parseFloat(form.precio_descuento)
-        : undefined,
+      precio: form.precio_consultar ? 0 : parseFloat(form.precio) || 0,
+      precio_descuento:
+        form.precio_consultar || !form.precio_descuento
+          ? undefined
+          : parseFloat(form.precio_descuento),
+      precio_consultar: form.precio_consultar,
       stock: form.stock !== "" ? parseInt(form.stock) : undefined,
       descripcion: form.descripcion,
       categoria: form.categoria,
@@ -231,6 +234,7 @@ function EditDrawer({
   }
 
   const descuento =
+    !form.precio_consultar &&
     form.precio_descuento &&
     parseFloat(form.precio_descuento) < parseFloat(form.precio)
       ? Math.round(
@@ -440,7 +444,18 @@ function EditDrawer({
                       marginBottom: 8,
                     }}
                   >
-                    {descuento ? (
+                    {form.precio_consultar ? (
+                      <span
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: "#8A8680",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        Consultar precio
+                      </span>
+                    ) : descuento ? (
                       <>
                         <span
                           style={{
@@ -489,7 +504,6 @@ function EditDrawer({
                       </span>
                     )}
                   </div>
-                  {/* Miniaturas de fotos adicionales */}
                   {form.imagenes.length > 1 && (
                     <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
                       {form.imagenes.slice(1).map((img, i) => (
@@ -520,7 +534,7 @@ function EditDrawer({
             </div>
           )}
 
-          {/* ── Fotos ── */}
+          {/* Fotos */}
           <div>
             <p
               style={{
@@ -760,89 +774,161 @@ function EditDrawer({
             </select>
           </div>
 
-          {/* Precios y stock */}
+          {/* Toggle precio a consultar */}
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 16px",
+              background: "#fff",
+              borderRadius: 12,
+              border: "1px solid #E8E4DC",
             }}
           >
             <div>
-              <label className="field-label">Precio *</label>
-              <input
-                className="input-field"
-                type="number"
-                value={form.precio}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, precio: e.target.value }))
-                }
-                placeholder="15000"
-              />
+              <p
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#1A1814",
+                  marginBottom: 2,
+                }}
+              >
+                Precio a consultar
+              </p>
+              <p style={{ fontSize: 12, color: "#8A8680" }}>
+                El cliente consulta el precio por WhatsApp
+              </p>
             </div>
-            <div>
-              <label className="field-label">Con descuento</label>
-              <input
-                className="input-field"
-                type="number"
-                value={form.precio_descuento}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, precio_descuento: e.target.value }))
-                }
-                placeholder="12000"
-              />
-            </div>
-            <div>
-              <label className="field-label">Stock</label>
-              <input
-                className="input-field"
-                type="number"
-                value={form.stock}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, stock: e.target.value }))
-                }
-                placeholder="∞"
-              />
-            </div>
-          </div>
-
-          {descuento && (
-            <div
+            <button
+              type="button"
+              onClick={() =>
+                setForm((p) => ({
+                  ...p,
+                  precio_consultar: !p.precio_consultar,
+                }))
+              }
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "8px 14px",
-                background: "#FEF2EE",
-                borderRadius: 10,
-                border: "1px solid #FFDDD0",
+                width: 48,
+                height: 26,
+                borderRadius: 13,
+                border: "none",
+                cursor: "pointer",
+                background: form.precio_consultar ? "#6B7A5A" : "#D0CCC4",
+                position: "relative",
+                transition: "background 0.2s",
+                flexShrink: 0,
               }}
             >
-              <span style={{ fontSize: 15, fontWeight: 700, color: "#C4664A" }}>
-                ${parseFloat(form.precio_descuento).toLocaleString("es-AR")}
-              </span>
               <span
                 style={{
-                  fontSize: 12,
-                  color: "#8A8680",
-                  textDecoration: "line-through",
+                  position: "absolute",
+                  top: 3,
+                  left: form.precio_consultar ? 24 : 3,
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  background: "#fff",
+                  transition: "left 0.2s",
+                  display: "block",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
                 }}
-              >
-                ${parseFloat(form.precio).toLocaleString("es-AR")}
-              </span>
-              <span
+              />
+            </button>
+          </div>
+
+          {/* Precios y stock — solo si no es consultar */}
+          {!form.precio_consultar && (
+            <>
+              <div
                 style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#fff",
-                  background: "#C4664A",
-                  padding: "2px 10px",
-                  borderRadius: 100,
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: 10,
                 }}
               >
-                {descuento}% OFF
-              </span>
-            </div>
+                <div>
+                  <label className="field-label">Precio *</label>
+                  <input
+                    className="input-field"
+                    type="number"
+                    value={form.precio}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, precio: e.target.value }))
+                    }
+                    placeholder="15000"
+                  />
+                </div>
+                <div>
+                  <label className="field-label">Con descuento</label>
+                  <input
+                    className="input-field"
+                    type="number"
+                    value={form.precio_descuento}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        precio_descuento: e.target.value,
+                      }))
+                    }
+                    placeholder="12000"
+                  />
+                </div>
+                <div>
+                  <label className="field-label">Stock</label>
+                  <input
+                    className="input-field"
+                    type="number"
+                    value={form.stock}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, stock: e.target.value }))
+                    }
+                    placeholder="∞"
+                  />
+                </div>
+              </div>
+              {descuento && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "8px 14px",
+                    background: "#FEF2EE",
+                    borderRadius: 10,
+                    border: "1px solid #FFDDD0",
+                  }}
+                >
+                  <span
+                    style={{ fontSize: 15, fontWeight: 700, color: "#C4664A" }}
+                  >
+                    ${parseFloat(form.precio_descuento).toLocaleString("es-AR")}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: "#8A8680",
+                      textDecoration: "line-through",
+                    }}
+                  >
+                    ${parseFloat(form.precio).toLocaleString("es-AR")}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#fff",
+                      background: "#C4664A",
+                      padding: "2px 10px",
+                      borderRadius: 100,
+                    }}
+                  >
+                    {descuento}% OFF
+                  </span>
+                </div>
+              )}
+            </>
           )}
 
           {/* Descripción + IA */}
@@ -1180,6 +1266,7 @@ export default function ViewProductos({
     descripcion: "",
     precio: "",
     precio_descuento: "",
+    precio_consultar: false,
     stock: "",
     categoria: "",
     imagen: "",
@@ -1257,10 +1344,12 @@ export default function ViewProductos({
       .insert({
         nombre: newProd.nombre,
         descripcion: newProd.descripcion,
-        precio: parseFloat(newProd.precio),
-        precio_descuento: newProd.precio_descuento
-          ? parseFloat(newProd.precio_descuento)
-          : null,
+        precio: newProd.precio_consultar ? 0 : parseFloat(newProd.precio),
+        precio_descuento:
+          newProd.precio_consultar || !newProd.precio_descuento
+            ? null
+            : parseFloat(newProd.precio_descuento),
+        precio_consultar: newProd.precio_consultar,
         stock: newProd.stock ? parseInt(newProd.stock) : null,
         categoria: newProd.categoria,
         imagen: newProd.imagenes[0] ?? "",
@@ -1285,6 +1374,7 @@ export default function ViewProductos({
         descripcion: "",
         precio: "",
         precio_descuento: "",
+        precio_consultar: false,
         stock: "",
         categoria: "",
         imagen: "",
@@ -1347,13 +1437,15 @@ export default function ViewProductos({
     const pct = parseFloat(porcentajeAumento);
     if (!pct || pct <= 0 || pct > 500) return;
     setAplicandoAumento(true);
-    const updates = productos.map((p) => ({
-      id: p.id,
-      precio: Math.round(p.precio * (1 + pct / 100)),
-      precio_descuento: p.precio_descuento
-        ? Math.round(p.precio_descuento * (1 + pct / 100))
-        : null,
-    }));
+    const updates = productos
+      .filter((p) => !p.precio_consultar)
+      .map((p) => ({
+        id: p.id,
+        precio: Math.round(p.precio * (1 + pct / 100)),
+        precio_descuento: p.precio_descuento
+          ? Math.round(p.precio_descuento * (1 + pct / 100))
+          : null,
+      }));
     await Promise.all(
       updates.map((u) =>
         supabase
@@ -1364,7 +1456,8 @@ export default function ViewProductos({
     );
     setProductos((prev) =>
       prev.map((p) => {
-        const u = updates.find((x) => x.id === p.id)!;
+        const u = updates.find((x) => x.id === p.id);
+        if (!u) return p;
         return {
           ...p,
           precio: u.precio,
@@ -1403,7 +1496,11 @@ export default function ViewProductos({
           {/* Banner stock crítico */}
           {(() => {
             const criticos = productos.filter(
-              (p) => p.stock !== undefined && p.stock !== null && p.stock <= 5,
+              (p) =>
+                !p.precio_consultar &&
+                p.stock !== undefined &&
+                p.stock !== null &&
+                p.stock <= 5,
             );
             if (criticos.length === 0) return null;
             return (
@@ -1826,7 +1923,7 @@ export default function ViewProductos({
                 </div>
               </div>
 
-              {/* Modal aumento masivo */}
+              {/* Aumento masivo */}
               {showAumento && (
                 <div
                   style={{
@@ -1917,6 +2014,7 @@ export default function ViewProductos({
                 </div>
               )}
 
+              {/* Límite free */}
               {limiteAlcanzado && (
                 <div
                   style={{
@@ -1977,7 +2075,7 @@ export default function ViewProductos({
               {/* Formulario agregar */}
               {adding && !limiteAlcanzado && (
                 <form onSubmit={handleAddProduct} className={styles.addForm}>
-                  {/* Fotos — hasta 3 */}
+                  {/* Fotos */}
                   <div className={styles.field}>
                     <label className="field-label">
                       Fotos del producto{" "}
@@ -2151,49 +2249,124 @@ export default function ViewProductos({
                         ))}
                       </select>
                     </div>
-                    <div className={styles.field}>
-                      <label className="field-label">Precio *</label>
-                      <input
-                        className="input-field"
-                        type="number"
-                        value={newProd.precio}
-                        onChange={(e) =>
-                          setNewProd((p) => ({ ...p, precio: e.target.value }))
-                        }
-                        placeholder="15000"
-                        required
-                      />
-                    </div>
-                    <div className={styles.field}>
-                      <label className="field-label">
-                        Precio con descuento
-                      </label>
-                      <input
-                        className="input-field"
-                        type="number"
-                        value={newProd.precio_descuento}
-                        onChange={(e) =>
-                          setNewProd((p) => ({
-                            ...p,
-                            precio_descuento: e.target.value,
-                          }))
-                        }
-                        placeholder="12000"
-                      />
-                    </div>
-                    <div className={styles.field}>
-                      <label className="field-label">Stock</label>
-                      <input
-                        className="input-field"
-                        type="number"
-                        value={newProd.stock}
-                        onChange={(e) =>
-                          setNewProd((p) => ({ ...p, stock: e.target.value }))
-                        }
-                        placeholder="Sin límite"
-                      />
-                    </div>
                   </div>
+
+                  {/* Toggle precio consultar */}
+                  <div
+                    className={styles.field}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 16px",
+                      background: "var(--cream)",
+                      borderRadius: 12,
+                      border: "1px solid var(--border)",
+                    }}
+                  >
+                    <div>
+                      <p
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "var(--black)",
+                          marginBottom: 2,
+                        }}
+                      >
+                        Precio a consultar
+                      </p>
+                      <p style={{ fontSize: 12, color: "var(--muted)" }}>
+                        El cliente consulta el precio por WhatsApp
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNewProd((p) => ({
+                          ...p,
+                          precio_consultar: !p.precio_consultar,
+                        }))
+                      }
+                      style={{
+                        width: 48,
+                        height: 26,
+                        borderRadius: 13,
+                        border: "none",
+                        cursor: "pointer",
+                        background: newProd.precio_consultar
+                          ? "#6B7A5A"
+                          : "#D0CCC4",
+                        position: "relative",
+                        transition: "background 0.2s",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: 3,
+                          left: newProd.precio_consultar ? 24 : 3,
+                          width: 20,
+                          height: 20,
+                          borderRadius: "50%",
+                          background: "#fff",
+                          transition: "left 0.2s",
+                          display: "block",
+                          boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+                        }}
+                      />
+                    </button>
+                  </div>
+
+                  {!newProd.precio_consultar && (
+                    <div className={styles.formGrid}>
+                      <div className={styles.field}>
+                        <label className="field-label">Precio *</label>
+                        <input
+                          className="input-field"
+                          type="number"
+                          value={newProd.precio}
+                          onChange={(e) =>
+                            setNewProd((p) => ({
+                              ...p,
+                              precio: e.target.value,
+                            }))
+                          }
+                          placeholder="15000"
+                          required
+                        />
+                      </div>
+                      <div className={styles.field}>
+                        <label className="field-label">
+                          Precio con descuento
+                        </label>
+                        <input
+                          className="input-field"
+                          type="number"
+                          value={newProd.precio_descuento}
+                          onChange={(e) =>
+                            setNewProd((p) => ({
+                              ...p,
+                              precio_descuento: e.target.value,
+                            }))
+                          }
+                          placeholder="12000"
+                        />
+                      </div>
+                      <div className={styles.field}>
+                        <label className="field-label">Stock</label>
+                        <input
+                          className="input-field"
+                          type="number"
+                          value={newProd.stock}
+                          onChange={(e) =>
+                            setNewProd((p) => ({ ...p, stock: e.target.value }))
+                          }
+                          placeholder="Sin límite"
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <div className={styles.field}>
                     <label className="field-label">Descripción</label>
@@ -2340,7 +2513,9 @@ export default function ViewProductos({
                 >
                   {productosSorted.map((p, idx) => {
                     const tieneDescuento =
-                      p.precio_descuento && p.precio_descuento < p.precio;
+                      !p.precio_consultar &&
+                      p.precio_descuento &&
+                      p.precio_descuento < p.precio;
                     const descPct = tieneDescuento
                       ? Math.round((1 - p.precio_descuento! / p.precio) * 100)
                       : 0;
@@ -2413,6 +2588,20 @@ export default function ViewProductos({
                                 Pausado
                               </span>
                             )}
+                            {p.precio_consultar && (
+                              <span
+                                style={{
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  background: "#6B7A5A",
+                                  color: "#fff",
+                                  padding: "2px 6px",
+                                  borderRadius: 100,
+                                }}
+                              >
+                                Consultar
+                              </span>
+                            )}
                             {tieneDescuento && (
                               <span
                                 style={{
@@ -2427,7 +2616,8 @@ export default function ViewProductos({
                                 -{descPct}%
                               </span>
                             )}
-                            {p.stock !== undefined &&
+                            {!p.precio_consultar &&
+                              p.stock !== undefined &&
                               p.stock !== null &&
                               p.stock <= 5 && (
                                 <span
@@ -2444,7 +2634,6 @@ export default function ViewProductos({
                                 </span>
                               )}
                           </div>
-                          {/* Indicador de fotos múltiples */}
                           {p.imagenes && p.imagenes.length > 1 && (
                             <span
                               style={{
@@ -2501,7 +2690,18 @@ export default function ViewProductos({
                               gap: 5,
                             }}
                           >
-                            {tieneDescuento ? (
+                            {p.precio_consultar ? (
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  color: "var(--muted)",
+                                  fontStyle: "italic",
+                                }}
+                              >
+                                Consultar precio
+                              </span>
+                            ) : tieneDescuento ? (
                               <>
                                 <span
                                   style={{
@@ -2628,7 +2828,9 @@ export default function ViewProductos({
                 >
                   {productosSorted.map((p, idx) => {
                     const tieneDescuento =
-                      p.precio_descuento && p.precio_descuento < p.precio;
+                      !p.precio_consultar &&
+                      p.precio_descuento &&
+                      p.precio_descuento < p.precio;
                     const descPct = tieneDescuento
                       ? Math.round((1 - p.precio_descuento! / p.precio) * 100)
                       : 0;
@@ -2720,6 +2922,21 @@ export default function ViewProductos({
                                   Pausado
                                 </span>
                               )}
+                              {p.precio_consultar && (
+                                <span
+                                  style={{
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    background: "#F0F4EC",
+                                    color: "#6B7A5A",
+                                    padding: "1px 6px",
+                                    borderRadius: 100,
+                                    border: "1px solid #C8D0BC",
+                                  }}
+                                >
+                                  Consultar
+                                </span>
+                              )}
                               {p.imagenes && p.imagenes.length > 1 && (
                                 <span
                                   style={{
@@ -2753,7 +2970,18 @@ export default function ViewProductos({
                                 gap: 6,
                               }}
                             >
-                              {tieneDescuento ? (
+                              {p.precio_consultar ? (
+                                <span
+                                  style={{
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    color: "var(--muted)",
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  Consultar precio
+                                </span>
+                              ) : tieneDescuento ? (
                                 <>
                                   <span
                                     style={{
@@ -2800,17 +3028,21 @@ export default function ViewProductos({
                                   ${Number(p.precio).toLocaleString("es-AR")}
                                 </span>
                               )}
-                              {p.stock !== undefined && p.stock !== null && (
-                                <span
-                                  style={{
-                                    fontSize: 10,
-                                    color:
-                                      p.stock <= 5 ? "#C9A84C" : "var(--muted)",
-                                  }}
-                                >
-                                  · Stock: {p.stock}
-                                </span>
-                              )}
+                              {!p.precio_consultar &&
+                                p.stock !== undefined &&
+                                p.stock !== null && (
+                                  <span
+                                    style={{
+                                      fontSize: 10,
+                                      color:
+                                        p.stock <= 5
+                                          ? "#C9A84C"
+                                          : "var(--muted)",
+                                    }}
+                                  >
+                                    · Stock: {p.stock}
+                                  </span>
+                                )}
                             </div>
                           </div>
                           <div
