@@ -643,7 +643,7 @@ export default function DirectorioClient({
           <div className={styles.grid}>
             {filtered.map((e) => {
               const esMio = e.id === miEmpId;
-              const img = e.images?.[0];
+              const img = e.images?.find((i) => i && i.trim() !== "") ?? null;
               const badges = getBadges(e, esMio);
               return (
                 <div
@@ -664,7 +664,14 @@ export default function DirectorioClient({
                         sizes="(max-width: 700px) 100vw, 33vw"
                       />
                     ) : (
-                      <div className={styles.cardImgEmpty}>📷</div>
+                      <Image
+                        src="/viko-placeholder.png"
+                        alt="Sin imagen"
+                        fill
+                        unoptimized
+                        style={{ objectFit: "cover" }}
+                        sizes="(max-width: 700px) 100vw, 33vw"
+                      />
                     )}
                     <div className={styles.cardBadges}>
                       <span className={styles.badgeCat}>{e.rubro}</span>

@@ -1,31 +1,31 @@
-'use client'
-import Link from 'next/link'
-import Image from 'next/image'
-import styles from './public.module.css'
+"use client";
+import Link from "next/link";
+import Image from "next/image";
+import styles from "./public.module.css";
 
 interface Emprendimiento {
-  id: string
-  nombre: string
-  rubro: string
-  tagline: string
-  ubicacion?: string
-  envios?: boolean
-  whatsapp: string
-  instagram?: string
-  images?: string[]
-  plan?: string
-  slug: string
+  id: string;
+  nombre: string;
+  rubro: string;
+  tagline: string;
+  ubicacion?: string;
+  envios?: boolean;
+  whatsapp: string;
+  instagram?: string;
+  images?: string[];
+  plan?: string;
+  slug: string;
 }
 
 interface Props {
-  emprendimientos: Emprendimiento[]
-  titulo: string
+  emprendimientos: Emprendimiento[];
+  titulo: string;
 }
 
 function buildWA(whatsapp: string, nombre: string) {
   return `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(
-    `Hola ${nombre}! Vi tu perfil en Viko.`
-  )}`
+    `Hola ${nombre}! Vi tu perfil en Viko.`,
+  )}`;
 }
 
 export default function PublicDirectorio({ emprendimientos, titulo }: Props) {
@@ -37,7 +37,9 @@ export default function PublicDirectorio({ emprendimientos, titulo }: Props) {
 
         <div className={styles.directorioGrid}>
           {emprendimientos.map((e) => {
-            const img = e.images?.[0]
+            const img =
+              e.images?.[0] && e.images[0].trim() !== "" ? e.images[0] : null;
+
             return (
               <div key={e.id} className={styles.dirCard}>
                 <Link
@@ -50,14 +52,20 @@ export default function PublicDirectorio({ emprendimientos, titulo }: Props) {
                         src={img}
                         alt={e.nombre}
                         fill
-                        style={{ objectFit: 'cover' }}
+                        style={{ objectFit: "cover" }}
                         sizes="(max-width: 700px) 100vw, 33vw"
                       />
                     ) : (
-                      <div className={styles.dirCardImgPlaceholder}>📷</div>
+                      <Image
+                        src="/viko-placeholder.png"
+                        alt="Sin imagen"
+                        fill
+                        style={{ objectFit: "cover" }}
+                        sizes="(max-width: 700px) 100vw, 33vw"
+                      />
                     )}
                     <span className={styles.dirCardBadge}>{e.rubro}</span>
-                    {e.plan === 'premium' && (
+                    {e.plan === "premium" && (
                       <span className={styles.dirCardPremium}>Premium</span>
                     )}
                   </div>
@@ -66,7 +74,7 @@ export default function PublicDirectorio({ emprendimientos, titulo }: Props) {
                     <p className={styles.dirCardTag}>{e.tagline}</p>
                     {e.ubicacion && (
                       <p className={styles.dirCardMeta}>
-                        📍 {e.ubicacion} · {e.envios ? '🚚 Envíos' : '🏪 Local'}
+                        📍 {e.ubicacion} · {e.envios ? "🚚 Envíos" : "🏪 Local"}
                       </p>
                     )}
                   </div>
@@ -93,7 +101,7 @@ export default function PublicDirectorio({ emprendimientos, titulo }: Props) {
                   )}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
 
@@ -104,5 +112,5 @@ export default function PublicDirectorio({ emprendimientos, titulo }: Props) {
         </div>
       </div>
     </section>
-  )
+  );
 }
