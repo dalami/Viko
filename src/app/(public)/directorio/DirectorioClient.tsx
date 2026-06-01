@@ -142,90 +142,8 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   );
 }
 
-function FeatureCard({
-  icon,
-  title,
-  desc,
-  plan,
-}: {
-  icon: string;
-  title: string;
-  desc: string;
-  plan: string | null;
-}) {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: hovered ? "var(--black)" : "var(--white)",
-        border: "1px solid var(--border)",
-        borderRadius: 16,
-        padding: "28px 24px",
-        transition:
-          "background 0.22s ease, transform 0.18s ease, box-shadow 0.18s ease",
-        transform: hovered ? "translateY(-4px)" : "none",
-        boxShadow: hovered ? "0 12px 32px rgba(0,0,0,0.12)" : "none",
-        cursor: "default",
-        position: "relative",
-      }}
-    >
-      {plan && (
-        <span
-          style={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: 1,
-            textTransform: "uppercase",
-            color: hovered ? "#C9A84C" : "#C9A84C",
-            background: hovered
-              ? "rgba(201,168,76,0.15)"
-              : "rgba(201,168,76,0.1)",
-            border: "1px solid rgba(201,168,76,0.3)",
-            padding: "3px 8px",
-            borderRadius: 100,
-          }}
-        >
-          {plan}
-        </span>
-      )}
-      <div style={{ fontSize: 28, marginBottom: 14 }}>{icon}</div>
-      <p
-        style={{
-          fontFamily: "Syne, sans-serif",
-          fontSize: 15,
-          fontWeight: 700,
-          color: hovered ? "#F5F0E8" : "var(--black)",
-          marginBottom: 8,
-          lineHeight: 1.3,
-          transition: "color 0.22s ease",
-        }}
-      >
-        {title}
-      </p>
-      <p
-        style={{
-          fontSize: 13,
-          lineHeight: 1.65,
-          color: hovered ? "rgba(245,240,232,0.65)" : "var(--muted)",
-          margin: 0,
-          transition: "color 0.22s ease",
-        }}
-      >
-        {desc}
-      </p>
-    </div>
-  );
-}
-
 export default function DirectorioClient({
   emprendimientos,
-  isLoggedIn,
   miEmpId,
 }: {
   emprendimientos: Emp[];
@@ -238,14 +156,12 @@ export default function DirectorioClient({
   const router = useRouter();
   const [banner, setBanner] = useState(true);
   const [faqOpen, setFaqOpen] = useState(false);
-  const [featuresOpen, setFeaturesOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setBanner(false), 15000);
     return () => clearTimeout(t);
   }, []);
 
-  // Categorías dinámicas — combina rubro y rubros[] de cada emprendimiento
   const categoriasExtra = Array.from(
     new Set(
       emprendimientos
@@ -300,18 +216,8 @@ export default function DirectorioClient({
       };
       const diff = score(b) - score(a);
       if (diff !== 0) return diff;
-      // mismo score → más nuevo primero
       return b.id - a.id;
     });
-  async function handleUpgrade(periodo: "mensual" | "anual" = "mensual") {
-    const res = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ periodo }),
-    });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
-  }
 
   function getBadges(e: Emp, esMio: boolean) {
     const badges = [];
@@ -324,7 +230,6 @@ export default function DirectorioClient({
     if (tieneDatos && tieneFotos) {
       badges.push({ label: "✅ Verificado", color: "#6B7A5A", tooltip: null });
     } else if (esMio) {
-      
       const falta = [];
       if (!e.descripcion) falta.push("descripción");
       if (!e.tagline) falta.push("tagline");
@@ -335,7 +240,6 @@ export default function DirectorioClient({
         tooltip: `Falta: ${falta.join(", ")}`,
       });
     }
-   
 
     return badges;
   }
@@ -456,139 +360,6 @@ export default function DirectorioClient({
         </div>
       </section>
 
-      {/* FUNCIONALIDADES */}
-      <section
-        onMouseEnter={() => setFeaturesOpen(true)}
-        onMouseLeave={() => setFeaturesOpen(false)}
-        style={{
-          background: "#F5F0E8",
-          padding: featuresOpen ? "80px 5vw" : "32px 5vw",
-          borderTop: "1px solid var(--border)",
-          transition: "padding 0.4s ease",
-          cursor: "default",
-        }}
-      >
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: 2,
-                  textTransform: "uppercase",
-                  color: "var(--olive)",
-                  marginBottom: 6,
-                  margin: 0,
-                }}
-              >
-                Para emprendedores
-              </p>
-              <h2
-                style={{
-                  fontFamily: "'DM Serif Display', serif",
-                  fontSize: "clamp(22px, 3vw, 32px)",
-                  color: "var(--black)",
-                  letterSpacing: -0.5,
-                  margin: "6px 0 0",
-                }}
-              >
-                Todo lo que necesitás para vender
-              </h2>
-            </div>
-            <span
-              style={{
-                fontSize: 18,
-                color: "var(--muted)",
-                transition: "transform 0.3s",
-                transform: featuresOpen ? "rotate(45deg)" : "none",
-                display: "inline-block",
-              }}
-            >
-              +
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateRows: featuresOpen ? "1fr" : "0fr",
-              marginTop: featuresOpen ? 48 : 0,
-              transition: "grid-template-rows 0.4s ease, margin-top 0.4s ease",
-            }}
-          >
-            <div style={{ overflow: "hidden" }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                  gap: 16,
-                }}
-              >
-                {[
-                  {
-                    icon: "🪟",
-                    title: "Vitrina profesional",
-                    desc: "Tu página con link propio para compartir por WhatsApp, Instagram o donde quieras.",
-                    plan: null,
-                  },
-                  {
-                    icon: "🛍️",
-                    title: "Catálogo y carrito",
-                    desc: "Tus productos con fotos, precios y compra directa. Sin redirigir a ningún lado.",
-                    plan: "Pro",
-                  },
-                  {
-                    icon: "🚫",
-                    title: "Sin comisión por venta",
-                    desc: "Lo que vendés, lo cobrás vos entero. Cero intermediarios, cero sorpresas.",
-                    plan: null,
-                  },
-                  {
-                    icon: "📊",
-                    title: "Métricas",
-                    desc: "Sabé cuánto vendés, qué productos funcionan y cómo crece tu negocio mes a mes.",
-                    plan: "Pro",
-                  },
-                  {
-                    icon: "🧾",
-                    title: "Planilla de ventas y costos",
-                    desc: "Calculá tu ganancia real por producto. Registrá ventas y conocé tu punto de equilibrio.",
-                    plan: "Pro",
-                  },
-                  {
-                    icon: "🛒",
-                    title: "Integración con Mercado Libre",
-                    desc: "Sincronizá tu stock y vendé en los dos canales al mismo tiempo, sin doble trabajo.",
-                    plan: "Pro",
-                  },
-                  {
-                    icon: "⭐",
-                    title: "Posicionamiento Pro",
-                    desc: "Aparecés primero cuando los compradores buscan en Viko. Más visibilidad, más ventas.",
-                    plan: "Pro",
-                  },
-                  {
-                    icon: "📱",
-                    title: "Compatible con todos los dispositivos",
-                    desc: "Tu vitrina se ve perfecta en celular, tablet y computadora, sin configuración extra.",
-                    plan: null,
-                  },
-                ].map((f) => (
-                  <FeatureCard key={f.title} {...f} />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* BUSCADOR */}
       <div className={styles.searchWrap}>
         <div className={styles.searchBar}>
@@ -619,7 +390,7 @@ export default function DirectorioClient({
         </div>
       </div>
 
-      {/* CATEGORÍAS — dinámicas */}
+      {/* CATEGORÍAS */}
       <div className={styles.catsWrap}>
         <div className={styles.cats}>
           {CATEGORIAS_DINAMICAS.map((c) => (
@@ -789,8 +560,6 @@ export default function DirectorioClient({
           </div>
         )}
       </div>
-
-     
 
       {/* FAQ */}
       <section

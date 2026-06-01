@@ -24,6 +24,131 @@ const RUBROS = [
   "Macrame",
 ];
 
+const FEATURES = [
+  {
+    icon: "🪟",
+    title: "Vitrina profesional",
+    desc: "Tu página con link propio para compartir donde quieras.",
+    plan: null,
+  },
+  {
+    icon: "🛍️",
+    title: "Catálogo y carrito",
+    desc: "Tus productos con fotos, precios y compra directa.",
+    plan: "Pro",
+  },
+  {
+    icon: "🚫",
+    title: "Sin comisión por venta",
+    desc: "Lo que vendés, lo cobrás vos entero. Cero sorpresas.",
+    plan: null,
+  },
+  {
+    icon: "📊",
+    title: "Métricas",
+    desc: "Sabé cuánto vendés y qué productos funcionan mejor.",
+    plan: "Pro",
+  },
+  {
+    icon: "🧾",
+    title: "Planilla de ventas",
+    desc: "Calculá tu ganancia real y tu punto de equilibrio.",
+    plan: "Pro",
+  },
+  {
+    icon: "⭐",
+    title: "Posicionamiento Pro",
+    desc: "Aparecés primero en el directorio. Más visibilidad.",
+    plan: "Pro",
+  },
+  {
+    icon: "📱",
+    title: "Landing + QR propio",
+    desc: "Tu tienda online con QR descargable para compartir.",
+    plan: "Pro",
+  },
+  {
+    icon: "💬",
+    title: "Contacto directo",
+    desc: "WhatsApp e Instagram visibles en tu perfil público.",
+    plan: null,
+  },
+];
+
+function FeatureRow({
+  icon,
+  title,
+  desc,
+  plan,
+}: {
+  icon: string;
+  title: string;
+  desc: string;
+  plan: string | null;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 14,
+        padding: "14px 0",
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        alignItems: "flex-start",
+      }}
+    >
+      <span style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>{icon}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 2,
+          }}
+        >
+          <p
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: "#F5F0E8",
+              margin: 0,
+            }}
+          >
+            {title}
+          </p>
+          {plan && (
+            <span
+              style={{
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                color: "#C9A84C",
+                background: "rgba(201,168,76,0.12)",
+                border: "1px solid rgba(201,168,76,0.3)",
+                padding: "2px 6px",
+                borderRadius: 100,
+              }}
+            >
+              {plan}
+            </span>
+          )}
+        </div>
+        <p
+          style={{
+            fontSize: 12,
+            color: "rgba(245,240,232,0.5)",
+            margin: 0,
+            lineHeight: 1.5,
+          }}
+        >
+          {desc}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function RegisterPage() {
   const [form, setForm] = useState({
     email: "",
@@ -83,7 +208,6 @@ export default function RegisterPage() {
       }),
     });
 
-    // El emprendimiento se crea automáticamente cuando el usuario confirma el email
     setSuccess(true);
     setLoading(false);
   }
@@ -95,7 +219,6 @@ export default function RegisterPage() {
           <div className={styles.authLogo}>
             Viko <span className={styles.logoDot}>.</span>
           </div>
-
           <div
             style={{
               width: 72,
@@ -111,9 +234,7 @@ export default function RegisterPage() {
           >
             📬
           </div>
-
           <h2 className={regStyles.successTitle}>¡Revisá tu email!</h2>
-
           <div
             style={{
               background: "#f5f0e8",
@@ -138,7 +259,6 @@ export default function RegisterPage() {
               {form.email}
             </p>
           </div>
-
           <div
             style={{
               background: "#fff",
@@ -197,14 +317,12 @@ export default function RegisterPage() {
               </div>
             ))}
           </div>
-
           <Link
             href="/login"
             className={`btn btn-olive ${regStyles.successBtn}`}
           >
             Ir al login →
           </Link>
-
           <p
             style={{
               fontSize: 12,
@@ -231,6 +349,7 @@ export default function RegisterPage() {
 
   return (
     <div className={styles.authWrap}>
+      {/* FORM */}
       <div className={styles.authCard}>
         <div className={styles.authLogo}>
           Viko<span className={styles.logoDot}>.</span>
@@ -348,14 +467,57 @@ export default function RegisterPage() {
         </Link>
       </div>
 
-      <div className={styles.authDecor}>
-        <div className={styles.decorQuote}>
-          <p className={styles.decorText}>
-            &quot;Tu marca merece estar en el mejor lugar.&quot;
-          </p>
-          <p className={styles.decorSub}>
-            Directorio curado · Presencia online · Métricas reales
-          </p>
+      {/* PANEL DERECHO — FUNCIONALIDADES */}
+      <div
+        className={styles.authDecor}
+        style={{
+          background: "#1A1814",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          padding: "48px 40px",
+          overflowY: "auto",
+        }}
+      >
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: 2,
+            textTransform: "uppercase",
+            color: "var(--olive)",
+            marginBottom: 8,
+          }}
+        >
+          Para emprendedores
+        </p>
+        <h2
+          style={{
+            fontFamily: "'DM Serif Display', serif",
+            fontSize: "clamp(22px, 2.5vw, 30px)",
+            color: "#F5F0E8",
+            letterSpacing: -0.5,
+            marginBottom: 4,
+          }}
+        >
+          Todo lo que necesitás
+          <br />
+          para vender
+        </h2>
+        <p
+          style={{
+            fontSize: 13,
+            color: "rgba(245,240,232,0.45)",
+            marginBottom: 24,
+          }}
+        >
+          Gratis para empezar. Sin comisiones. Sin límite de tiempo.
+        </p>
+
+        <div>
+          {FEATURES.map((f) => (
+            <FeatureRow key={f.title} {...f} />
+          ))}
         </div>
       </div>
     </div>
