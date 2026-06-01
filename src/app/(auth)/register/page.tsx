@@ -5,7 +5,6 @@ import { createClient } from "../../../lib/supabase";
 import Link from "next/link";
 import styles from "../../../styles/auth.module.css";
 import regStyles from "../../../register.module.css";
-import { slugify } from "../../../lib/utils";
 
 const RUBROS = [
   "Gastronomía",
@@ -32,6 +31,7 @@ export default function RegisterPage() {
     nombre: "",
     rubro: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -45,20 +45,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
-    const slug = slugify(form.nombre);
-
-    const { data: existing } = await supabase
-      .from("emprendimientos")
-      .select("id")
-      .eq("slug", slug)
-      .maybeSingle();
-
-    if (existing) {
-      setError("Ya existe un emprendimiento con ese nombre. Probá con otro.");
-      setLoading(false);
-      return;
-    }
 
     const { data, error: authError } = await supabase.auth.signUp({
       email: form.email,
@@ -87,17 +73,17 @@ export default function RegisterPage() {
       return;
     }
 
-    if (data.user) {
-      await supabase.from("emprendimientos").insert({
-        user_id: data.user.id,
+    fetch("/api/notificacion-registro", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         nombre: form.nombre,
         rubro: form.rubro,
-        slug: slug,
-        plan: "basic",
-        visible: false,
-      });
-    }
+        email: form.email,
+      }),
+    });
 
+    // El emprendimiento se crea automáticamente cuando el usuario confirma el email
     setSuccess(true);
     setLoading(false);
   }
@@ -110,7 +96,6 @@ export default function RegisterPage() {
             Viko <span className={styles.logoDot}>.</span>
           </div>
 
-          {/* Ícono grande y llamativo */}
           <div
             style={{
               width: 72,
@@ -129,7 +114,6 @@ export default function RegisterPage() {
 
           <h2 className={regStyles.successTitle}>¡Revisá tu email!</h2>
 
-          {/* Caja destacada con el email */}
           <div
             style={{
               background: "#f5f0e8",
@@ -155,7 +139,6 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          {/* Paso a paso */}
           <div
             style={{
               background: "#fff",
@@ -309,16 +292,38 @@ export default function RegisterPage() {
           </div>
           <div className={styles.fieldGroup}>
             <label className="field-label">Contraseña</label>
-            <input
-              className="input-field"
-              type="password"
-              name="password"
-              placeholder="Mínimo 8 caracteres"
-              value={form.password}
-              onChange={handleChange}
-              required
-              minLength={8}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                className="input-field"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Mínimo 8 caracteres"
+                value={form.password}
+                onChange={handleChange}
+                required
+                minLength={8}
+                style={{ paddingRight: 44 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  color: "#8A8680",
+                  lineHeight: 1,
+                  padding: 0,
+                }}
+              >
+                {showPassword ? "🙈" : "👁"}
+              </button>
+            </div>
           </div>
 
           {error && <p className={styles.errorMsg}>{error}</p>}
