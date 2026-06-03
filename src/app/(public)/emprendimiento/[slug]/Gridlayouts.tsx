@@ -1209,15 +1209,12 @@ export function GridRevista({
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       {productos.map((p, i) => (
-        <div
-          key={p.id}
-          className={styles.revistaRow}
-        >
+        <div key={p.id} className={styles.revistaRow}>
           <div
             className={styles.revistaImg}
+            data-order={i % 2 === 0 ? "0" : "1"}
             style={{
               position: "relative",
-              order: i % 2 === 0 ? 0 : 1,
               background: tema.bg,
             }}
           >
@@ -1247,8 +1244,8 @@ export function GridRevista({
           </div>
           <div
             className={styles.revistaInfo}
+            data-order={i % 2 === 0 ? "1" : "0"}
             style={{
-              order: i % 2 === 0 ? 1 : 0,
               background: i % 2 === 0 ? tema.bg : tema.card,
             }}
           >
