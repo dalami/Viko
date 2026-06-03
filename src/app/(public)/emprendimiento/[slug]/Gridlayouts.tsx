@@ -1211,21 +1211,14 @@ export function GridRevista({
       {productos.map((p, i) => (
         <div
           key={p.id}
-           className={styles.revistaImg}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            minHeight: 400,
-            borderBottom: `1px solid ${tema.border}`,
-          }}
+          className={styles.revistaRow}
         >
           <div
-           className={styles.revistaInfo}
+            className={styles.revistaImg}
             style={{
               position: "relative",
               order: i % 2 === 0 ? 0 : 1,
               background: tema.bg,
-              minHeight: 400,
             }}
           >
             {p.imagen ? (
@@ -1253,12 +1246,9 @@ export function GridRevista({
             )}
           </div>
           <div
+            className={styles.revistaInfo}
             style={{
               order: i % 2 === 0 ? 1 : 0,
-              padding: "60px 52px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
               background: i % 2 === 0 ? tema.bg : tema.card,
             }}
           >

@@ -536,39 +536,3 @@
     display: none;
   }
 }
-/* ── LAYOUT REVISTA ── */
-.revistaRow {
-  display: grid;
-  grid-template-columns: 1fr;
-  border-bottom: 1px solid var(--border);
-}
-
-.revistaImg {
-  position: relative;
-  width: 100%;
-  min-height: 280px;
-  aspect-ratio: 4/3;
-}
-
-.revistaInfo {
-  padding: 32px 28px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-@media (min-width: 640px) {
-  .revistaRow {
-    grid-template-columns: 1fr 1fr;
-    min-height: 400px;
-  }
-
-  .revistaImg {
-    aspect-ratio: unset;
-    min-height: 400px;
-  }
-
-  .revistaInfo {
-    padding: 60px 52px;
-  }
-}
