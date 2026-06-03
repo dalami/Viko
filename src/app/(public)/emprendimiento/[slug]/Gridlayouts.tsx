@@ -1211,6 +1211,7 @@ export function GridRevista({
       {productos.map((p, i) => (
         <div
           key={p.id}
+           className={styles.revistaImg}
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
@@ -1219,6 +1220,7 @@ export function GridRevista({
           }}
         >
           <div
+           className={styles.revistaInfo}
             style={{
               position: "relative",
               order: i % 2 === 0 ? 0 : 1,
