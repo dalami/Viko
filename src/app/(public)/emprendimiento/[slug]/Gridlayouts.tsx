@@ -5,6 +5,67 @@ import Image from "next/image";
 import type { Producto } from "../../../../lib/types";
 import { getTema } from "../../../../lib/plantillas";
 import styles from "./public.module.css";
+import { useState } from "react";
+
+function ZoomableImage({
+  src,
+  alt,
+  sizes,
+  style,
+}: {
+  src: string;
+  alt: string;
+  sizes?: string;
+  style?: React.CSSProperties;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes={sizes}
+        onClick={() => setOpen(true)}
+        style={{
+          cursor: "zoom-in",
+          ...style,
+        }}
+      />
+
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,.95)",
+            zIndex: 999999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            cursor: "zoom-out",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "95vw",
+              maxHeight: "95vh",
+              objectFit: "contain",
+              borderRadius: 12,
+            }}
+          />
+        </div>
+      )}
+    </>
+  );
+}
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 type Tema = ReturnType<typeof getTema>;
@@ -506,12 +567,11 @@ export function GridTienda({
             >
               <div style={{ position: "absolute", inset: 0 }}>
                 {p.imagen ? (
-                  <Image
+                  <ZoomableImage
                     src={p.imagen}
                     alt={p.nombre}
-                    fill
+                    sizes="240px"
                     style={{ objectFit: "cover" }}
-                    sizes="25vw"
                   />
                 ) : (
                   <div
@@ -1219,12 +1279,11 @@ export function GridRevista({
             }}
           >
             {p.imagen ? (
-              <Image
+              <ZoomableImage
                 src={p.imagen}
                 alt={p.nombre}
-                fill
-                style={{ objectFit: "cover" }}
                 sizes="50vw"
+                style={{ objectFit: "cover" }}
               />
             ) : (
               <div
