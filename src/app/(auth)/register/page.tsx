@@ -153,6 +153,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({
     email: "",
     password: "",
+    confirm: "",
     nombre: "",
     rubro: "",
   });
@@ -170,6 +171,17 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    if (form.password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres.");
+      setLoading(false);
+      return;
+    }
+    if (form.password !== form.confirm) {
+      setError("Las contraseñas no coinciden.");
+      setLoading(false);
+      return;
+    }
 
     const { data, error: authError } = await supabase.auth.signUp({
       email: form.email,
@@ -443,6 +455,19 @@ export default function RegisterPage() {
                 {showPassword ? "🙈" : "👁"}
               </button>
             </div>
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className="field-label">Confirmar contraseña</label>
+            <input
+              className="input-field"
+              type={showPassword ? "text" : "password"}
+              name="confirm"
+              placeholder="Repetí tu contraseña"
+              value={form.confirm}
+              onChange={handleChange}
+              required
+              minLength={8}
+            />
           </div>
 
           {error && <p className={styles.errorMsg}>{error}</p>}
