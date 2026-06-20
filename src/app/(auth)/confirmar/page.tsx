@@ -148,4 +148,3 @@ export default function ConfirmarPage() {
     </div>
   );
 }
-"
