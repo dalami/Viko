@@ -200,7 +200,7 @@ export async function GET(req: Request) {
 
   const { data: emps, error } = await supabase
     .from("emprendimientos")
-    .select("id, nombre,rubro, email, images, created_at, updated_at, plan")
+    .select("id, nombre,rubro, email, images, created_at, updated_at, last_login, ultimo_recordatorio, plan")
     .not("email", "is", null)
     .neq("email", "");
 
@@ -216,9 +216,13 @@ export async function GET(req: Request) {
     const nombre = (emp.nombre as string) ?? "";
     const images = (emp.images as string[]) ?? [];
     const createdAt = emp.created_at as string;
-    const updatedAt = emp.updated_at as string;
+    const lastLogin = emp.last_login as string | null;
+    const ultimoRecordatorio = emp.ultimo_recordatorio as string | null;
     const horas = horasDesde(createdAt);
-    const dias = diasDesde(updatedAt);
+    // last_login mide inactividad real (login), a diferencia de updated_at que se
+    // resetea con cualquier UPDATE administrativo. Si nunca volvió a entrar
+    // después del registro, last_login es null y usamos created_at como fallback.
+    const dias = diasDesde(lastLogin ?? createdAt);
     const tieneFoto = images.filter(Boolean).length > 0;
     const perfilCompleto =
       esValido(emp.nombre) && esValido(emp.rubro) && tieneFoto;
@@ -232,10 +236,18 @@ export async function GET(req: Request) {
     } else if (!tieneFoto && horas >= 48 && horas < 72) {
       template = mailSinFoto(nombre);
       tipo = "sin_foto";
-    } else if (dias >= 15 && dias < 16) {
+    } else if (
+      dias >= 15 &&
+      dias < 30 &&
+      ultimoRecordatorio !== "inactivo_15"
+    ) {
+      // Ventana abierta (15-29 días) en vez de exacta: si el cron falla un día
+      // puntual no se pierde el envío. ultimoRecordatorio evita repetirlo
+      // todos los días dentro de la ventana.
       template = mailInactivo15(nombre);
       tipo = "inactivo_15";
-    } else if (dias >= 30 && dias < 31) {
+    } else if (dias >= 30 && ultimoRecordatorio !== "inactivo_30") {
+      // Ventana abierta sin tope superior, con el mismo control de repetición.
       template = mailInactivo30(nombre);
       tipo = "inactivo_30";
     }
@@ -254,6 +266,12 @@ export async function GET(req: Request) {
       errores.push(`${email} (${tipo}): ${sendError.message}`);
     } else {
       enviados.push(`${email} (${tipo})`);
+      if (tipo === "inactivo_15" || tipo === "inactivo_30") {
+        await supabase
+          .from("emprendimientos")
+          .update({ ultimo_recordatorio: tipo })
+          .eq("id", emp.id);
+      }
     }
   }
 

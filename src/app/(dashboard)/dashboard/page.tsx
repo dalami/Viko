@@ -1,5 +1,6 @@
 import { createClient } from '../../../lib/server'
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
 import DashboardClient from './DashboardClient'
 
 export default async function DashboardPage() {
@@ -22,6 +23,18 @@ export default async function DashboardPage() {
     .single()
 
   if (!emprendimiento) redirect('/register')
+
+  // Side-effect informativo: no debe bloquear ni romper la carga del dashboard.
+  after(async () => {
+    try {
+      await supabase
+        .from('emprendimientos')
+        .update({ last_login: new Date().toISOString() })
+        .eq('user_id', user.id)
+    } catch {
+      // silencioso: last_login es solo para medir inactividad, nunca debe afectar al usuario
+    }
+  })
 
   const { data: productos } = await supabase
     .from('productos')
