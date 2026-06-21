@@ -200,9 +200,7 @@ export async function GET(req: Request) {
 
   const { data: emps, error } = await supabase
     .from("emprendimientos")
-    .select("id, nombre,rubro, email, images, created_at, updated_at, last_login, ultimo_recordatorio, mail_perfil_incompleto_enviado, mail_sin_foto_enviado, plan")
-    .not("email", "is", null)
-    .neq("email", "");
+    .select("id, user_id, nombre, rubro, descripcion, whatsapp, images, created_at, updated_at, last_login, ultimo_recordatorio, mail_perfil_incompleto_enviado, mail_sin_foto_enviado, plan");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -212,7 +210,15 @@ export async function GET(req: Request) {
   const errores: string[] = [];
 
   for (const emp of emps ?? []) {
-    const email = emp.email as string;
+    const userId = emp.user_id as string | null;
+    if (!userId) continue;
+
+    // emprendimientos.email es el contacto público del negocio, no la cuenta —
+    // el recordatorio se manda a la dirección con la que el usuario se registró.
+    const { data: authData } = await supabase.auth.admin.getUserById(userId);
+    const email = authData?.user?.email;
+    if (!email) continue;
+
     const nombre = (emp.nombre as string) ?? "";
     const images = (emp.images as string[]) ?? [];
     const createdAt = emp.created_at as string;
@@ -228,7 +234,11 @@ export async function GET(req: Request) {
     const dias = diasDesde(lastLogin ?? createdAt);
     const tieneFoto = images.filter(Boolean).length > 0;
     const perfilCompleto =
-      esValido(emp.nombre) && esValido(emp.rubro) && tieneFoto;
+      esValido(emp.nombre) &&
+      esValido(emp.rubro) &&
+      esValido(emp.descripcion) &&
+      esValido(emp.whatsapp) &&
+      tieneFoto;
 
     let template: { subject: string; html: string } | null = null;
     let tipo = "";
