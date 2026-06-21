@@ -200,7 +200,7 @@ export async function GET(req: Request) {
 
   const { data: emps, error } = await supabase
     .from("emprendimientos")
-    .select("id, nombre,rubro, email, images, created_at, updated_at, last_login, ultimo_recordatorio, plan")
+    .select("id, nombre,rubro, email, images, created_at, updated_at, last_login, ultimo_recordatorio, mail_perfil_incompleto_enviado, mail_sin_foto_enviado, plan")
     .not("email", "is", null)
     .neq("email", "");
 
@@ -218,6 +218,9 @@ export async function GET(req: Request) {
     const createdAt = emp.created_at as string;
     const lastLogin = emp.last_login as string | null;
     const ultimoRecordatorio = emp.ultimo_recordatorio as string | null;
+    const mailPerfilIncompletoEnviado =
+      (emp.mail_perfil_incompleto_enviado as boolean) ?? false;
+    const mailSinFotoEnviado = (emp.mail_sin_foto_enviado as boolean) ?? false;
     const horas = horasDesde(createdAt);
     // last_login mide inactividad real (login), a diferencia de updated_at que se
     // resetea con cualquier UPDATE administrativo. Si nunca volvió a entrar
@@ -230,10 +233,16 @@ export async function GET(req: Request) {
     let template: { subject: string; html: string } | null = null;
     let tipo = "";
 
-    if (!perfilCompleto && horas >= 24 && horas < 48) {
+    if (!perfilCompleto && horas >= 24 && !mailPerfilIncompletoEnviado) {
+      // Ventana abierta: alcanza también a emprendimientos viejos con perfil
+      // incompleto, no solo a los recién registrados. mailPerfilIncompletoEnviado
+      // evita repetirlo; si más adelante completan el perfil, !perfilCompleto ya
+      // se vuelve false solo y la rama deja de dispararse sin tocar el guard.
       template = mailPerfilIncompleto(nombre);
       tipo = "perfil_incompleto";
-    } else if (!tieneFoto && horas >= 48 && horas < 72) {
+    } else if (!tieneFoto && horas >= 48 && !mailSinFotoEnviado) {
+      // Guard independiente del de perfil_incompleto: si ya completó todo
+      // menos la foto, tiene que poder recibir este igual.
       template = mailSinFoto(nombre);
       tipo = "sin_foto";
     } else if (
@@ -270,6 +279,16 @@ export async function GET(req: Request) {
         await supabase
           .from("emprendimientos")
           .update({ ultimo_recordatorio: tipo })
+          .eq("id", emp.id);
+      } else if (tipo === "perfil_incompleto") {
+        await supabase
+          .from("emprendimientos")
+          .update({ mail_perfil_incompleto_enviado: true })
+          .eq("id", emp.id);
+      } else if (tipo === "sin_foto") {
+        await supabase
+          .from("emprendimientos")
+          .update({ mail_sin_foto_enviado: true })
           .eq("id", emp.id);
       }
     }
