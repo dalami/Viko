@@ -442,7 +442,9 @@ export default function DirectorioClient({
                   key={e.id}
                   className={styles.card}
                   onClick={() =>
-                    router.push(`/emprendimiento/${slugify(e.nombre)}`)
+                    router.push(
+                      `/emprendimiento/${e.slug ?? slugify(e.nombre)}`,
+                    )
                   }
                   style={{ cursor: "pointer" }}
                 >
