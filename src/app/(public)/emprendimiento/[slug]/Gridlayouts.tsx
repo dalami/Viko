@@ -6,63 +6,218 @@ import type { Producto } from "../../../../lib/types";
 import { getTema } from "../../../../lib/plantillas";
 import styles from "./public.module.css";
 import { useState } from "react";
+// Agregar a los imports existentes:
+import { createPortal } from "react-dom";
 
-function ZoomableImage({
-  src,
+function ProductImageSlider({
+  imagen,
+  imagenes,
   alt,
   sizes,
   style,
 }: {
-  src: string;
+  imagen?: string;
+  imagenes?: string[];
   alt: string;
   sizes?: string;
   style?: React.CSSProperties;
 }) {
-  const [open, setOpen] = useState(false);
+  const imgs = (
+    (imagenes?.length ? imagenes : imagen ? [imagen] : []) as string[]
+  ).filter(Boolean);
+  const [idx, setIdx] = useState(0);
+  const [zoomed, setZoomed] = useState(false);
+
+  if (imgs.length === 0) return null;
 
   return (
     <>
       <Image
-        src={src}
+        src={imgs[idx]}
         alt={alt}
         fill
         sizes={sizes}
-        onClick={() => setOpen(true)}
-        style={{
-          cursor: "zoom-in",
-          ...style,
-        }}
+        onClick={() => setZoomed(true)}
+        style={{ cursor: "zoom-in", ...style }}
       />
 
-      {open && (
-        <div
-          onClick={() => setOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,.95)",
-            zIndex: 999999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 20,
-            cursor: "zoom-out",
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt={alt}
-            onClick={(e) => e.stopPropagation()}
+      {imgs.length > 1 && (
+        <>
+          {idx > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIdx((i) => i - 1);
+              }}
+              style={{
+                position: "absolute",
+                left: 6,
+                top: "50%",
+                transform: "translateY(-50%)",
+                zIndex: 10,
+                background: "rgba(0,0,0,0.5)",
+                border: "none",
+                borderRadius: "50%",
+                width: 28,
+                height: 28,
+                color: "#fff",
+                cursor: "pointer",
+                fontSize: 18,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ‹
+            </button>
+          )}
+          {idx < imgs.length - 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIdx((i) => i + 1);
+              }}
+              style={{
+                position: "absolute",
+                right: 6,
+                top: "50%",
+                transform: "translateY(-50%)",
+                zIndex: 10,
+                background: "rgba(0,0,0,0.5)",
+                border: "none",
+                borderRadius: "50%",
+                width: 28,
+                height: 28,
+                color: "#fff",
+                cursor: "pointer",
+                fontSize: 18,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ›
+            </button>
+          )}
+          <div
             style={{
-              maxWidth: "95vw",
-              maxHeight: "95vh",
-              objectFit: "contain",
-              borderRadius: 12,
+              position: "absolute",
+              bottom: 6,
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              gap: 4,
+              zIndex: 10,
             }}
-          />
-        </div>
+          >
+            {imgs.map((_, i) => (
+              <button
+                key={i}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIdx(i);
+                }}
+                style={{
+                  width: i === idx ? 14 : 6,
+                  height: 6,
+                  borderRadius: 3,
+                  background: i === idx ? "#fff" : "rgba(255,255,255,0.5)",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  transition: "width 0.2s",
+                }}
+              />
+            ))}
+          </div>
+        </>
       )}
+
+      {zoomed &&
+        createPortal(
+          <div
+            onClick={() => setZoomed(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,.95)",
+              zIndex: 999999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 20,
+              cursor: "zoom-out",
+            }}
+          >
+            {imgs.length > 1 && idx > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIdx((i) => i - 1);
+                }}
+                style={{
+                  position: "fixed",
+                  left: 20,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "rgba(255,255,255,0.15)",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: 44,
+                  height: 44,
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontSize: 28,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                ‹
+              </button>
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imgs[idx]}
+              alt={alt}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: "95vw",
+                maxHeight: "95vh",
+                objectFit: "contain",
+                borderRadius: 12,
+              }}
+            />
+            {imgs.length > 1 && idx < imgs.length - 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIdx((i) => i + 1);
+                }}
+                style={{
+                  position: "fixed",
+                  right: 20,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "rgba(255,255,255,0.15)",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: 44,
+                  height: 44,
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontSize: 28,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                ›
+              </button>
+            )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
@@ -450,13 +605,13 @@ export function GridClasica({
                 background: tema.bg,
               }}
             >
-              {p.imagen ? (
-                <Image
-                  src={p.imagen}
+              {p.imagen || p.imagenes?.length ? (
+                <ProductImageSlider
+                  imagen={p.imagen}
+                  imagenes={p.imagenes}
                   alt={p.nombre}
-                  fill
-                  style={{ objectFit: "cover" }}
                   sizes="30vw"
+                  style={{ objectFit: "cover" }}
                 />
               ) : (
                 <div
@@ -567,8 +722,9 @@ export function GridTienda({
             >
               <div style={{ position: "absolute", inset: 0 }}>
                 {p.imagen ? (
-                  <ZoomableImage
-                    src={p.imagen}
+                  <ProductImageSlider
+                    imagen={p.imagen}
+                    imagenes={p.imagenes}
                     alt={p.nombre}
                     sizes="240px"
                     style={{ objectFit: "cover" }}
@@ -1120,13 +1276,13 @@ export function GridCatalogo({
             className={styles.catalogoCardImg}
             style={{ position: "relative", background: tema.bg }}
           >
-            {p.imagen ? (
-              <Image
-                src={p.imagen}
+            {p.imagen || p.imagenes?.length ? (
+              <ProductImageSlider
+                imagen={p.imagen}
+                imagenes={p.imagenes}
                 alt={p.nombre}
-                fill
-                style={{ objectFit: "cover" }}
                 sizes="240px"
+                style={{ objectFit: "cover" }}
               />
             ) : (
               <div
@@ -1279,10 +1435,11 @@ export function GridRevista({
             }}
           >
             {p.imagen ? (
-              <ZoomableImage
-                src={p.imagen}
+              <ProductImageSlider
+                imagen={p.imagen}
+                imagenes={p.imagenes}
                 alt={p.nombre}
-                sizes="50vw"
+                sizes="240px"
                 style={{ objectFit: "cover" }}
               />
             ) : (
