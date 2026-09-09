@@ -44,10 +44,12 @@ export default function DashboardClient({
   user,
   emprendimiento,
   productos,
+   ubicacionesExistentes,
 }: {
   user: User;
   emprendimiento: Emprendimiento;
   productos: Producto[];
+  ubicacionesExistentes: string[];
 }) {
   const searchParams = useSearchParams();
   const mpStatus = searchParams.get("mp");
@@ -228,6 +230,7 @@ export default function DashboardClient({
               setEmp={setEmp}
               userId={user.id}
               onUpgrade={handleUpgrade}
+               ubicacionesExistentes={ubicacionesExistentes}
             />
           )}
           {view === "productos" && (

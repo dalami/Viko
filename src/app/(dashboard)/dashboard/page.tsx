@@ -42,11 +42,25 @@ export default async function DashboardPage() {
     .eq('emprendimiento_id', emprendimiento.id)
     .order('orden', { ascending: true })
 
+      const { data: ubicacionesRaw } = await supabase
+    .from('emprendimientos')
+    .select('ubicacion')
+    .not('ubicacion', 'is', null)
+
+  const ubicacionesExistentes = Array.from(
+    new Set(
+      (ubicacionesRaw ?? [])
+        .map((r) => r.ubicacion?.trim())
+        .filter((u): u is string => !!u)
+    )
+  ).sort()
+
   return (
     <DashboardClient
       user={{ id: user.id, email: user.email }}
       emprendimiento={emprendimiento}
       productos={productos ?? []}
+       ubicacionesExistentes={ubicacionesExistentes}
     />
   )
 }

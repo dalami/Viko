@@ -309,17 +309,181 @@ function RubroSelector({
   );
 }
 
+// ─── UbicacionSelector ────────────────────────────────────────────────────────
+function UbicacionSelector({
+  value,
+  opciones,
+  onChange,
+}: {
+  value: string;
+  opciones: string[];
+  onChange: (ubicacion: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [custom, setCustom] = useState("");
+  const allOpciones = Array.from(
+    new Set([...opciones, ...(value ? [value] : [])]),
+  ).sort();
+
+  function addCustom() {
+    const val = custom.trim();
+    if (!val) return;
+    onChange(val);
+    setCustom("");
+    setOpen(false);
+  }
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="input-field"
+        style={{
+          width: "100%",
+          textAlign: "left",
+          cursor: "pointer",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background: "#fff",
+        }}
+      >
+        <span style={{ color: value ? "#1A1814" : "#8A8680" }}>
+          {value || "Seleccioná tu ubicación..."}
+        </span>
+        <span
+          style={{
+            fontSize: 12,
+            color: "#8A8680",
+            transition: "transform 0.2s",
+            display: "inline-block",
+            transform: open ? "rotate(180deg)" : "none",
+          }}
+        >
+          ▼
+        </span>
+      </button>
+
+      {open && (
+        <>
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% + 4px)",
+              left: 0,
+              right: 0,
+              background: "#fff",
+              border: "1.5px solid #E8E4DC",
+              borderRadius: 12,
+              zIndex: 100,
+              maxHeight: 280,
+              overflowY: "auto",
+              boxShadow: "0 8px 24px rgba(26,24,20,0.12)",
+            }}
+          >
+            {allOpciones.map((u) => {
+              const isSelected = value === u;
+              return (
+                <div
+                  key={u}
+                  onClick={() => {
+                    onChange(u);
+                    setOpen(false);
+                  }}
+                  style={{
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    borderBottom: "1px solid #F5F2EC",
+                    background: isSelected ? "#F5F2EC" : "transparent",
+                    fontSize: 13,
+                    color: "#1A1814",
+                    fontWeight: isSelected ? 600 : 400,
+                  }}
+                >
+                  {u}
+                  {isSelected && (
+                    <span style={{ float: "right", color: "#6B7A5A" }}>✓</span>
+                  )}
+                </div>
+              );
+            })}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 16px",
+                borderTop: "1px solid #E8E4DC",
+              }}
+            >
+              <span style={{ fontSize: 13, color: "#6B7A5A", fontWeight: 600 }}>
+                + Otra
+              </span>
+              <input
+                type="text"
+                value={custom}
+                onChange={(e) => setCustom(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addCustom()}
+                placeholder="Ciudad, Provincia"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  flex: 1,
+                  padding: "5px 10px",
+                  borderRadius: 8,
+                  border: "1px solid #E8E4DC",
+                  fontSize: 12,
+                  fontFamily: "inherit",
+                  outline: "none",
+                }}
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addCustom();
+                }}
+                disabled={!custom.trim()}
+                style={{
+                  padding: "5px 10px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: "#6B7A5A",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  opacity: !custom.trim() ? 0.4 : 1,
+                  flexShrink: 0,
+                }}
+              >
+                Agregar
+              </button>
+            </div>
+          </div>
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 99 }}
+            onClick={() => setOpen(false)}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── ViewPerfil ───────────────────────────────────────────────────────────────
 export default function ViewPerfil({
   emp,
   setEmp,
   userId,
   onUpgrade,
+  ubicacionesExistentes,
 }: {
   emp: Emprendimiento;
   setEmp: React.Dispatch<React.SetStateAction<Emprendimiento>>;
   userId: string;
   onUpgrade?: () => void;
+  ubicacionesExistentes: string[];
 }) {
   const supabase = createClient();
   const [uploading, setUploading] = useState<number | null>(null);
@@ -482,13 +646,13 @@ export default function ViewPerfil({
           </div>
           <div className={styles.field}>
             <label className="field-label">Ubicación</label>
-            <input
-              className="input-field"
+            <UbicacionSelector
               value={emp.ubicacion || ""}
-              onChange={(e) => update("ubicacion", e.target.value)}
-              onBlur={(e) => save("ubicacion", e.target.value)}
-              placeholder="Ciudad, Provincia"
-              required
+              opciones={ubicacionesExistentes}
+              onChange={(ubicacion) => {
+                update("ubicacion", ubicacion);
+                save("ubicacion", ubicacion);
+              }}
             />
           </div>
           <div className={styles.field}>
