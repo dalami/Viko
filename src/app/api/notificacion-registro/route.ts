@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       <p><strong>Nombre:</strong> ${nombre}</p>
       <p><strong>Rubro:</strong> ${rubro}</p>
       <p><strong>Email:</strong> ${email}</p>
-      <p style="color:#888;font-size:12px;">Aún no confirmó el email — el perfil se creará cuando lo haga.</p>
+      
     `,
   });
 
